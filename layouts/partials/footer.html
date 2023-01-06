@@ -1,0 +1,8 @@
+<footer class="footer wrap pale">
+    <a href="https://www.tampadevs.com"><p>&copy;&nbsp;<span class="year"></span>&nbsp;Tampa Devs</p></a>
+    <p class="attribution upcase"></p>
+  </footer>
+  {{ $scriptPath := "js/index.js" }}
+  {{ $scripts := resources.Get $scriptPath | resources.ExecuteAsTemplate $scriptPath . | resources.Minify | resources.Fingerprint "sha512" }}
+  <script src="{{ $scripts.Permalink }}"></script>
+  
