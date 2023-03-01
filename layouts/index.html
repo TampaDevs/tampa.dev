@@ -17,7 +17,7 @@
         {{ $scratch.Set "website" "#" }}
     {{ end }}
     {{ if isset .Params "sticky" }}
-      {{ $scratch.Set "sticky" .Params.sticky }}
+      {{ $scratch.Set "sticky" .Params.sticky }} 
     {{ else }}
       {{ $scratch.Set "sticky" false }}
     {{ end }}
@@ -39,6 +39,7 @@
         </div>
       </div>
     </a>
+    {{ if eq $sticky true }} <script src="https://opencollective.com/tampadevs/banner.js"></script> {{ end }}
   </article>
   {{- if and (eq $index 0) (gt $size 1)  }}<div class = 'grid-2 article_showcase'>{{ end }}
   {{- if and (eq $index (add $size -1)) (gt $size 1) }}</div>{{ end }}
