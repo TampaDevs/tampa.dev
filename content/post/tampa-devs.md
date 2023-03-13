@@ -7,4 +7,4 @@ website: "https://www.tampadevs.com/"
 sticky: true
 ---
 
-Tampa Devs is the fastest growing software development community in Tampa Bay.
+Tampa Devs is the fastest-growing nonprofit software development community in Tampa Bay. 
