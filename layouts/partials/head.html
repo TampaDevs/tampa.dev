@@ -6,7 +6,17 @@
     {{- end }}
     <meta name="viewport" content ="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    {{- partialCached "analytics" . }}
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VV1YTRRM50"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-VV1YTRRM50');
+    </script>
+    
     {{- partial "opengraph" . }}
     {{- partialCached "favicon" . }}
     {{- partialCached "styles" . }}
