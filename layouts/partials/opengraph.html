@@ -23,7 +23,7 @@
 {{- else }}
   {{- $image = .Site.Params.image }}
 {{- end }}
-<meta name="keywords" content="{{ $st }}">
+<meta name="keywords" content="{{ .Site.Params.keywords }}">
 <meta property="og:locale" content='{{ default "en_US" $config.locale }}'>
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ .Title }}">
