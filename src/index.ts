@@ -10,6 +10,7 @@ export default {
 
     if (request.method == "GET") {
 		  res = new Response(await env.kv.get("event_data"), { status: 200 });
+      res.headers.set("Content-Type", "application/json");
       return res;
     }
   }
