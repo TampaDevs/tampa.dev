@@ -7,9 +7,7 @@ website: "https://www.tampadevs.com/"
 sticky: true
 ---
 
-Tampa Devs is the fastest-growing nonprofit software development community in Tampa Bay. 
-
-About Tampa Devs
+Tampa Devs is the fastest-growing nonprofit community for software developers in Tampa Bay.
 
 Tampa Devs started as a small group of friends in the technology industry who met through latin dance. After realizing the broad appeal and clear need for a developer meetup in Tampa, founder Vincent Tang publicly launched the group with its first event in September 2021. 
 
