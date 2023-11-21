@@ -1,0 +1,35 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  {{> style/widget this }}
+
+</head>
+
+<body>
+  <div>
+    <h1>Next Event</h1>
+    <div class="next-event-card">
+      <div class="next-event-date">
+        <h1>{{ this.event.dayNumber }}</h1>
+        <h3>{{ this.event.month }}</h3>
+      </div>
+      <div class="next-event-card-image">
+        <img src="{{ this.event.node.imageUrl }}" />
+      </div>
+
+      <div class="next-event-text">
+        <h2>
+          <a href="{{ this.event.node.eventUrl }}">{{ this.event.name }} — {{ this.event.node.title }}</a>
+        </h2>
+        <ul>
+          <li>📆 {{ this.event.date }}</li>
+          <li>👥 {{ this.event.node.going }} going</li>
+          <li>📍 <a href="{{ this.event.googleMapsUrl }}">{{ this.event.address }}</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

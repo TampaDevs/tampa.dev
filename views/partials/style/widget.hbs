@@ -1,0 +1,80 @@
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  h1 {
+    margin-bottom: 5px;
+  }
+
+  h1.next-event-header {
+    margin-bottom: 5px;
+  }
+
+  .next-event-card {
+    display: flex;
+    color: black;
+    background-color: #FF5733;
+    border: 2px solid #FF5733;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    font-weight: bold;
+  }
+
+  .next-event-date {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    background-color: lightblue;
+    padding-left: 20px;
+    padding-right: 20px;
+    border: solid;
+  }
+
+  .next-event-date>h1 {
+    margin: 0;
+    font-size: 3rem;
+  }
+
+  .next-event-date>h3 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .next-event-card-image {
+    display: flex;
+    background-color: black;
+    max-width: 200px;
+  }
+
+  .next-event-card-image>img {
+    width: 100%;
+    align-self: center;
+  }
+
+  .next-event-text {
+    flex-grow: 1;
+    padding-left: 10px;
+    background-color: lightblue;
+    border: solid;
+    padding-right: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .next-event-text>h2 {
+    margin-top: 0;
+  }
+
+  .next-event-text>ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+</style>
+
+{{#if url_params.custom_stylesheet_url }}
+<link rel="stylesheet" type="text/css" href="{{ url_params.custom_stylesheet_url }}">
+{{/if}}
