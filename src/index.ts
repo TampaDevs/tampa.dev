@@ -11,18 +11,67 @@ export default {
     if (request.method == "GET") {
 
       const url = new URL(request.url);
+      const params = await parseQueryParams(url);
+
+      const eventData = await filterEventData(JSON.parse(await env.kv.get("event_data")), params)
 
       if(url.pathname == '/rss') { 
-        res = new Response(jsonToRss(JSON.parse(await env.kv.get("event_data"))));
+        res = new Response(jsonToRss(eventData));
         res.headers.set("Content-Type", "application/rss+xml");
         return res;
       }
 
-		  res = new Response(await env.kv.get("event_data"), { status: 200 });
+		  res = new Response(JSON.stringify(eventData), { status: 200 });
       res.headers.set("Content-Type", "application/json");
       return res;
     }
   }
+}
+
+async function filterEventData(event_data, params) {
+  let eventData = event_data;
+
+  if (params.groups) {
+    let groups = params.groups.toLowerCase().split(',').map(x => x.replace(/\+/g, ' '));
+    let selection = Object.keys(event_data).filter(e => groups.includes(e.toLowerCase()));
+
+    event_data = selection.reduce((a, prop) => {
+      if (event_data.hasOwnProperty(prop)) {
+        a[prop] = event_data[prop];
+      }
+      return a;
+    }, {});
+  }
+
+  if (params.noempty){
+    event_data = Object.keys(event_data).reduce((a, prop) => {
+      if (event_data[prop]["eventSearch"]["count"] > 0) {
+        a[prop] = event_data[prop];
+      }
+      return a;
+    }, {});
+  }
+
+  if (params.noonline){
+    event_data = Object.keys(event_data).reduce((a, prop) => {
+      if (event_data[prop]["eventSearch"]["count"] > 0 && event_data[prop]["eventSearch"]["edges"]["0"]["node"]["venue"]["name"] !== "Online event") {
+        a[prop] = event_data[prop];
+      }
+      return a;
+    }, {});
+  }
+
+  return event_data;
+}
+
+async function parseQueryParams(url){
+  const params = {};
+  const queryString = url.search.slice(1).split('&')
+  queryString.forEach(item => {
+    const kv = item.split('=')
+    if (kv[0]) params[kv[0]] = decodeURIComponent(kv[1]) || true
+  });
+  return params;
 }
 
 function escapeXml(unsafeStr) {

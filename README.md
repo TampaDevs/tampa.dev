@@ -13,6 +13,20 @@ You can also access this API at the following additional URLs:
 - https://tampa.dev/events.json (for JSON), and
 - https://tampa.dev/rss
 
+### Filters
+
+You can supply optional filters as query parameters:
+
+- `groups`: A comma-separated list of groups to return. These should match the group's `urlname` (e.g., `tampadevs`).
+- `noempty`: Filter groups with no upcoming events from the response.
+- `noonline`: Filter online events from the response.
+
+_Note: These filters also work when you're requesting results in RSS format._
+
+Example:
+
+https://events.api.tampa.dev/?groups=tampadevs,tampa-bay-techies&noonline&noempty
+
 ## Data Freshness
 
 Data is served from a cache in Workers KV. This cache data is updated every 30 minutes.
