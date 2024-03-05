@@ -6,6 +6,13 @@ Public API to retrieve information about upcoming tech events in the Tampa Bay a
 
 Simply send a GET request to https://events.api.tampa.dev/.
 
+Want an RSS feed? Grab it at https://events.api.tampa.dev/rss.
+
+You can also access this API at the following additional URLs:
+
+- https://tampa.dev/events.json (for JSON), and
+- https://tampa.dev/rss
+
 ## Data Freshness
 
 Data is served from a cache in Workers KV. This cache data is updated every 30 minutes.
