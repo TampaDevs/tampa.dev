@@ -17,7 +17,7 @@ export default {
 
             const eventData = await filterEventData(JSON.parse(await env.kv.get("event_data")), params)
 
-            if (url.pathname == '/rss') {
+            if (url.pathname == '/rss' || url.pathname == '/feed') {
                 res = new Response(jsonToRss(eventData));
                 res.headers.set("Content-Type", "application/rss+xml");
                 return res;
@@ -101,7 +101,7 @@ function jsonToRss(jsonData) {
     let rssFeed = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-  <title>Tampa Tech Meetup Events</title>
+  <title>Upcoming Events</title>
   <link>https://tampa.dev/</link>
   <description>A collection of upcoming events from tech meetups in Tampa Bay.</description>
   <language>en-us</language>`;
