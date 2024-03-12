@@ -18,7 +18,7 @@ export default {
             const eventData = await filterEventData(JSON.parse(await env.kv.get("event_data")), params)
 
             if (url.pathname == '/rss' || url.pathname == '/feed') {
-                res = new Response(jsonToRss(eventData));
+                res = new Response(jsonToRss(eventData, request));
                 res.headers.set("Content-Type", "application/rss+xml");
                 return res;
             }
@@ -97,7 +97,7 @@ function escapeXml(unsafeStr) {
     });
 }
 
-function jsonToRss(jsonData) {
+function jsonToRss(jsonData, request) {
     let rssFeed = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
@@ -115,14 +115,14 @@ function jsonToRss(jsonData) {
     <title>${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</title>
     <link>${eventNode.eventUrl}</link>
     <guid isPermaLink="true">${eventNode.eventUrl}</guid>
-    <description><![CDATA[<img src="${eventNode.imageUrl}" alt="Event image"/><p>${escapeXml(eventNode.title)}</p>]]></description>
+    <description><![CDATA[<h2>${escapeXml(eventNode.title)}</h2><img src="${eventNode.imageUrl}" alt="Event image"/><p>${escapeXml(eventNode.description)}</p>]]></description>
     <pubDate>${new Date(eventNode.dateTime).toUTCString()}</pubDate>
   </item>`;
         });
     });
 
     rssFeed += `
-<atom:link href="https://events.api.tampa.dev/rss" rel="self" type="application/rss+xml" />
+<atom:link href="${request.url}" rel="self" type="application/rss+xml" />
 </channel>
 </rss>`;
 
