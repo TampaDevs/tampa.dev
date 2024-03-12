@@ -221,11 +221,28 @@ function jsonToHTML(jsonData, request) {
   <meta name="description" content="A collection of upcoming events from software development and technology meetups in Tampa Bay.">
   <meta charset="UTF-8">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VV1YTRRM50"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-VV1YTRRM50');
+  </script>
+
+  
+  <script>
+    !function(){var analytics=window.analytics=window.analytics||[];if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Segment snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.src="https://cdn.segment.com/analytics.js/v1/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._loadOptions=e};analytics._writeKey="Cxy4CFCYHzZ7KuxjVgMQIiwhRlrkvDT1";;analytics.SNIPPET_VERSION="4.15.3";
+    analytics.load("Cxy4CFCYHzZ7KuxjVgMQIiwhRlrkvDT1");
+    analytics.page();
+    }}();
+  </script>
   </head>
   <body class="bg-gray-50 text-gray-800 font-sans">
   <div class="max-w-4xl mx-auto py-8 px-4">
   <div class="text-center mb-12">
     <h1 class="text-4xl font-semibold">Upcoming Events</h1>
+    <h4 class="mt-2 text-1xl font-semibold"><a class="text-blue-500 hover:text-blue-700" href="https://tampa.dev/">Back to All Meetups</a></h4>
   </div>
   <div class="space-y-8">`;
 
@@ -247,6 +264,7 @@ function jsonToHTML(jsonData, request) {
     html += `
     </div>
     </div>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js?token=5e34450a278e4510b022ed00c6bc0bdc"></script>
     </body>`;
 
     return html;
