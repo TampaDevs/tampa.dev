@@ -202,16 +202,20 @@ function markdownToHtml(markdown) {
 }
 
 function toLocalDate(dateStr) {
+    const timeZoneMatch = dateStr.match(/([+-][0-9]{2}:[0-9]{2})$/);
+    const timeZone = timeZoneMatch ? timeZoneMatch[0] : 'UTC';
+
     const dt = new Date(dateStr);
     const options = {
         weekday: 'long',
-        year: 'numeric',
         month: 'long',
         day: 'numeric',
-        hour: 'numeric'
+        hour: 'numeric',
+        minute: 'numeric',
+        timeZone: timeZone 
     };
 
-    return dt.toLocaleDateString('en-US', options);
+    return new Intl.DateTimeFormat('en-US', options).format(dt);
 }
 
 function jsonToHTML(jsonData, request) {
@@ -246,20 +250,48 @@ function jsonToHTML(jsonData, request) {
   </div>
   <div class="space-y-8">`;
 
+    let numEvents = 0;
+
     getSortedGroupNames(jsonData).forEach(groupKey => {
         const group = jsonData[groupKey];
         group.eventSearch.edges.forEach(event => {
             const eventNode = event.node;
+            numEvents++;
             html += `
     <div class="bg-white shadow rounded-lg p-6">
-    <h2 class="text-2xl font-semibold">${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</h2>
-    <p><strong>${toLocalDate(eventNode.dateTime)}</strong></p>
-    <a class="text-blue-500 hover:text-blue-700" href="${eventNode.eventUrl}">Event Link</a>
-    <div class="flex mt-4 mb-4 justify-center items-center"><img class="rounded-md" src="${eventNode.imageUrl}" alt="Event image"/></div>
-    <p class="mt-4">${markdownToHtml(escapeXml(eventNode.description))}</p>
+      <div class="w-11/12" >
+        <h2 class="text-2xl font-semibold">${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</h2>
+        <h3 class="text-lg font-bold">${toLocalDate(eventNode.dateTime)}</h3>
+      </div>
+
+      <div class="flex mt-8 justify-center items-center">
+        <img class="rounded-md drop-shadow-sm" src="${eventNode.imageUrl}" alt="Event image"/>
+      </div>
+
+      <div class="flex mb-4 mt-6 justify-center items-center">
+        <a href="${eventNode.eventUrl}">
+          <button class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded">
+            RSVP
+          </button>
+        </a>
+      </div>
+
+      <div class="flex flex-col justify-center items-center">
+        <p class="mt-4 mb-10 w-11/12">${markdownToHtml(escapeXml(eventNode.description))}</p>
+        <a class="text-blue-500 hover:text-blue-700 text-xs" href="${eventNode.eventUrl}">View on Meetup.com</a>
+      </div>
     </div>`;
         });
     });
+
+    if(numEvents == 0){
+        html += `
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex mt-4 mb-4 justify-center items-center">
+              <h2 class="text-2xl font-semibold">No events found.</h2>
+            </div>
+        </div>`;
+    }
 
     html += `
     </div>
