@@ -122,7 +122,7 @@ function jsonToRss(jsonData, request) {
     <title>${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</title>
     <link>${eventNode.eventUrl}</link>
     <guid isPermaLink="true">${eventNode.eventUrl}</guid>
-    <description><![CDATA[<h2>${escapeXml(eventNode.title)}</h2><img src="${eventNode.imageUrl}" alt="Event image"/><p>${escapeXml(eventNode.description)}</p>]]></description>
+    <description><![CDATA[<img src="${eventNode.imageUrl}" alt="Event image"/><p>${escapeXml(eventNode.description)}</p>]]></description>
     <pubDate>${new Date(eventNode.dateTime).toUTCString()}</pubDate>
   </item>`;
         });
