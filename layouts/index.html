@@ -1,61 +1,122 @@
-{{ define "main" }}
-{{- $pages := where site.RegularPages "Type" "in" site.Params.mainSections }}
-<div class = 'wrap pt-2 mt-2'>
-  {{- $paginator := .Paginate $pages -}}
-  {{- $size := $paginator.PageSize }}
-  {{- $scratch := newScratch }}
-  {{- range $index, $value := $paginator.Pages }}
-    {{ if isset .Params "image" }}
-      {{ $scratch.Set "image" .Params.image }}
-    {{ else }}
-      {{ $scratch.Set "image" "thumbnail.svg" }}
-    {{ end }}
-    {{ $url := "/#" }}
-    {{ if isset .Params "website" }}
-        {{ $scratch.Set "website" .Params.website }}
-    {{ else }}
-        {{ $scratch.Set "website" "#" }}
-    {{ end }}
-    {{ if isset .Params "sticky" }}
-      {{ $scratch.Set "sticky" .Params.sticky }} 
-    {{ else }}
-      {{ $scratch.Set "sticky" false }}
-    {{ end }}
-    {{ $url := $scratch.Get "website" }}
-    {{ $sticky := $scratch.Get "sticky" }}
-    {{ $image := $scratch.Get "image" }}
-    {{ $bg := (absURL (printf "images/%s" $image)) }}
-    {{- if in $image "https://" }}
-      {{- $bg = $image }}
-    {{- end }}
-  <article class = 'article mb-2'>
-    <a href = '{{ $url }}' {{ if eq $sticky true }} class = 'grid-reverse' {{ end }}>
-      <div class = 'article_thumb' style='background-image: url({{ $bg }})'></div>
-      <div class = 'article_meta {{ if eq $index 0 }} center_y {{ end }}'>
-        <time class = 'post_date'>{{ dateFormat "January 02, 2006" $value.Date }}</time>
-        <h3 class = 'article_title'>{{ $value.Title }}</h3>
-        <div class = 'article_excerpt {{ if eq $index 0 }} visible {{ end }}'>
-        <p>{{ $value.Summary | truncate 100 }}</p>
+{{ define "main" }} {{- $pages := where site.RegularPages "Type" "in" site.Params.mainSections }}
+<div class='justify-center items-center wrap pt-2 mt-2'>
+    {{- $paginator := .Paginate $pages -}} {{- $size := $paginator.PageSize }} {{- $scratch := newScratch }} {{- range $index, $value := $paginator.Pages }} {{ if isset .Params "image" }} {{ $scratch.Set "image" .Params.image }} {{ else }} {{ $scratch.Set "image" "thumbnail.svg" }} {{ end }} {{ $url := "/#" }} {{ if isset .Params "website" }} {{ $scratch.Set "website" .Params.website }} {{ else }} {{ $scratch.Set "website" "#" }} {{ end }} {{ if isset .Params "sticky" }} {{ $scratch.Set "sticky" .Params.sticky }} {{ else }} {{ $scratch.Set "sticky" false }} {{ end }} {{ $url := $scratch.Get "website" }} {{ $sticky := $scratch.Get "sticky" }} {{ $image := $scratch.Get "image" }} {{ $bg := (absURL (printf "images/%s" $image)) }} {{- if in $image "https://" }} {{- $bg = $image }} {{- end }}
+    <article class='article mb-2'>
+        <a href='{{ $url }}' {{ if eq $sticky true }} class='grid-reverse' {{ end }}>
+            <div class='article_thumb' style='background-image: url({{ $bg }})'></div>
+            <div class='article_meta {{ if eq $index 0 }} center_y {{ end }}'>
+                <time class='post_date'>{{ dateFormat "January 02, 2006" $value.Date }}</time>
+                <h3 class='article_title'>{{ $value.Title }}</h3>
+                <div class='article_excerpt {{ if eq $index 0 }} visible {{ end }}'>
+                    <p>{{ $value.Summary | truncate 100 }}</p>
+                </div>
+            </div>
+        </a>
+        {{ if eq $sticky true }}
+        <script src="https://opencollective.com/tampadevs/banner.js"></script> {{ end }}
+    </article>
+
+    {{ if eq $sticky true }}
+    <article class="article mt-8 mb-2" id="upcoming-events-feed" style="width: 100%; height: 440px;">
+        <a href="https://tampa.dev/upcoming-events" class="article_title">Upcoming Events</a>
+        <iframe src="https://rss.app/embed/v1/carousel/8TDOemcFAdDYqjke" style="width: 100%; height: 440px; overflow: hidden;" frameborder="0"></iframe>
+    </article>
+    {{ end }} 
+    
+    {{ if eq $sticky true }}
+    <article class="article mb-10" id="newsletter" style="width: 100%;">
+        <div class="flex-grow bg-red-500 text-white py-8">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-lg md:text-2xl font-bold flex items-center">
+                    <img src="https://www.tampadevs.com/_assets/misc/icons/mail-send.svg" alt="Paper Airplane" class="h-6 mr-2"> Keep in touch
+                </h2>
+                <p class="mt-2">Stay informed with local tech news, upcoming events, job opportunities, and more from Tampa Devs.</p>
+                <form action="https://newsletter.api.tampa.dev/subscribe" method="post" class="mt-8" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" target="_blank" novalidate>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-black">
+
+                        <div class="form-group">
+                            <input type="text" name="firstname" placeholder="First name" autocomplete="off" class="w-full p-2 rounded-md border border-gray-300">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="lastname" placeholder="Last name" autocomplete="off" class="w-full p-2 rounded-md border border-gray-300">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="email" placeholder="Email Address" required autocomplete="off" class="w-full p-2 rounded-md border border-gray-300">
+                        </div>
+                        <div aria-hidden="true" class="hidden">
+                            <input name="phone" class="required phone" id="mce-phone" value="(813) 555-0199" placeholder="Phone" autocomplete="off">
+                            <input type="email" value name="verify_email" class="required email" id="mce-EMAIL-verify" placeholder="Verify Email Address" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-center md:justify-start">
+                        <input type="submit" id="mc-embedded-subscribe" value="Subscribe" name="subscribe" class="cursor-pointer bg-white text-gray-800 font-bold py-2 px-4 rounded-md hover:bg-gray-100">
+                    </div>
+                </form>
+                <p class="mt-16 text-xs" id="website-link">Visit <a class="underline text-white text-opacity-100" href="https://www.tampadevs.com/">our website</a> to learn more about Tampa Devs' charitable mission.</p>
+            </div>
         </div>
-      </div>
-    </a>
-    {{ if eq $sticky true }} <script src="https://opencollective.com/tampadevs/banner.js"></script> {{ end }}
-  </article>
-  
-  {{ if eq $sticky true }}
-  <article class="article mb-2" id="upcoming-events-feed" style="width: 100%; height: 440px;">
-    <a href="https://tampa.dev/upcoming-events" class="article_title">Upcoming Events</a>
-    <iframe src="https://rss.app/embed/v1/carousel/8TDOemcFAdDYqjke" style="width: 100%; height: 440px; overflow: hidden;" frameborder="0"></iframe>
-  </article>
-  {{ end }}
-  
-  {{- if and (eq $index 0) (gt $size 1)  }}<div class = 'grid-2 article_showcase'>{{ end }}
-  {{- if and (eq $index (add $size -1)) (gt $size 1) }}</div>{{ end }}
-  {{- end }}
-</div>
-<a href = '{{ absURL (printf "post/%s" "") }}' class = 'post_nav'><span class = 'post_next'>{{ T "archive_text" }}
+        <script>
+            function resetMailForm() {
+                    document.getElementById("mc-embedded-subscribe-form").reset();
+                    document.getElementById("mc-embedded-subscribe").value = "Subscribe";
+                    document.getElementById("mc-embedded-subscribe").style.backgroundColor = "#fff";
+                    document.getElementById("mc-embedded-subscribe").style.textTransform = "uppercase";
+                    document.getElementById("mc-embedded-subscribe").style.color = "#566075";
+                  }
+    
+                  function formSubmit(e) {
+                    var req = new XMLHttpRequest();
+                    req.open('POST', "https://newsletter.api.tampa.dev/subscribe", true);
+            
+                    req.onload = function() { 
+                      document.getElementById("mc-embedded-subscribe-form").reset();
+                      document.getElementById("mc-embedded-subscribe").value = "Subscribed ✔️";
+                      document.getElementById("mc-embedded-subscribe").style.backgroundColor = "#B5E0B8";
+                      setTimeout(resetMailForm, 2000);
+                      console.log(req.responseText);
+                    };
+          
+                    req.onerror = function() {
+                      document.getElementById("mc-embedded-subscribe-form").reset();
+                      document.getElementById("mc-embedded-subscribe").value = "Something Broke 😔";
+                      document.getElementById("mc-embedded-subscribe").style.color = "#fff";
+                      document.getElementById("mc-embedded-subscribe").style.textTransform = "none";
+                      document.getElementById("mc-embedded-subscribe").style.backgroundColor = "#4e5569";
+                      setTimeout(resetMailForm, 2000);
+                      console.log("Newsletter subscription failed.");
+                    };
+          
+                    req.send(new FormData(e.target));
+          
+                    e.preventDefault();
+                  }
+          
+                  document.getElementById("mc-embedded-subscribe-form").addEventListener("submit", formSubmit);
+    
+                  document.addEventListener('DOMContentLoaded', function() {
+                      const queryParams = new URLSearchParams(window.location.search);
+    
+                      if (queryParams.has('nolinks')) {
+                          const calloutElement = document.getElementById('website-link');
+                          if (calloutElement) {
+                              calloutElement.style.display = 'none';
+                          }
+                      }
+    
+                      if (queryParams.has('novideo')) {
+                          const videoElement = document.getElementById('looping-video');
+                          if (videoElement) {
+                              videoElement.style.display = 'none';
+                          }
+                      }
+                  });
+        </script>
+    </article>
+    {{ end }} {{- if and (eq $index 0) (gt $size 1) }}
+    <div class='grid-2 article_showcase'>{{ end }} {{- if and (eq $index (add $size -1)) (gt $size 1) }}</div>{{ end }} {{- end }}
+  </div>
+<a href='{{ absURL (printf "post/%s" "") }}' class='post_nav'><span class = 'post_next'>{{ T "archive_text" }}
   <svg class="icon icon_scale">
     <use xlink:href="#double-arrow"></use>
   </svg>
-</span></a>
-{{ end }}
+</span></a> {{ end }}
