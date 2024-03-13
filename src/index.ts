@@ -218,6 +218,23 @@ function toLocalDate(dateStr) {
     return new Intl.DateTimeFormat('en-US', options).format(dt);
 }
 
+function formatAddressHTML(event){
+    if (event.venue) {
+        if (event.venue.name !== 'Online event') {
+          const destinationParams = Object.keys(event.venue)
+            .map(key => `${key}=${encodeURIComponent(event.venue[key])}`)
+            .join('&');
+          const googleMapsURL = `https://www.google.com/maps/dir/?api=1&destination=${destinationParams}`;
+      
+          const venueDetails = Object.values(event.venue).join(', ');
+      
+          return `<a class="text-blue-500 hover:text-blue-700" href="${googleMapsURL}">📍 ${escapeXml(venueDetails)}</a>`;
+        } else {
+          return "<p>🖥️ Online event</p>";
+        }
+      }
+}
+
 function jsonToHTML(jsonData, request) {
     let html = `<head>
   <title>Upcoming Tech Events in Tampa</title>
@@ -260,8 +277,9 @@ function jsonToHTML(jsonData, request) {
             html += `
     <div class="bg-white shadow rounded-lg p-6">
       <div class="w-11/12" >
-        <h2 class="text-2xl font-semibold">${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</h2>
-        <h3 class="text-lg font-bold">${toLocalDate(eventNode.dateTime)}</h3>
+        <h2 class="text-2xl mb-1 font-semibold">${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</h2>
+        <h3 class="text-lg mb-2 font-bold">${toLocalDate(eventNode.dateTime)}</h3>
+        <h4 class="text-xs w-1/3 font-bold" >${formatAddressHTML(eventNode)}</h4>
       </div>
 
       <div class="flex mt-8 justify-center items-center">
