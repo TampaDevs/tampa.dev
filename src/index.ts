@@ -276,7 +276,7 @@ function jsonToHTML(jsonData, request) {
             numEvents++;
             html += `
     <div class="bg-white shadow rounded-lg p-6">
-      <div class="w-11/12" >
+      <div class="w-11/12" id="${group.urlname}">
         <h2 class="text-2xl mb-1 font-semibold">${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</h2>
         <h3 class="text-lg mb-2 font-bold">${toLocalDate(eventNode.dateTime)}</h3>
         <h4 class="text-xs w-1/3 font-bold" >${formatAddressHTML(eventNode)}</h4>
