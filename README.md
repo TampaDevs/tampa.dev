@@ -11,7 +11,7 @@ Want an RSS feed? Grab it at https://events.api.tampa.dev/rss.
 You can also access this API at the following additional URLs:
 
 - https://tampa.dev/events.json (for JSON), and
-- https://tampa.dev/rss
+- https://tampa.dev/feed
 
 ### Filters
 
