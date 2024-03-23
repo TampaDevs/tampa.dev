@@ -1,6 +1,8 @@
 name = "events-api-tampa-dev"
 main = "src/index.ts"
 compatibility_date = "2023-06-14"
+node_compat = true
+send_metrics = true
 
 kv_namespaces = [
   { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" }
