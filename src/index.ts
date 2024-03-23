@@ -443,7 +443,7 @@ function HTMLCarouselWidget(jsonData, request) {
                   <div class="p-4 md:p-8">
                     <div class="uppercase tracking-wide text-sm text-blue-500 font-semibold"><a href="${eventNode.eventUrl}" target="_blank">${toLocalDate(eventNode.dateTime)}</a></div>
                     <a href="${eventNode.eventUrl}" class="block mt-1 text-lg leading-tight font-medium text-black hover:underline" target="_blank">${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</a>
-                    <p class="mt-2 text-slate-500"><a href="${eventNode.eventUrl}" target="_blank">${markdownToHtml(escapeXml(trunc(eventNode.description, 64)))}</a></p>
+                    <p class="mt-2 text-slate-500"><a href="${eventNode.eventUrl}" target="_blank">${markdownToHtml(escapeXml(trunc(eventNode.description, 100)))}</a></p>
                   </div>
                 </div>
               </div>`;
