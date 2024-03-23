@@ -29,8 +29,14 @@ export default {
                 return res;
             }
 
-            if (url.pathname == '/widget') {
-                res = new Response(jsonToHTMLWidget(eventData, request));
+            if (url.pathname == '/widget/next-event') {
+                res = new Response(HTMLEventWidget(eventData, request));
+                res.headers.set("Content-Type", "text/html");
+                return res;
+            }
+
+            if (url.pathname == '/widget/carousel') {
+                res = new Response(HTMLCarouselWidget(eventData, request));
                 res.headers.set("Content-Type", "text/html");
                 return res;
             }
@@ -330,7 +336,7 @@ function trunc(str, len) {
     return str.substr(0,len-1)+(str.length>len?'...':''); 
 }
 
-function jsonToHTMLWidget(jsonData, request) {
+function HTMLEventWidget(jsonData, request) {
     let html = `<head>
   <title>Upcoming Tech Events in Tampa</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -389,6 +395,72 @@ function jsonToHTMLWidget(jsonData, request) {
 
     html += `
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js?token=5e34450a278e4510b022ed00c6bc0bdc"></script>
+    </body>`;
+
+    return html;
+}
+
+function HTMLCarouselWidget(jsonData, request) {
+    let html = `<head>
+    <title>Upcoming Tech Events in Tampa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A collection of upcoming events from software development and technology meetups in Tampa Bay.">
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VV1YTRRM50"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+  
+      gtag('config', 'G-VV1YTRRM50');
+    </script>
+  
+    <script>
+      !function(){var analytics=window.analytics=window.analytics||[];if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Segment snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.src="https://cdn.segment.com/analytics.js/v1/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._loadOptions=e};analytics._writeKey="Cxy4CFCYHzZ7KuxjVgMQIiwhRlrkvDT1";;analytics.SNIPPET_VERSION="4.15.3";
+      analytics.load("Cxy4CFCYHzZ7KuxjVgMQIiwhRlrkvDT1");
+      analytics.page();
+      }}();
+    </script>
+  
+    </head>
+    <body>`;
+
+    let numEvents = 0;
+
+    html += `<div class="flex overflow-x-auto py-4 space-x-4">`;
+
+    getSortedGroupNames(jsonData).forEach(groupKey => {
+        const group = jsonData[groupKey];
+        group.eventSearch.edges.forEach(event => {
+            const eventNode = event.node;
+            numEvents++;
+            html += `<div class="shrink-0 bg-white rounded-xl shadow-md overflow-hidden w-full max-w-lg">
+                <div class="flex h-full flex-col md:flex-row">
+                  <div class="md:shrink-0">
+                    <a href="${eventNode.eventUrl}" target="_blank"><img class="w-full md:w-48 object-cover h-full" src="${eventNode.imageUrl}" alt="${escapeXml(eventNode.title)}"></a>
+                  </div>
+                  <div class="p-4 md:p-8">
+                    <div class="uppercase tracking-wide text-sm text-blue-500 font-semibold"><a href="${eventNode.eventUrl}" target="_blank">${toLocalDate(eventNode.dateTime)}</a></div>
+                    <a href="${eventNode.eventUrl}" class="block mt-1 text-lg leading-tight font-medium text-black hover:underline" target="_blank">${escapeXml(group.name)} - ${escapeXml(eventNode.title)}</a>
+                    <p class="mt-2 text-slate-500"><a href="${eventNode.eventUrl}" target="_blank">${markdownToHtml(escapeXml(trunc(eventNode.description, 64)))}</a></p>
+                  </div>
+                </div>
+              </div>`;
+        });
+    });
+
+    html += `</div>`;
+
+    if(numEvents == 0){
+        html += `<div class="bg-white shadow rounded-lg p-6">
+            <div class="flex mt-4 mb-4 justify-center items-center">
+              <h2 class="text-2xl font-semibold">No upcoming events.</h2>
+            </div>
+        </div>`;
+    }
+
+    html += `<script defer src="https://static.cloudflareinsights.com/beacon.min.js?token=5e34450a278e4510b022ed00c6bc0bdc"></script>
     </body>`;
 
     return html;
