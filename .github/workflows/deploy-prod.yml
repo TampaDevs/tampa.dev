@@ -1,0 +1,30 @@
+name: "Production Deployment"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths-ignore: 
+      - '.**'
+      - 'LICENSE'
+      - 'ACKNOWLEDGEMENTS'
+      - '**.md'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Deploy Prod
+    steps:
+    - uses: actions/checkout@v4.1.1
+    - uses: actions/setup-node@v4.0.2
+      with:
+        node-version: current
+        cache: 'npm'
+    - run: npm ci
+    - name: Publish production
+      uses: cloudflare/wrangler-action@v3.4.1
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        environment: "production"

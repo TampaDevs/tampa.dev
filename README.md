@@ -27,24 +27,33 @@ Example:
 
 https://events.api.tampa.dev/?groups=tampadevs,tampa-bay-techies&noonline&noempty
 
-### Widgets
+## Widgets
 
 The Events API also provides several HTML views and embeddable widgets. These support the same parameters as the other API routes. 
 
-#### Next Event Widget
+### Next Event Widget
 
 https://events.api.tampa.dev/widget/next-event?groups=tampadevs
 
 _Note: This widget is intended to display events for a single group, so remember to specify the `groups` query parameter with a single group name._
 
-#### Events Carousel
+### Events Carousel
 
 https://events.api.tampa.dev/widget/carousel
 
-#### Upcoming Events Page
+### Upcoming Events Page
 
 https://events.api.tampa.dev/html or https://tampa.dev/upcoming-events
 
+## Development
+
+To start the local development environment, execute the following command:
+
+```bash
+wrangler dev -l
+```
+
+Your local instance of the Events API will become available at http://localhost:8787.
 
 ## Data Freshness
 

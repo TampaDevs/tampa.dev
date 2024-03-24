@@ -7,3 +7,13 @@ send_metrics = true
 kv_namespaces = [
   { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" }
 ]
+
+[build]
+command="npm run handlebars"
+watch_dir="views/"
+
+[env.pr]
+name = "events-api-pr"
+
+[env.production]
+name = "events-api-tampa-dev"
