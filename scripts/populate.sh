@@ -1,0 +1,1 @@
+wrangler kv:key put event_data --path ./event_data.json --namespace-id 791983cf109c43eaa21ff4f3406de811 --local

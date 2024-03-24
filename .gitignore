@@ -1,2 +1,5 @@
 node_modules/
 .dev.env
+node_modules
+assets/*
+.wrangler/tmp/
