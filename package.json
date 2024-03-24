@@ -17,8 +17,8 @@
   "scripts": {
     "start": "wrangler dev -l",
     "deploy": "wrangler publish",
-    "handlebars": "npm run compilehbs && npm run transpilehbs && rm src/*-original.js",
-    "compilehbs": "handlebars -e hbs -f src/pages-original.js views/pages/ views/rss/ && handlebars -e hbs -p -f src/partials-original.js views/partials/",
-    "transpilehbs": "hbs-import-transpile src/pages-original.js > assets/pages.js && hbs-import-transpile src/partials-original.js > assets/partials.js"
+    "handlebars": "npm run compilehbs && npm run transpilehbs && rm ./src/*-original.js",
+    "compilehbs": "handlebars -e hbs -f ./src/pages-original.js ./views/pages/ views/rss/ && handlebars -e hbs -p -f ./src/partials-original.js ./views/partials/",
+    "transpilehbs": "hbs-import-transpile ./src/pages-original.js > ./assets/pages.js && hbs-import-transpile ./src/partials-original.js > ./assets/partials.js"
   }
 }

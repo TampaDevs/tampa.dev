@@ -17,3 +17,6 @@ name = "events-api-pr"
 
 [env.production]
 name = "events-api-tampa-dev"
+kv_namespaces = [
+  { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" }
+]
