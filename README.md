@@ -27,6 +27,25 @@ Example:
 
 https://events.api.tampa.dev/?groups=tampadevs,tampa-bay-techies&noonline&noempty
 
+### Widgets
+
+The Events API also provides several HTML views and embeddable widgets. These support the same parameters as the other API routes. 
+
+#### Next Event Widget
+
+https://events.api.tampa.dev/widget/next-event?groups=tampadevs
+
+_Note: This widget is intended to display events for a single group, so remember to specify the `groups` query parameter with a single group name._
+
+#### Events Carousel
+
+https://events.api.tampa.dev/widget/carousel
+
+#### Upcoming Events Page
+
+https://events.api.tampa.dev/html or https://tampa.dev/upcoming-events
+
+
 ## Data Freshness
 
 Data is served from a cache in Workers KV. This cache data is updated every 30 minutes.
