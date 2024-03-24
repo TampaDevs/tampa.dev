@@ -3,6 +3,7 @@ author: Tampa Bay Data Science
 date: 1970-01-03
 title: Tampa Bay Data Science
 image: tbdatasci.jpg
+meetup: "tampa-bay-data-science-group"
 website: "https://datascience.tampa.dev/"
 draft: true
 ---

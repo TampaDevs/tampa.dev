@@ -3,6 +3,7 @@ author: Tampa Bay DevOps Meetup
 date: 1970-01-01
 title: Tampa Bay DevOps Meetup
 image: dodays.png
+meetup: "tampa-devops-meetup"
 website: "https://www.meetup.com/tampa-devops-meetup/"
 ---
 

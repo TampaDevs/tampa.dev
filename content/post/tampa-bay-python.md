@@ -3,6 +3,7 @@ author: Tampa Bay Python
 date: 1970-01-01
 title: Tampa Bay Python
 image: tbpython.png
+meetup: "tampa-bay-python"
 website: "https://www.meetup.com/tampa-bay-python/"
 ---
 

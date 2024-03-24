@@ -13,6 +13,12 @@
           {{ end }}
           <img src="{{ $image }}" alt="{{ . }}" class="post_thumbnail">
         {{ end }}
+        {{ if .Params.meetup }}
+        <div class="container next-event-container">
+          <h2 class="next-event__title" style="font-weight: bold; font-size: 1.5rem">Next Event</h2>
+          <iframe src="https://events.api.tampa.dev/widget/next-event?groups={{ .Params.meetup }}" frameborder="0" scrolling="no" style="width: 100%; height: 210px; overflow:hidden;"></iframe>
+        </div>
+        {{ end }}
           {{ .Content }}
         </div>
         <div class="post_extra mb-2">

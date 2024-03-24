@@ -3,6 +3,7 @@ author: Tampa Bay Azure User Group
 date: 1970-01-01
 title: Tampa Bay Azure User Group
 image: tbazure.jpg
+meetup: "microsoft-azure-tampa"
 website: "https://www.meetup.com/microsoft-azure-tampa/"
 ---
 

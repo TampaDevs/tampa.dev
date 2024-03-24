@@ -3,6 +3,7 @@ author: Tampa Java User Group
 date: 1970-01-01
 title: Tampa Java User Group
 image: tbjug.jpg
+meetup: "tampa-jug"
 website: "https://www.meetup.com/tampa-jug/"
 ---
 

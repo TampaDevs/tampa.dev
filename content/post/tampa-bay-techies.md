@@ -3,6 +3,7 @@ author: Tampa Bay Techies
 date: 1970-01-03
 title: Tampa Bay Techies
 image: tbtechies.jpg
+meetup: "tampa-bay-techies"
 website: "https://tampabaytechies.com/"
 ---
 

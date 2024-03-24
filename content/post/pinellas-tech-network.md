@@ -3,6 +3,7 @@ author: Pinellas Tech Network
 date: 1970-01-01
 title: Pinellas Tech Network
 image: ptn.png
+meetup: "pinellas-tech-network"
 website: "https://www.meetup.com/pinellas-tech-network/"
 ---
 

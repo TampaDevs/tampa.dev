@@ -3,6 +3,7 @@ author: Tampa Bay Google Cloud User Group
 date: 1970-01-01
 title: Tampa Bay Google Cloud User Group
 image: tbgcloud.jpeg
+meetup: "tampa-bay-google-cloud-user-group"
 website: "https://www.meetup.com/tampa-bay-google-cloud-user-group/"
 ---
 

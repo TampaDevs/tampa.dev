@@ -3,6 +3,7 @@ author: Suncoast Developers Guild
 date: 1970-01-01
 title: Suncoast Developers Guild
 image: suncoast.png
+meetup: "suncoast-developer-guild"
 website: "https://suncoast.io/"
 ---
 

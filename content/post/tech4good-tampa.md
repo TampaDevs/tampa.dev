@@ -3,6 +3,7 @@ author: Tech4Good Tampa
 date: 1970-01-01
 title: Tech4Good Tampa
 image: tech4good.jpeg
+meetup: "tech4good-tampa"
 website: "https://www.meetup.com/tech4good-tampa/"
 ---
 

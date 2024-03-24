@@ -3,6 +3,7 @@ author: Tampa Artificial Intelligence Meetup
 date: 1970-01-03
 title: Tampa Artificial Intelligence Meetup
 image: ai.jpg
+meetup: "Tampa-Artificial-Intelligence-Meetup"
 website: "https://www.meetup.com/Tampa-Artificial-Intelligence-Meetup/"
 ---
 

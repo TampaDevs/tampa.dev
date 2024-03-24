@@ -3,6 +3,7 @@ author: Women Who Code Tampa
 date: 1970-01-01
 title: Women Who Code Tampa
 image: wwcode.jpg
+meetup: "Women-Who-Code-Tampa"
 website: "https://www.meetup.com/Women-Who-Code-Tampa/"
 ---
 

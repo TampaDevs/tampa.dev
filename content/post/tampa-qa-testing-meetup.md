@@ -3,6 +3,7 @@ author: Tampa Bay QA & Testing Meetup
 date: 1970-01-01
 title: Tampa Bay QA & Testing Meetup
 image: tampaqa.jpg
+meetup: "tampa-software-qa-and-testing-meetup"
 website: "https://www.meetup.com/tampa-software-qa-and-testing-meetup/"
 ---
 

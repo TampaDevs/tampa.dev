@@ -1,6 +1,6 @@
 baseURL = 'https://tampa.dev/'
 languageCode = 'en-us'
-title = "Tampa Bay's Tech & Developer Communities"
+title = "Tampa Bay's Tech Meetups & Developer Communities"
 theme = "newsroom"
 author = "Tampa Devs"
 canonifyurls = true

@@ -3,6 +3,7 @@ author: Tampa Bay AWS User Group
 date: 1970-01-01
 title: Tampa Bay AWS User Group
 image: tbaws.jpg
+meetup: "tampa-bay-aws"
 website: "https://www.meetup.com/tampa-bay-aws/"
 ---
 

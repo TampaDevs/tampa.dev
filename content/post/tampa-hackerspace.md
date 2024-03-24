@@ -3,6 +3,7 @@ author: Tampa Hackerspace
 date: 1970-01-01
 title: Tampa Hackerspace
 image: ths.jpg
+meetup: "tampa-hackerspace"
 website: "https://tampahackerspace.com/"
 ---
 

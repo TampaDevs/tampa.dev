@@ -4,6 +4,7 @@ date: 2014-09-28
 title: Tampa Devs
 image: tampadevs.jpg
 website: "https://www.tampadevs.com/"
+meetup: "tampadevs"
 sticky: true
 ---
 

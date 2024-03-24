@@ -3,6 +3,7 @@ author: High Tech Connect
 date: 1970-01-02
 title: High Tech Connect
 image: htc.png
+meetup: "high-tech-connect"
 website: "https://www.hightechconnect.io/"
 ---
 

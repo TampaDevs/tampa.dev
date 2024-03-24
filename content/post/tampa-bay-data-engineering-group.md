@@ -3,6 +3,7 @@ author: Tampa Bay Data Engineering Group
 date: 1970-01-04
 title: Tampa Bay Data Engineering Group
 image: tbdeg.jpeg
+meetup: "tampa-bay-data-engineering-group"
 website: "https://www.meetup.com/tampa-bay-data-engineering-group/"
 ---
 
