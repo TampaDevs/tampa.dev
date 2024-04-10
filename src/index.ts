@@ -36,6 +36,7 @@ export default {
                 res = new Response(bodyText);
                 res.headers.set("Content-Type", "application/rss+xml");
                 res.headers.set("Cache-Control", "public, max-age=3600");
+                res.headers.set('Content-Encoding', 'gzip');
                 res.headers.set("Etag", util.cyrb53(bodyText));
                 return res;
             }
@@ -47,6 +48,7 @@ export default {
                 res = new Response(bodyText);
                 res.headers.set("Content-Type", "text/html");
                 res.headers.set("Cache-Control", "public, max-age=3600");
+                res.headers.set('Content-Encoding', 'gzip');
                 res.headers.set("Etag", util.cyrb53(bodyText));
                 return res;
             }
@@ -58,6 +60,7 @@ export default {
                 res = new Response(bodyText);
                 res.headers.set("Content-Type", "text/html");
                 res.headers.set("Cache-Control", "public, max-age=3600");
+                res.headers.set('Content-Encoding', 'gzip');
                 res.headers.set("Etag", util.cyrb53(bodyText));
                 return res;
             }
@@ -69,6 +72,7 @@ export default {
                 res = new Response(bodyText);
                 res.headers.set("Content-Type", "text/html");
                 res.headers.set("Cache-Control", "public, max-age=3600");
+                res.headers.set('Content-Encoding', 'gzip');
                 res.headers.set("Etag", util.cyrb53(bodyText));
                 return res;
             }
@@ -77,6 +81,7 @@ export default {
                 status: 200
             });
             res.headers.set("Content-Type", "application/json");
+            res.headers.set('Content-Encoding', 'gzip');
             return res;
         }
     }
