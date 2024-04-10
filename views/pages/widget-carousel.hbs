@@ -17,7 +17,7 @@
                             <a href="{{ add_utm this.data.eventUrl }}" target="_blank"><img class="w-full md:w-48 object-cover md:h-full" src="{{ this.data.imageUrl }}" alt="{{ this.data.title }}"></a>
                         </div>
                         <div class="p-4 md:p-8">
-                            <div class="uppercase tracking-wide text-sm text-blue-500 font-semibold"><a href="{{ add_utm this.data.eventUrl }}" target="_blank">{{ to_local_date this.data.dateTime }}</a></div>
+                            <div class="uppercase tracking-wide text-sm text-blue-500 font-semibold"><a href="{{ add_utm this.data.eventUrl }}" target="_blank">{{ to_local_date this.data.dateTime }} &bull; {{ this.data.going }} Going</a></div>
                             <a href="{{ add_utm this.data.eventUrl }}" class="block mt-1 text-lg leading-tight font-medium text-black hover:underline" target="_blank">{{ this.groupName }} - {{ this.data.title }}</a>
                             <p class="mt-2 text-slate-500"><a href="{{ add_utm this.data.eventUrl }}" target="_blank">{{ render_short_description this.data.description }}</a></p>
                         </div>
