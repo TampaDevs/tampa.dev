@@ -8,10 +8,13 @@ Simply send a GET request to https://events.api.tampa.dev/.
 
 Want an RSS feed? Grab it at https://events.api.tampa.dev/rss.
 
+Want an iCal feed? It's at https://events.api.tampa.dev/ical.
+
 You can also access this API at the following additional URLs:
 
-- https://tampa.dev/events.json (for JSON), and
-- https://tampa.dev/feed
+- https://tampa.dev/events.json (for JSON),
+- https://tampa.dev/feed (for RSS), and
+- https://tampa.dev/webcal (for iCal)
 
 ### Filters
 
@@ -21,7 +24,7 @@ You can supply optional filters as query parameters:
 - `noempty`: Filter groups with no upcoming events from the response.
 - `noonline`: Filter online events from the response.
 
-_Note: These filters also work when you're requesting results in RSS format._
+_Note: These filters also work when you're requesting results in iCal, HTML, RSS, and any other formats._
 
 Example:
 
