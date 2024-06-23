@@ -9,6 +9,7 @@ import '../assets/partials.js';
 import * as helpers from '../lib/helpers.js';
 import * as util from '../lib/utils.js';
 import * as rss from '../lib/rss.js';
+import * as ical from '../lib/ical.js';
 
 helpers.registerAll();
 
@@ -50,6 +51,16 @@ export default {
                 res.headers.set("Cache-Control", "public, max-age=3600");
                 res.headers.set('Content-Encoding', 'gzip');
                 res.headers.set("Etag", util.cyrb53(bodyText));
+                return res;
+            }
+
+            if (url.pathname == '/ics' || url.pathname == '/webcal' || url.pathname == '/ical') {
+                const icsPayload = ical.fromGroupEventsList(util.getSortedEvents(eventData));
+                res = new Response(icsPayload);
+                res.headers.set("Content-Type", "text/calendar");
+                res.headers.set("Cache-Control", "public, max-age=3600");
+                res.headers.set('Content-Encoding', 'gzip');
+                res.headers.set("Etag", util.cyrb53(icsPayload));
                 return res;
             }
 
