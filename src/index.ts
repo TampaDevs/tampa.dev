@@ -44,7 +44,7 @@ export default {
 
             if (url.pathname == '/html' || url.pathname == '/upcoming-events') {
                 const bodyText = await hbsAsyncRender(Handlebars, 'events-html', {
-                    events: util.getSortedEvents(eventData)
+                    events: util.getSortedNextEvents(eventData)
                 });
                 res = new Response(bodyText);
                 res.headers.set("Content-Type", "text/html");
@@ -66,7 +66,7 @@ export default {
 
             if (url.pathname == '/widget/next-event') {
                 const bodyText = await hbsAsyncRender(Handlebars, 'widget-next-event', {
-                    events: util.getSortedEvents(eventData)
+                    events: util.getSortedNextEvents(eventData)
                 });
                 res = new Response(bodyText);
                 res.headers.set("Content-Type", "text/html");
