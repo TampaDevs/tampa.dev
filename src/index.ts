@@ -22,8 +22,8 @@ function isLessThanOneHourIntoFuture(edge) {
     const eventDateTime = new Date(eventDateTimeStr);
 
     // Get the current date and time
-    const now = new Date("2024-08-07T18:00-04:00");
-    // const now = new Date();
+    // const now = new Date("2024-08-07T18:00-04:00");
+    const now = new Date();
 
     // Calculate the difference in milliseconds
     const timeDifference = eventDateTime - now;
