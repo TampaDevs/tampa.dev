@@ -13,6 +13,29 @@ import * as ical from '../lib/ical.js';
 
 helpers.registerAll();
 
+
+function isLessThanOneHourIntoFuture(edge) {
+
+    const eventDateTimeStr = edge.node.dateTime;
+
+    // Parse the date-time string into a Date object
+    const eventDateTime = new Date(eventDateTimeStr);
+
+    // Get the current date and time
+    const now = new Date("2024-08-07T18:00-04:00");
+    // const now = new Date();
+
+    // Calculate the difference in milliseconds
+    const timeDifference = eventDateTime - now;
+
+    // Define the threshold for 1 hour in milliseconds
+    const oneHourInMs = 60 * 60 * 1000;
+
+    // Check if the given date-time is less than 1 hour into the future
+    return timeDifference > 0 && timeDifference < oneHourInMs;
+}
+
+
 export default {
     async fetch(request, env) {
 
@@ -86,6 +109,14 @@ export default {
                 res.headers.set('Content-Encoding', 'gzip');
                 res.headers.set("Etag", util.cyrb53(bodyText));
                 return res;
+            }
+
+            if (url.pathname == '/next-hour') {
+                for (const [key, value] of Object.entries(eventData)) {
+                    const upcomingEvents = value.eventSearch.edges.filter(isLessThanOneHourIntoFuture)
+                    value.eventSearch.edges = upcomingEvents;
+                    value.eventSearch.count = upcomingEvents.length;
+                }
             }
 
             res = new Response(JSON.stringify(eventData), {
