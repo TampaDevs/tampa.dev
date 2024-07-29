@@ -30,6 +30,10 @@ export default {
             const url = new URL(request.url);
             const params = await util.parseQueryParams(url);
 
+            if (url.pathname === '/favicon.ico') {
+                return new Response();
+            }
+
             const eventData = await util.filterEventData(JSON.parse(await env.kv.get("event_data")), params)
 
             if (url.pathname == '/rss' || url.pathname == '/feed') {
