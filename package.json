@@ -18,7 +18,7 @@
   },
   "private": true,
   "scripts": {
-    "start": "wrangler dev -l",
+    "start": "wrangler dev",
     "deploy": "wrangler publish",
     "handlebars": "npm run compilehbs && npm run transpilehbs && rm ./src/*-original.js",
     "compilehbs": "handlebars -e hbs -f ./src/pages-original.js ./views/pages/ views/rss/ && handlebars -e hbs -p -f ./src/partials-original.js ./views/partials/",
