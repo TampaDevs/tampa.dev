@@ -14,7 +14,7 @@
     "hbs-import-transpile": "^1.0.4",
     "mocha": "^11.1.0",
     "typescript": "^5.8.3",
-    "wrangler": "^4.10.0"
+    "wrangler": "^4.12.1"
   },
   "private": true,
   "scripts": {
