@@ -10,7 +10,7 @@
     "moment-timezone": "^0.5.48"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250423.0",
+    "@cloudflare/workers-types": "^4.20250430.0",
     "hbs-import-transpile": "^1.0.4",
     "mocha": "^11.1.0",
     "typescript": "^5.8.3",
