@@ -23,7 +23,7 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - name: Publish production
-      uses: cloudflare/wrangler-action@v3.4.1
+      uses: cloudflare/wrangler-action@v3.14.1
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

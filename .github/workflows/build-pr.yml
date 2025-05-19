@@ -22,7 +22,7 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - name: Run test
-      uses: cloudflare/wrangler-action@v3.4.1
+      uses: cloudflare/wrangler-action@v3.14.1
       with:
         apiToken: 'dummy-key-that-should-make-the-action-run-lol'
         command: deploy --env pr --dry-run --outdir ./out
