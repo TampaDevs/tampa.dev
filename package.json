@@ -13,7 +13,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250715.0",
     "hbs-import-transpile": "^1.0.4",
-    "mocha": "^11.6.0",
+    "mocha": "^11.7.1",
     "typescript": "^5.8.3",
     "wrangler": "^4.24.3"
   },
