@@ -11,7 +11,7 @@
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250924.0",
+    "@cloudflare/workers-types": "^4.20251004.0",
     "hbs-import-transpile": "^1.0.4",
     "mocha": "^11.7.2",
     "typescript": "^5.9.3",
