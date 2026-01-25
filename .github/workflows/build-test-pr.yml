@@ -1,10 +1,8 @@
-name: "Production Deployment"
+name: "Build and Test PR"
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
+  pull_request:
     paths-ignore:
       - ".**"
       - "LICENSE"
@@ -12,9 +10,10 @@ on:
       - "**.md"
 
 jobs:
-  publish:
+  build:
+    name: "Build PR"
+    if: ${{ (github.event.action == 'synchronize' && github.event.label.name != 'skip preview') || github.event.action != 'synchronize' }}
     runs-on: ubuntu-latest
-    name: Deploy Prod
     steps:
       - uses: actions/checkout@v4.1.1
       - uses: actions/setup-node@v4.0.2
@@ -24,9 +23,8 @@ jobs:
       - run: npm ci
       - name: Run tests
         run: npm test
-      - name: Publish production
+      - name: Build check
         uses: cloudflare/wrangler-action@v3.14.1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          environment: "production"
+          apiToken: "dummy-key-that-should-make-the-action-run-lol"
+          command: deploy --env pr --dry-run --outdir ./out

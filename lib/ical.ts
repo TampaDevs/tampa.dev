@@ -1,6 +1,6 @@
 import { Event, EventLoader } from '../models/index.js';
 import * as util from './utils.js';
-import ics from 'ics';
+import { createEvent, createEvents } from 'ics';
 import moment from 'moment-timezone';
 
 /**
@@ -13,7 +13,7 @@ export function fromGroupEventsList(events: Event[]): string {
     else return null;
   });
 
-  const { error, value } = ics.createEvents(groupEventsIcs);
+  const { error, value } = createEvents(groupEventsIcs);
   return error ? '' : (value || '');
 }
 
@@ -175,6 +175,6 @@ export function icalSequenceFromEventDate(event_date: string): number {
  * Validate iCal event structure
  */
 export function icsValid(icsEvent: any): boolean {
-  const { error, value } = ics.createEvent(icsEvent);
+  const { error, value } = createEvent(icsEvent);
   return !error && !!value;
 }
