@@ -1,10 +1,16 @@
-name: "Generate API Clients"
+name: "Regenerate Schemas and API Clients"
 
 on:
   workflow_dispatch:
   push:
     branches:
       - master
+    paths:
+      - "schemas/openapi.json"
+      - "models/**"
+      - "src/**"
+      - "scripts/generate-openapi.ts"
+  pull_request:
     paths:
       - "schemas/openapi.json"
       - "models/**"
@@ -114,7 +120,7 @@ jobs:
           fi
 
       - name: Commit and push changes
-        if: steps.check_changes.outputs.has_changes == 'true'
+        if: steps.check_changes.outputs.has_changes == 'true' && github.event_name == 'push'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
