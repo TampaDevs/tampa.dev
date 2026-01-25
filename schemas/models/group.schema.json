@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/group",
+  "title": "Group Schema",
+  "description": "Schema for group/organization data",
+  "$ref": "#/definitions/Group",
+  "definitions": {
+    "Group": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "urlname": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string",
+          "format": "uri"
+        },
+        "memberCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "photo": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "required": [
+            "id",
+            "baseUrl"
+          ],
+          "additionalProperties": false
+        },
+        "extras": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "urlname",
+        "link",
+        "memberCount"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

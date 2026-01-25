@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/photo",
+  "title": "Photo Schema",
+  "description": "Schema for photo data",
+  "$ref": "#/definitions/Photo",
+  "definitions": {
+    "Photo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "baseUrl"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

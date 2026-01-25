@@ -2,51 +2,77 @@
 
 Public API to retrieve information about upcoming tech events in the Tampa Bay area.
 
-## Usage
+## API Documentation
 
-Simply send a GET request to https://events.api.tampa.dev/.
+Interactive API documentation with all available endpoints is available at:
 
-Want an RSS feed? Grab it at https://events.api.tampa.dev/rss.
+**https://events.api.tampa.dev/docs**
 
-Want an iCal feed? It's at https://events.api.tampa.dev/ical.
+The OpenAPI specification is available at:
 
-You can also access this API at the following additional URLs:
+**https://events.api.tampa.dev/openapi.json**
 
-- https://tampa.dev/events.json (for JSON),
-- https://tampa.dev/feed (for RSS), and
-- https://tampa.dev/webcal (for iCal)
+## Quick Start
+
+### Events API
+
+Get all upcoming events:
+```
+GET https://events.api.tampa.dev/2026-01-25/events
+```
+
+Get the next event for each group:
+```
+GET https://events.api.tampa.dev/2026-01-25/events/next
+```
+
+### Feed Formats
+
+RSS Feed:
+```
+https://events.api.tampa.dev/rss
+```
+
+iCalendar Feed:
+```
+https://events.api.tampa.dev/ical
+```
+
+### HTML Pages
+
+Upcoming Events Page:
+```
+https://events.api.tampa.dev/html
+```
 
 ### Filters
 
-You can supply optional filters as query parameters:
+All endpoints support optional query parameters:
 
-- `groups`: A comma-separated list of groups to return. These should match the group's `urlname` (e.g., `tampadevs`).
-- `noempty`: Filter groups with no upcoming events from the response.
-- `noonline`: Filter online events from the response.
-
-_Note: These filters also work when you're requesting results in iCal, HTML, RSS, and any other formats._
+- `groups` - Comma-separated list of group urlnames (e.g., `tampadevs,suncoast-js`)
+- `noempty` - Exclude groups with no upcoming events
+- `noonline` - Exclude online events
+- `within_hours` - Only show events within the next N hours
+- `within_days` - Only show events within the next N days
 
 Example:
-
-https://events.api.tampa.dev/?groups=tampadevs,tampa-bay-techies&noonline&noempty
+```
+https://events.api.tampa.dev/2026-01-25/events?groups=tampadevs&noonline=1
+```
 
 ## Widgets
-
-The Events API also provides several HTML views and embeddable widgets. These support the same parameters as the other API routes. 
 
 ### Next Event Widget
 
 https://events.api.tampa.dev/widget/next-event?groups=tampadevs
 
-_Note: This widget is intended to display events for a single group, so remember to specify the `groups` query parameter with a single group name._
+Displays the next upcoming event for the specified group(s).
 
 ### Events Carousel
 
 https://events.api.tampa.dev/widget/carousel
 
-### Upcoming Events Page
-
-https://events.api.tampa.dev/html or https://tampa.dev/upcoming-events
+Displays a carousel of upcoming events.
 
 ## Development
 
