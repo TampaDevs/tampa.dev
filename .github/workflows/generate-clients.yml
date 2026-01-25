@@ -112,11 +112,22 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
+          echo "=== Files in clients/ ==="
+          find clients/ -type f | head -20
+          echo ""
+          echo "=== Git status ==="
+          git status --short
+          echo ""
           git add -A
+          echo "=== Staged changes ==="
+          git diff --staged --name-only | head -20
+          echo ""
           if git diff --staged --quiet; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected!"
           fi
 
       - name: Commit and push changes
