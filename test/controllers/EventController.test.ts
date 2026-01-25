@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { EventController } from '../../src/controllers/EventController.js';
-import { allTestEvents, mockMeetupData } from '../fixtures/events.js';
+import { mockMeetupData } from '../fixtures/events.js';
 
 describe('EventController', () => {
   // Mock Context
