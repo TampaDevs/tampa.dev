@@ -4,8 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import * as util from '../../lib/utils.js';
 import { EventQuerySchema } from './events.js';
-import Handlebars from 'handlebars/runtime.js';
-import { hbsAsyncRender } from 'hbs-async-render';
+import { EventsPage } from '../components/index.js';
 
 /**
  * GET /html - HTML page with upcoming events
@@ -61,15 +60,12 @@ const upcomingEventsRoute = createRoute({
 export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   const htmlHandler = async (c: any) => {
     const nextEvents = await EventController.getNextEvents(c);
-    const html = await hbsAsyncRender(Handlebars, 'events-html', {
-      events: nextEvents,
-    });
 
     c.header('Content-Type', 'text/html; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
-    c.header('Etag', util.cyrb53(html));
+    c.header('Etag', EventController.generateETag({ events: nextEvents }));
 
-    return c.html(html);
+    return c.html(<EventsPage events={nextEvents} />);
   };
 
   app.openapi(htmlPageRoute, htmlHandler);

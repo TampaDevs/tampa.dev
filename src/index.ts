@@ -1,16 +1,9 @@
-import '../assets/pages.js';
-import '../assets/partials.js';
-
-import * as helpers from '../lib/helpers.js';
 import { createApp, addOpenAPIRoutes } from './app.js';
 import { registerEventRoutes } from './routes/events.js';
 import { registerSchemaRoutes } from './routes/schemas.js';
 import { registerFeedRoutes } from './routes/feeds.js';
 import { registerWidgetRoutes } from './routes/widgets.js';
 import { registerPageRoutes } from './routes/pages.js';
-
-// Register Handlebars helpers
-helpers.registerAll();
 
 // Create Hono app
 const app = createApp();

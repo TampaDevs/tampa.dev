@@ -3,8 +3,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import * as util from '../../lib/utils.js';
-import Handlebars from 'handlebars/runtime.js';
-import { hbsAsyncRender } from 'hbs-async-render';
+import { WidgetNextEvent, WidgetCarousel } from '../components/index.js';
 
 /**
  * Widget query parameters
@@ -75,29 +74,23 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // GET /widget/next-event
   app.openapi(nextEventWidgetRoute, async (c) => {
     const events = await EventController.getNextEvents(c);
-    const html = await hbsAsyncRender(Handlebars, 'widget-next-event', {
-      events: events,
-    });
 
     c.header('Content-Type', 'text/html; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
-    c.header('Etag', util.cyrb53(html));
+    c.header('Etag', EventController.generateETag({ events }));
 
-    return c.html(html);
+    return c.html(<WidgetNextEvent events={events} />);
   });
 
   // GET /widget/carousel
   app.openapi(carouselWidgetRoute, async (c) => {
     const events = await EventController.getAllEvents(c);
     const sortedEvents = util.getSortedEvents(events);
-    const html = await hbsAsyncRender(Handlebars, 'widget-carousel', {
-      events: sortedEvents,
-    });
 
     c.header('Content-Type', 'text/html; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
-    c.header('Etag', util.cyrb53(html));
+    c.header('Etag', EventController.generateETag({ events: sortedEvents }));
 
-    return c.html(html);
+    return c.html(<WidgetCarousel events={sortedEvents} />);
   });
 }
