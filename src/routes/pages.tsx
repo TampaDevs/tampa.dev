@@ -2,7 +2,6 @@ import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
-import * as util from '../../lib/utils.js';
 import { EventQuerySchema } from './events.js';
 import { EventsPage } from '../components/index.js';
 
