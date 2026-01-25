@@ -139,8 +139,8 @@ const getNextEventsRoute = createRoute({
  * Register event routes with the app
  */
 export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
-  // GET /2026-01-25/events
-  app.openapi(getAllEventsRoute, async (c) => {
+  // Handler for all events
+  const allEventsHandler = async (c: any) => {
     try {
       const events = await EventController.getAllEvents(c);
       const json = events.map((e) => e.toJSON()) as z.infer<typeof EventResponseSchema>[];
@@ -153,10 +153,10 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     } catch (error) {
       return c.text('No event data available', 503);
     }
-  });
+  };
 
-  // GET /2026-01-25/events/next
-  app.openapi(getNextEventsRoute, async (c) => {
+  // Handler for next events
+  const nextEventsHandler = async (c: any) => {
     try {
       const events = await EventController.getNextEvents(c);
       const json = events.map((e) => e.toJSON()) as z.infer<typeof EventResponseSchema>[];
@@ -169,5 +169,13 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     } catch (error) {
       return c.text('No event data available', 503);
     }
-  });
+  };
+
+  // Versioned routes (OpenAPI documented)
+  app.openapi(getAllEventsRoute, allEventsHandler);
+  app.openapi(getNextEventsRoute, nextEventsHandler);
+
+  // Legacy unversioned routes (for backwards compatibility)
+  app.get('/events', allEventsHandler);
+  app.get('/events/next', nextEventsHandler);
 }
