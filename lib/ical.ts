@@ -1,4 +1,4 @@
-import { Event, EventLoader } from '../models/index.js';
+import { Event } from '../models/index.js';
 import * as util from './utils.js';
 import { createEvent, createEvents } from 'ics';
 import moment from 'moment-timezone';
