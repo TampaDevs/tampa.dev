@@ -112,9 +112,6 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          echo "=== Files in clients/ ==="
-          find clients/ -type f | head -20
-          echo ""
           echo "=== Git status ==="
           git status --short
           echo ""
@@ -127,7 +124,7 @@ jobs:
             echo "No changes detected"
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "Changes detected!"
+            echo "Changes detected, updated schemas/clients will be committed."
           fi
 
       - name: Commit and push changes
