@@ -9,7 +9,7 @@ import moment from 'moment-timezone';
 export function fromGroupEventsList(events: Event[]): string {
   const groupEventsIcs = events.map((event) => {
     const icsEvent = eventToIcal(event);
-    if (icsEvent !== null && icsValid(icsEvent)) return icsEvent;
+    if (icsValid(icsEvent)) return icsEvent;
     else return null;
   });
 
