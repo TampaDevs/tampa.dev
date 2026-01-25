@@ -1,0 +1,1122 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tampa Events API",
+    "version": "2026-01-25",
+    "description": "Community events aggregation API for Tampa Bay tech meetups and events",
+    "contact": {
+      "name": "Tampa Devs",
+      "url": "https://tampa.dev"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://events.api.tampa.dev",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:8787",
+      "description": "Development"
+    }
+  ],
+  "components": {
+    "schemas": {},
+    "parameters": {}
+  },
+  "paths": {
+    "/2026-01-25/events": {
+      "get": {
+        "summary": "Get all events",
+        "description": "Returns a list of all upcoming events, optionally filtered by query parameters",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "dateTime": {
+                        "type": "string"
+                      },
+                      "duration": {
+                        "type": "string"
+                      },
+                      "eventUrl": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "ACTIVE",
+                          "CANCELLED",
+                          "DRAFT"
+                        ]
+                      },
+                      "eventType": {
+                        "type": "string",
+                        "enum": [
+                          "PHYSICAL",
+                          "ONLINE",
+                          "HYBRID"
+                        ]
+                      },
+                      "rsvpCount": {
+                        "type": "number"
+                      },
+                      "venues": {
+                        "type": "array",
+                        "items": {
+                          "nullable": true
+                        }
+                      },
+                      "photo": {
+                        "nullable": true
+                      },
+                      "group": {
+                        "nullable": true
+                      },
+                      "address": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "googleMapsUrl": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "photoUrl": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "isOnline": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "dateTime",
+                      "eventUrl",
+                      "status",
+                      "rsvpCount",
+                      "venues",
+                      "address",
+                      "googleMapsUrl",
+                      "photoUrl",
+                      "isOnline"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable - no event data",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/events/next": {
+      "get": {
+        "summary": "Get next event per group",
+        "description": "Returns one upcoming event for each group (the next event)",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Next event for each group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "dateTime": {
+                        "type": "string"
+                      },
+                      "duration": {
+                        "type": "string"
+                      },
+                      "eventUrl": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "ACTIVE",
+                          "CANCELLED",
+                          "DRAFT"
+                        ]
+                      },
+                      "eventType": {
+                        "type": "string",
+                        "enum": [
+                          "PHYSICAL",
+                          "ONLINE",
+                          "HYBRID"
+                        ]
+                      },
+                      "rsvpCount": {
+                        "type": "number"
+                      },
+                      "venues": {
+                        "type": "array",
+                        "items": {
+                          "nullable": true
+                        }
+                      },
+                      "photo": {
+                        "nullable": true
+                      },
+                      "group": {
+                        "nullable": true
+                      },
+                      "address": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "googleMapsUrl": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "photoUrl": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "isOnline": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "dateTime",
+                      "eventUrl",
+                      "status",
+                      "rsvpCount",
+                      "venues",
+                      "address",
+                      "googleMapsUrl",
+                      "photoUrl",
+                      "isOnline"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable - no event data",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/schemas": {
+      "get": {
+        "summary": "List all JSON schemas",
+        "description": "Returns metadata about all available JSON schemas for the API models",
+        "tags": [
+          "Schemas"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available schemas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "title",
+                          "description",
+                          "url"
+                        ]
+                      }
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "schemas",
+                    "version"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/schemas/{name}": {
+      "get": {
+        "summary": "Get specific JSON schema",
+        "description": "Returns the JSON Schema for a specific model type",
+        "tags": [
+          "Schemas"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Schema name (event, group, venue, photo, meetup)",
+              "example": "event"
+            },
+            "required": true,
+            "name": "name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON Schema",
+            "content": {
+              "application/schema+json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Schema not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "available": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "available"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/rss": {
+      "get": {
+        "summary": "Get RSS feed",
+        "description": "Returns events as an RSS 2.0 feed",
+        "tags": [
+          "Feeds"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RSS feed",
+            "content": {
+              "application/rss+xml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/feed": {
+      "get": {
+        "summary": "Get RSS feed (alias)",
+        "description": "Alias for /rss - returns events as an RSS 2.0 feed",
+        "tags": [
+          "Feeds"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RSS feed",
+            "content": {
+              "application/rss+xml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/ics": {
+      "get": {
+        "summary": "Get iCalendar feed",
+        "description": "Returns events as an iCalendar (.ics) feed",
+        "tags": [
+          "Feeds"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "iCalendar feed",
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/ical": {
+      "get": {
+        "summary": "Get iCalendar feed (alias)",
+        "description": "Alias for /ics - returns events as an iCalendar (.ics) feed",
+        "tags": [
+          "Feeds"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "iCalendar feed",
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/webcal": {
+      "get": {
+        "summary": "Get webcal feed",
+        "description": "Returns events as an iCalendar feed (same as /ics, for webcal:// protocol)",
+        "tags": [
+          "Feeds"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "iCalendar feed",
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/widget/next-event": {
+      "get": {
+        "summary": "Next event HTML widget",
+        "description": "Returns an HTML widget showing the next upcoming event",
+        "tags": [
+          "Widgets"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group URL names to filter by",
+              "example": "tampadevs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML widget",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/widget/carousel": {
+      "get": {
+        "summary": "Carousel HTML widget",
+        "description": "Returns an HTML carousel widget showing upcoming events",
+        "tags": [
+          "Widgets"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group URL names to filter by",
+              "example": "tampadevs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML carousel widget",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1": {
+      "get": {
+        "summary": "Legacy v1 API (deprecated)",
+        "description": "Returns raw Meetup API data structure for backward compatibility. Use /2026-01-25/events instead.",
+        "tags": [
+          "Legacy"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Legacy nested data structure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/html": {
+      "get": {
+        "summary": "Legacy HTML page (deprecated)",
+        "description": "Returns HTML page with upcoming events. Use /widget/next-event instead.",
+        "tags": [
+          "Legacy"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upcoming-events": {
+      "get": {
+        "summary": "Legacy HTML page (deprecated)",
+        "description": "Alias for /html. Use /widget/next-event instead.",
+        "tags": [
+          "Legacy"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
+              "example": "tampa-devs,suncoast-js"
+            },
+            "required": false,
+            "name": "groups",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude online events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noonline",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N hours",
+              "example": "24"
+            },
+            "required": false,
+            "name": "within_hours",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Only show events within the next N days",
+              "example": "7"
+            },
+            "required": false,
+            "name": "within_days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exclude groups with no events (set to \"1\" to exclude)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "noempty",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

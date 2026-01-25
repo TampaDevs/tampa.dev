@@ -21,7 +21,9 @@ jobs:
         node-version: current
         cache: 'npm'
     - run: npm ci
-    - name: Run test
+    - name: Run tests
+      run: npm test
+    - name: Build check
       uses: cloudflare/wrangler-action@v3.14.1
       with:
         apiToken: 'dummy-key-that-should-make-the-action-run-lol'

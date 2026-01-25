@@ -13,24 +13,24 @@
     <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
         <div class="md:flex">
             <div class="md:shrink-0">
-                <a href="{{ add_utm this.data.eventUrl }}" target="_blank">
-                    {{#if (photo_url this.data.featuredEventPhoto this.groupPhoto)}}
+                <a href="{{ add_utm this.eventUrl }}" target="_blank">
+                    {{#if (photo_url this.photo this.group.photo)}}
                     <img class="h-48 w-full object-cover md:h-full md:w-48"
-                        src="{{ photo_url this.data.featuredEventPhoto this.groupPhoto }}" alt="{{ this.data.title }}">
+                        src="{{ photo_url this.photo this.group.photo }}" alt="{{ this.title }}">
                     {{/if}}
                 </a>
             </div>
             <div class="p-8">
                 <div class="uppercase tracking-wide text-sm text-blue-500 font-semibold">
-                    <a href="{{ add_utm this.data.eventUrl }}" target="_blank">
-                        {{ to_local_date this.data.dateTime }} &bull; {{ this.data.rsvps.totalCount }} Going
+                    <a href="{{ add_utm this.eventUrl }}" target="_blank">
+                        {{ to_local_date this.dateTime }} &bull; {{ this.rsvpCount }} Going
                     </a>
                 </div>
-                <a href="{{ add_utm this.data.eventUrl }}"
+                <a href="{{ add_utm this.eventUrl }}"
                     class="block mt-1 text-lg leading-tight font-medium text-black hover:underline" target="_blank">{{
-                    this.groupName }} - {{ this.data.title }}</a>
-                <p class="mt-2 text-slate-500"><a href="{{ add_utm this.data.eventUrl }}" target="_blank">{{
-                        render_short_description this.data.description }}</a></p>
+                    this.group.name }} - {{ this.title }}</a>
+                <p class="mt-2 text-slate-500"><a href="{{ add_utm this.eventUrl }}" target="_blank">{{
+                        render_short_description this.description }}</a></p>
             </div>
         </div>
     </div>

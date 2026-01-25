@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/event",
+  "title": "Event Schema",
+  "description": "Schema for event data - core fields common across event providers",
+  "$ref": "#/definitions/Event",
+  "definitions": {
+    "Event": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "dateTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration": {
+          "type": "string"
+        },
+        "eventUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "CANCELLED",
+            "DRAFT"
+          ],
+          "default": "ACTIVE"
+        },
+        "eventType": {
+          "type": "string",
+          "enum": [
+            "PHYSICAL",
+            "ONLINE",
+            "HYBRID"
+          ]
+        },
+        "rsvpCount": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "venues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "postalCode": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "photo": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "required": [
+            "id",
+            "baseUrl"
+          ],
+          "additionalProperties": false
+        },
+        "group": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "urlname": {
+              "type": "string"
+            },
+            "link": {
+              "type": "string",
+              "format": "uri"
+            },
+            "memberCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "photo": {
+              "$ref": "#/definitions/Event/properties/photo"
+            },
+            "extras": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "urlname",
+            "link",
+            "memberCount"
+          ],
+          "additionalProperties": false
+        },
+        "extras": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "dateTime",
+        "eventUrl",
+        "group"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

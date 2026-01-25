@@ -4,3 +4,17 @@ node_modules
 assets/*
 !assets/.gitkeep
 .wrangler/tmp/
+.claude/
+
+# Generated clients - ignore build artifacts but keep source
+clients/**/node_modules/
+clients/**/__pycache__/
+clients/**/*.pyc
+clients/**/.pytest_cache/
+clients/**/dist/
+clients/**/build/
+clients/**/.tox/
+clients/**/*.egg-info/
+clients/**/vendor/
+clients/**/.gradle/
+clients/**/Gemfile.lock

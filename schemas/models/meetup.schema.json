@@ -1,0 +1,222 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/meetup",
+  "title": "Meetup API Data Schema",
+  "description": "Schema for Meetup API response data (provider-specific)",
+  "$ref": "#/definitions/MeetupData",
+  "definitions": {
+    "MeetupData": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "urlname": {
+                    "type": "string"
+                  },
+                  "link": {
+                    "type": "string"
+                  },
+                  "keyGroupPhoto": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "baseUrl": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "baseUrl"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "memberships": {
+                    "type": "object",
+                    "properties": {
+                      "totalCount": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "totalCount"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "events": {
+                    "type": "object",
+                    "properties": {
+                      "edges": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "node": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                },
+                                "dateTime": {
+                                  "type": "string"
+                                },
+                                "duration": {
+                                  "type": "string"
+                                },
+                                "eventUrl": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "eventType": {
+                                  "type": "string"
+                                },
+                                "rsvps": {
+                                  "type": "object",
+                                  "properties": {
+                                    "totalCount": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "totalCount"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "venues": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "address": {
+                                        "type": "string"
+                                      },
+                                      "city": {
+                                        "type": "string"
+                                      },
+                                      "state": {
+                                        "type": "string"
+                                      },
+                                      "postalCode": {
+                                        "type": "string"
+                                      },
+                                      "lat": {
+                                        "type": "number"
+                                      },
+                                      "lon": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "name"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "featuredEventPhoto": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/definitions/MeetupData/additionalProperties/anyOf/1/anyOf/0/properties/keyGroupPhoto/anyOf/0"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "title",
+                                "dateTime",
+                                "eventUrl"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "node"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "pageInfo": {
+                        "type": "object",
+                        "properties": {
+                          "endCursor": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "hasNextPage": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "hasNextPage"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "totalCount": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "edges",
+                      "pageInfo",
+                      "totalCount"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "urlname",
+                  "link",
+                  "memberships",
+                  "events"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
