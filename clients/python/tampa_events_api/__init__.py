@@ -22,6 +22,7 @@ __all__ = [
     "FeedsApi",
     "PagesApi",
     "SchemasApi",
+    "ServiceApi",
     "WidgetsApi",
     "ApiResponse",
     "ApiClient",
@@ -36,6 +37,10 @@ __all__ = [
     "Model20260125SchemasGet200Response",
     "Model20260125SchemasGet200ResponseSchemasInner",
     "Model20260125SchemasNameGet404Response",
+    "ServiceStatusGet200Response",
+    "ServiceStatusGet200ResponseAggregation",
+    "ServiceStatusGet200ResponseGroupsInner",
+    "ServiceStatusGet200ResponsePlatformsInner",
 ]
 
 # import apis into sdk package
@@ -43,6 +48,7 @@ from tampa_events_api.api.events_api import EventsApi as EventsApi
 from tampa_events_api.api.feeds_api import FeedsApi as FeedsApi
 from tampa_events_api.api.pages_api import PagesApi as PagesApi
 from tampa_events_api.api.schemas_api import SchemasApi as SchemasApi
+from tampa_events_api.api.service_api import ServiceApi as ServiceApi
 from tampa_events_api.api.widgets_api import WidgetsApi as WidgetsApi
 
 # import ApiClient
@@ -61,4 +67,8 @@ from tampa_events_api.models.model20260125_events_get200_response_inner import M
 from tampa_events_api.models.model20260125_schemas_get200_response import Model20260125SchemasGet200Response as Model20260125SchemasGet200Response
 from tampa_events_api.models.model20260125_schemas_get200_response_schemas_inner import Model20260125SchemasGet200ResponseSchemasInner as Model20260125SchemasGet200ResponseSchemasInner
 from tampa_events_api.models.model20260125_schemas_name_get404_response import Model20260125SchemasNameGet404Response as Model20260125SchemasNameGet404Response
+from tampa_events_api.models.service_status_get200_response import ServiceStatusGet200Response as ServiceStatusGet200Response
+from tampa_events_api.models.service_status_get200_response_aggregation import ServiceStatusGet200ResponseAggregation as ServiceStatusGet200ResponseAggregation
+from tampa_events_api.models.service_status_get200_response_groups_inner import ServiceStatusGet200ResponseGroupsInner as ServiceStatusGet200ResponseGroupsInner
+from tampa_events_api.models.service_status_get200_response_platforms_inner import ServiceStatusGet200ResponsePlatformsInner as ServiceStatusGet200ResponsePlatformsInner
 

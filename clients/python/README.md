@@ -101,6 +101,7 @@ Class | Method | HTTP request | Description
 *PagesApi* | [**upcoming_events_get**](docs/PagesApi.md#upcoming_events_get) | **GET** /upcoming-events | Upcoming events HTML page
 *SchemasApi* | [**call_20260125_schemas_get**](docs/SchemasApi.md#call_20260125_schemas_get) | **GET** /2026-01-25/schemas | List all JSON schemas
 *SchemasApi* | [**call_20260125_schemas_name_get**](docs/SchemasApi.md#call_20260125_schemas_name_get) | **GET** /2026-01-25/schemas/{name} | Get specific JSON schema
+*ServiceApi* | [**service_status_get**](docs/ServiceApi.md#service_status_get) | **GET** /service/status | Service status
 *WidgetsApi* | [**widget_carousel_get**](docs/WidgetsApi.md#widget_carousel_get) | **GET** /widget/carousel | Carousel HTML widget
 *WidgetsApi* | [**widget_next_event_get**](docs/WidgetsApi.md#widget_next_event_get) | **GET** /widget/next-event | Next event HTML widget
 
@@ -111,6 +112,10 @@ Class | Method | HTTP request | Description
  - [Model20260125SchemasGet200Response](docs/Model20260125SchemasGet200Response.md)
  - [Model20260125SchemasGet200ResponseSchemasInner](docs/Model20260125SchemasGet200ResponseSchemasInner.md)
  - [Model20260125SchemasNameGet404Response](docs/Model20260125SchemasNameGet404Response.md)
+ - [ServiceStatusGet200Response](docs/ServiceStatusGet200Response.md)
+ - [ServiceStatusGet200ResponseAggregation](docs/ServiceStatusGet200ResponseAggregation.md)
+ - [ServiceStatusGet200ResponseGroupsInner](docs/ServiceStatusGet200ResponseGroupsInner.md)
+ - [ServiceStatusGet200ResponsePlatformsInner](docs/ServiceStatusGet200ResponsePlatformsInner.md)
 
 
 <a id="documentation-for-authorization"></a>

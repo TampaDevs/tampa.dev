@@ -11,6 +11,11 @@ docs/Model20260125SchemasGet200ResponseSchemasInner.md
 docs/Model20260125SchemasNameGet404Response.md
 docs/PagesApi.md
 docs/SchemasApi.md
+docs/ServiceApi.md
+docs/ServiceStatusGet200Response.md
+docs/ServiceStatusGet200ResponseAggregation.md
+docs/ServiceStatusGet200ResponseGroupsInner.md
+docs/ServiceStatusGet200ResponsePlatformsInner.md
 docs/WidgetsApi.md
 git_push.sh
 pyproject.toml
@@ -23,6 +28,7 @@ tampa_events_api/api/events_api.py
 tampa_events_api/api/feeds_api.py
 tampa_events_api/api/pages_api.py
 tampa_events_api/api/schemas_api.py
+tampa_events_api/api/service_api.py
 tampa_events_api/api/widgets_api.py
 tampa_events_api/api_client.py
 tampa_events_api/api_response.py
@@ -33,8 +39,17 @@ tampa_events_api/models/model20260125_events_get200_response_inner.py
 tampa_events_api/models/model20260125_schemas_get200_response.py
 tampa_events_api/models/model20260125_schemas_get200_response_schemas_inner.py
 tampa_events_api/models/model20260125_schemas_name_get404_response.py
+tampa_events_api/models/service_status_get200_response.py
+tampa_events_api/models/service_status_get200_response_aggregation.py
+tampa_events_api/models/service_status_get200_response_groups_inner.py
+tampa_events_api/models/service_status_get200_response_platforms_inner.py
 tampa_events_api/py.typed
 tampa_events_api/rest.py
 test-requirements.txt
 test/__init__.py
+test/test_service_api.py
+test/test_service_status_get200_response.py
+test/test_service_status_get200_response_aggregation.py
+test/test_service_status_get200_response_groups_inner.py
+test/test_service_status_get200_response_platforms_inner.py
 tox.ini

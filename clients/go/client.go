@@ -57,6 +57,8 @@ type APIClient struct {
 
 	SchemasAPI *SchemasAPIService
 
+	ServiceAPI *ServiceAPIService
+
 	WidgetsAPI *WidgetsAPIService
 }
 
@@ -80,6 +82,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.FeedsAPI = (*FeedsAPIService)(&c.common)
 	c.PagesAPI = (*PagesAPIService)(&c.common)
 	c.SchemasAPI = (*SchemasAPIService)(&c.common)
+	c.ServiceAPI = (*ServiceAPIService)(&c.common)
 	c.WidgetsAPI = (*WidgetsAPIService)(&c.common)
 
 	return c

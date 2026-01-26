@@ -62,6 +62,7 @@ Class | Method | HTTP request | Description
 *PagesApi* | [**upcomingEventsGet**](docs/PagesApi.md#upcomingeventsget) | **GET** /upcoming-events | Upcoming events HTML page
 *SchemasApi* | [**_20260125schemasGet**](docs/SchemasApi.md#_20260125schemasget) | **GET** /2026-01-25/schemas | List all JSON schemas
 *SchemasApi* | [**_20260125schemasNameGet**](docs/SchemasApi.md#_20260125schemasnameget) | **GET** /2026-01-25/schemas/{name} | Get specific JSON schema
+*ServiceApi* | [**serviceStatusGet**](docs/ServiceApi.md#servicestatusget) | **GET** /service/status | Service status
 *WidgetsApi* | [**widgetCarouselGet**](docs/WidgetsApi.md#widgetcarouselget) | **GET** /widget/carousel | Carousel HTML widget
 *WidgetsApi* | [**widgetNextEventGet**](docs/WidgetsApi.md#widgetnexteventget) | **GET** /widget/next-event | Next event HTML widget
 
@@ -72,6 +73,10 @@ Class | Method | HTTP request | Description
  - [Model20260125SchemasGet200Response](docs/Model20260125SchemasGet200Response.md)
  - [Model20260125SchemasGet200ResponseSchemasInner](docs/Model20260125SchemasGet200ResponseSchemasInner.md)
  - [Model20260125SchemasNameGet404Response](docs/Model20260125SchemasNameGet404Response.md)
+ - [ServiceStatusGet200Response](docs/ServiceStatusGet200Response.md)
+ - [ServiceStatusGet200ResponseAggregation](docs/ServiceStatusGet200ResponseAggregation.md)
+ - [ServiceStatusGet200ResponseGroupsInner](docs/ServiceStatusGet200ResponseGroupsInner.md)
+ - [ServiceStatusGet200ResponsePlatformsInner](docs/ServiceStatusGet200ResponsePlatformsInner.md)
 
 
 <a id="documentation-for-authorization"></a>

@@ -71,6 +71,28 @@ export interface Model20260125SchemasNameGet404Response {
     'error': string;
     'available': Array<string>;
 }
+export interface ServiceStatusGet200Response {
+    'platforms': Array<ServiceStatusGet200ResponsePlatformsInner>;
+    'groups': Array<ServiceStatusGet200ResponseGroupsInner>;
+    'totalGroups': number;
+    'aggregation': ServiceStatusGet200ResponseAggregation;
+}
+export interface ServiceStatusGet200ResponseAggregation {
+    'lastRunAt': string;
+    'durationMs': number;
+    'groupsProcessed': number;
+    'groupsFailed': number;
+    'dataHash': string;
+    'errors': Array<string>;
+}
+export interface ServiceStatusGet200ResponseGroupsInner {
+    'urlname': string;
+    'platform': string;
+}
+export interface ServiceStatusGet200ResponsePlatformsInner {
+    'name': string;
+    'configured': boolean;
+}
 
 /**
  * EventsApi - axios parameter creator
@@ -1237,6 +1259,100 @@ export class SchemasApi extends BaseAPI {
      */
     public _20260125schemasNameGet(name: string, options?: RawAxiosRequestConfig) {
         return SchemasApiFp(this.configuration)._20260125schemasNameGet(name, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * ServiceApi - axios parameter creator
+ */
+export const ServiceApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
+         * @summary Service status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        serviceStatusGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/service/status`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * ServiceApi - functional programming interface
+ */
+export const ServiceApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ServiceApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
+         * @summary Service status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async serviceStatusGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ServiceStatusGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.serviceStatusGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ServiceApi.serviceStatusGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * ServiceApi - factory interface
+ */
+export const ServiceApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = ServiceApiFp(configuration)
+    return {
+        /**
+         * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
+         * @summary Service status
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        serviceStatusGet(options?: RawAxiosRequestConfig): AxiosPromise<ServiceStatusGet200Response> {
+            return localVarFp.serviceStatusGet(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * ServiceApi - object-oriented interface
+ */
+export class ServiceApi extends BaseAPI {
+    /**
+     * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
+     * @summary Service status
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public serviceStatusGet(options?: RawAxiosRequestConfig) {
+        return ServiceApiFp(this.configuration).serviceStatusGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

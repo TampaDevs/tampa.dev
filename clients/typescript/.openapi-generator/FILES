@@ -13,6 +13,11 @@ docs/EventsApi.md
 docs/FeedsApi.md
 docs/PagesApi.md
 docs/SchemasApi.md
+docs/ServiceApi.md
+docs/ServiceStatusGet200Response.md
+docs/ServiceStatusGet200ResponseAggregation.md
+docs/ServiceStatusGet200ResponseGroupsInner.md
+docs/ServiceStatusGet200ResponsePlatformsInner.md
 docs/WidgetsApi.md
 git_push.sh
 index.ts
