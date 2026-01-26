@@ -86,8 +86,9 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const events = await EventController.getNextEvents(c);
     const html = await c.html(<WidgetNextEvent events={events} />);
 
-    // Cache and return
-    return cacheResponse(c.req.raw, html, cacheVersion);
+    // Cache and return (pass waitUntil to ensure cache operation completes)
+    const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+    return cacheResponse(c.req.raw, html, cacheVersion, waitUntil);
   });
 
   // GET /widget/carousel
@@ -105,7 +106,8 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const sortedEvents = util.getSortedEvents(events);
     const html = await c.html(<WidgetCarousel events={sortedEvents} />);
 
-    // Cache and return
-    return cacheResponse(c.req.raw, html, cacheVersion);
+    // Cache and return (pass waitUntil to ensure cache operation completes)
+    const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+    return cacheResponse(c.req.raw, html, cacheVersion, waitUntil);
   });
 }

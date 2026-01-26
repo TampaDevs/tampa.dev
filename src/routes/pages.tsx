@@ -71,8 +71,9 @@ export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const nextEvents = await EventController.getNextEvents(c);
     const html = await c.html(<EventsPage events={nextEvents} />);
 
-    // Cache and return
-    return cacheResponse(c.req.raw, html, cacheVersion);
+    // Cache and return (pass waitUntil to ensure cache operation completes)
+    const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+    return cacheResponse(c.req.raw, html, cacheVersion, waitUntil);
   };
 
   app.openapi(htmlPageRoute, htmlHandler);

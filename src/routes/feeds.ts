@@ -152,8 +152,9 @@ export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       },
     });
 
-    // Cache and return
-    return cacheResponse(c.req.raw, response, cacheVersion);
+    // Cache and return (pass waitUntil to ensure cache operation completes)
+    const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+    return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
   };
 
   // iCalendar handler
@@ -178,8 +179,9 @@ export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       },
     });
 
-    // Cache and return
-    return cacheResponse(c.req.raw, response, cacheVersion);
+    // Cache and return (pass waitUntil to ensure cache operation completes)
+    const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+    return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
   };
 
   // Versioned RSS routes

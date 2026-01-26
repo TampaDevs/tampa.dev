@@ -164,8 +164,9 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
         },
       });
 
-      // Cache and return
-      return cacheResponse(c.req.raw, response, cacheVersion);
+      // Cache and return (pass waitUntil to ensure cache operation completes)
+      const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+      return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
     } catch (error) {
       return c.text('No event data available', 503);
     }
@@ -195,8 +196,9 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
         },
       });
 
-      // Cache and return
-      return cacheResponse(c.req.raw, response, cacheVersion);
+      // Cache and return (pass waitUntil to ensure cache operation completes)
+      const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+      return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
     } catch (error) {
       return c.text('No event data available', 503);
     }

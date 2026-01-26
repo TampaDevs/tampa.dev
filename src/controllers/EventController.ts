@@ -10,9 +10,11 @@ import { Event } from '../../models/index.js';
 export class EventController {
   /**
    * Load raw event data from KV storage
+   * Uses cacheTtl to cache at the edge for 30 minutes
    */
   static async loadRawData(c: Context<{ Bindings: Env }>): Promise<unknown> {
-    const rawData = await c.env.kv.get('event_data');
+    // cacheTtl caches the KV value at the edge for faster subsequent reads
+    const rawData = await c.env.kv.get('event_data', { cacheTtl: 1800 });
     if (!rawData) {
       throw new Error('No event data available');
     }

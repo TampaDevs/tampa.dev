@@ -2,10 +2,11 @@
  * Cloudflare Cache API wrapper for response caching
  *
  * Caches full responses based on URL with a 30-minute TTL.
- * Cache is automatically invalidated on deployment via CACHE_VERSION.
+ * Cache is automatically invalidated on deployment via version ID.
  */
 
 const CACHE_TTL_SECONDS = 30 * 60; // 30 minutes
+const CACHE_NAME = 'events-api-v1';
 
 /**
  * Generate a hash of the event data (kept for backwards compatibility with tests)
@@ -21,21 +22,15 @@ export function generateDataHash(data: string): string {
 }
 
 /**
- * Build a versioned cache key from the request
- * Includes CACHE_VERSION to invalidate cache on deployment
+ * Build a versioned cache key URL
+ * Includes version ID to invalidate cache on deployment
  */
-function buildCacheKey(request: Request, cacheVersion?: string): Request {
-  if (!cacheVersion) {
-    return request;
-  }
-
+function buildCacheKeyUrl(request: Request, cacheVersion?: string): string {
   const url = new URL(request.url);
-  url.searchParams.set('_v', cacheVersion);
-
-  return new Request(url.toString(), {
-    method: request.method,
-    headers: request.headers,
-  });
+  if (cacheVersion) {
+    url.searchParams.set('_v', cacheVersion);
+  }
+  return url.toString();
 }
 
 /**
@@ -45,20 +40,24 @@ export async function getCachedResponse(
   request: Request,
   cacheVersion?: string
 ): Promise<Response | null> {
-  const cache = caches.default;
-  const cacheKey = buildCacheKey(request, cacheVersion);
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const cacheKeyUrl = buildCacheKeyUrl(request, cacheVersion);
 
-  const cachedResponse = await cache.match(cacheKey);
+    const cachedResponse = await cache.match(cacheKeyUrl);
 
-  if (cachedResponse) {
-    // Clone the response and add a header indicating cache hit
-    const headers = new Headers(cachedResponse.headers);
-    headers.set('X-Cache', 'HIT');
-    return new Response(cachedResponse.body, {
-      status: cachedResponse.status,
-      statusText: cachedResponse.statusText,
-      headers,
-    });
+    if (cachedResponse) {
+      // Clone the response and add a header indicating cache hit
+      const headers = new Headers(cachedResponse.headers);
+      headers.set('X-Cache', 'HIT');
+      return new Response(cachedResponse.body, {
+        status: cachedResponse.status,
+        statusText: cachedResponse.statusText,
+        headers,
+      });
+    }
+  } catch {
+    // Cache API not available or failed - continue without cache
   }
 
   return null;
@@ -66,31 +65,45 @@ export async function getCachedResponse(
 
 /**
  * Cache a response for the given request
+ * @param request - The original request
+ * @param response - The response to cache
+ * @param cacheVersion - Optional version for cache invalidation
+ * @param waitUntil - Optional waitUntil function from execution context
  */
 export async function cacheResponse(
   request: Request,
   response: Response,
-  cacheVersion?: string
+  cacheVersion?: string,
+  waitUntil?: (promise: Promise<unknown>) => void
 ): Promise<Response> {
-  const cache = caches.default;
-  const cacheKey = buildCacheKey(request, cacheVersion);
+  // Clone the response first so we can return it
+  const responseToReturn = response.clone();
 
-  // Clone the response to cache it
-  const responseToCache = response.clone();
-
-  // Create a new response with cache headers
-  const headers = new Headers(responseToCache.headers);
+  // Create a new response with cache headers for storage
+  const headers = new Headers(response.headers);
   headers.set('Cache-Control', `public, max-age=${CACHE_TTL_SECONDS}`);
   headers.set('X-Cache', 'MISS');
 
-  const cachedResponse = new Response(responseToCache.body, {
-    status: responseToCache.status,
-    statusText: responseToCache.statusText,
+  const responseForClient = new Response(responseToReturn.body, {
+    status: responseToReturn.status,
+    statusText: responseToReturn.statusText,
     headers,
   });
 
-  // Store in cache (don't await - fire and forget)
-  cache.put(cacheKey, cachedResponse.clone());
+  // Store in cache - use waitUntil if available to ensure completion
+  const cacheOperation = (async () => {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const cacheKeyUrl = buildCacheKeyUrl(request, cacheVersion);
+      await cache.put(cacheKeyUrl, responseForClient.clone());
+    } catch {
+      // Cache API not available or failed - continue without caching
+    }
+  })();
 
-  return cachedResponse;
+  if (waitUntil) {
+    waitUntil(cacheOperation);
+  }
+
+  return responseForClient;
 }
