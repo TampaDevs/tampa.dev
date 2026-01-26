@@ -104,7 +104,8 @@ jobs:
             -i schemas/openapi.json \
             -g go \
             -o clients/go \
-            --additional-properties=packageName=tampaevents,packageVersion=1.0.0
+            --additional-properties=packageName=tampaevents,packageVersion=1.0.0 \
+            --model-name-prefix=Api
 
       - name: Generate Ruby Client
         run: |
