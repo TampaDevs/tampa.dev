@@ -1,0 +1,5 @@
+name: "CodeQL Config"
+
+paths-ignore:
+  - clients
+  - node_modules
