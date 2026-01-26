@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { Model20260125SchemasGet200Response } from '@tampa-devs/events-api-client';
+import { Model20260125SchemasGet200Response } from '@tampadevs/events-api-client';
 
 const instance: Model20260125SchemasGet200Response = {
     schemas,

@@ -16,38 +16,38 @@ import (
 	"fmt"
 )
 
-// checks if the 20260125SchemasNameGet404Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &20260125SchemasNameGet404Response{}
+// checks if the V20260125SchemasNameGet404Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &V20260125SchemasNameGet404Response{}
 
-// 20260125SchemasNameGet404Response struct for 20260125SchemasNameGet404Response
-type 20260125SchemasNameGet404Response struct {
+// V20260125SchemasNameGet404Response struct for V20260125SchemasNameGet404Response
+type V20260125SchemasNameGet404Response struct {
 	Error string `json:"error"`
 	Available []string `json:"available"`
 }
 
-type _20260125SchemasNameGet404Response 20260125SchemasNameGet404Response
+type _V20260125SchemasNameGet404Response V20260125SchemasNameGet404Response
 
-// New20260125SchemasNameGet404Response instantiates a new 20260125SchemasNameGet404Response object
+// New20260125SchemasNameGet404Response instantiates a new V20260125SchemasNameGet404Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func New20260125SchemasNameGet404Response(error_ string, available []string) *20260125SchemasNameGet404Response {
-	this := 20260125SchemasNameGet404Response{}
+func New20260125SchemasNameGet404Response(error_ string, available []string) *V20260125SchemasNameGet404Response {
+	this := V20260125SchemasNameGet404Response{}
 	this.Error = error_
 	this.Available = available
 	return &this
 }
 
-// New20260125SchemasNameGet404ResponseWithDefaults instantiates a new 20260125SchemasNameGet404Response object
+// New20260125SchemasNameGet404ResponseWithDefaults instantiates a new V20260125SchemasNameGet404Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func New20260125SchemasNameGet404ResponseWithDefaults() *20260125SchemasNameGet404Response {
-	this := 20260125SchemasNameGet404Response{}
+func New20260125SchemasNameGet404ResponseWithDefaults() *V20260125SchemasNameGet404Response {
+	this := V20260125SchemasNameGet404Response{}
 	return &this
 }
 
 // GetError returns the Error field value
-func (o *20260125SchemasNameGet404Response) GetError() string {
+func (o *V20260125SchemasNameGet404Response) GetError() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -58,7 +58,7 @@ func (o *20260125SchemasNameGet404Response) GetError() string {
 
 // GetErrorOk returns a tuple with the Error field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasNameGet404Response) GetErrorOk() (*string, bool) {
+func (o *V20260125SchemasNameGet404Response) GetErrorOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -66,12 +66,12 @@ func (o *20260125SchemasNameGet404Response) GetErrorOk() (*string, bool) {
 }
 
 // SetError sets field value
-func (o *20260125SchemasNameGet404Response) SetError(v string) {
+func (o *V20260125SchemasNameGet404Response) SetError(v string) {
 	o.Error = v
 }
 
 // GetAvailable returns the Available field value
-func (o *20260125SchemasNameGet404Response) GetAvailable() []string {
+func (o *V20260125SchemasNameGet404Response) GetAvailable() []string {
 	if o == nil {
 		var ret []string
 		return ret
@@ -82,7 +82,7 @@ func (o *20260125SchemasNameGet404Response) GetAvailable() []string {
 
 // GetAvailableOk returns a tuple with the Available field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasNameGet404Response) GetAvailableOk() ([]string, bool) {
+func (o *V20260125SchemasNameGet404Response) GetAvailableOk() ([]string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,11 +90,11 @@ func (o *20260125SchemasNameGet404Response) GetAvailableOk() ([]string, bool) {
 }
 
 // SetAvailable sets field value
-func (o *20260125SchemasNameGet404Response) SetAvailable(v []string) {
+func (o *V20260125SchemasNameGet404Response) SetAvailable(v []string) {
 	o.Available = v
 }
 
-func (o 20260125SchemasNameGet404Response) MarshalJSON() ([]byte, error) {
+func (o V20260125SchemasNameGet404Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -102,14 +102,14 @@ func (o 20260125SchemasNameGet404Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o 20260125SchemasNameGet404Response) ToMap() (map[string]interface{}, error) {
+func (o V20260125SchemasNameGet404Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["error"] = o.Error
 	toSerialize["available"] = o.Available
 	return toSerialize, nil
 }
 
-func (o *20260125SchemasNameGet404Response) UnmarshalJSON(data []byte) (err error) {
+func (o *V20260125SchemasNameGet404Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -132,7 +132,7 @@ func (o *20260125SchemasNameGet404Response) UnmarshalJSON(data []byte) (err erro
 		}
 	}
 
-	var20260125SchemasNameGet404Response := _20260125SchemasNameGet404Response{}
+	var20260125SchemasNameGet404Response := _V20260125SchemasNameGet404Response{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -142,21 +142,21 @@ func (o *20260125SchemasNameGet404Response) UnmarshalJSON(data []byte) (err erro
 		return err
 	}
 
-	*o = 20260125SchemasNameGet404Response(var20260125SchemasNameGet404Response)
+	*o = V20260125SchemasNameGet404Response(var20260125SchemasNameGet404Response)
 
 	return err
 }
 
 type Nullable20260125SchemasNameGet404Response struct {
-	value *20260125SchemasNameGet404Response
+	value *V20260125SchemasNameGet404Response
 	isSet bool
 }
 
-func (v Nullable20260125SchemasNameGet404Response) Get() *20260125SchemasNameGet404Response {
+func (v Nullable20260125SchemasNameGet404Response) Get() *V20260125SchemasNameGet404Response {
 	return v.value
 }
 
-func (v *Nullable20260125SchemasNameGet404Response) Set(val *20260125SchemasNameGet404Response) {
+func (v *Nullable20260125SchemasNameGet404Response) Set(val *V20260125SchemasNameGet404Response) {
 	v.value = val
 	v.isSet = true
 }
@@ -170,7 +170,7 @@ func (v *Nullable20260125SchemasNameGet404Response) Unset() {
 	v.isSet = false
 }
 
-func NewNullable20260125SchemasNameGet404Response(val *20260125SchemasNameGet404Response) *Nullable20260125SchemasNameGet404Response {
+func NewNullable20260125SchemasNameGet404Response(val *V20260125SchemasNameGet404Response) *Nullable20260125SchemasNameGet404Response {
 	return &Nullable20260125SchemasNameGet404Response{value: val, isSet: true}
 }
 

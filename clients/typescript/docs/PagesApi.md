@@ -18,7 +18,7 @@ Returns a formatted HTML page displaying upcoming events
 import {
     PagesApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new PagesApi(configuration);
@@ -81,7 +81,7 @@ Alias for /html - returns a formatted HTML page displaying upcoming events
 import {
     PagesApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new PagesApi(configuration);

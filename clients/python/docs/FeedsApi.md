@@ -37,7 +37,7 @@ configuration = tampa_events_api.Configuration(
 with tampa_events_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tampa_events_api.FeedsApi(api_client)
-    groups = 'tampa-devs,suncoast-js' # str |  (optional)
+    groups = 'tampadevs,suncoast-js' # str |  (optional)
     noonline = '1' # str |  (optional)
     within_hours = '24' # str |  (optional)
     within_days = '7' # str |  (optional)
@@ -112,7 +112,7 @@ configuration = tampa_events_api.Configuration(
 with tampa_events_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tampa_events_api.FeedsApi(api_client)
-    groups = 'tampa-devs,suncoast-js' # str |  (optional)
+    groups = 'tampadevs,suncoast-js' # str |  (optional)
     noonline = '1' # str |  (optional)
     within_hours = '24' # str |  (optional)
     within_days = '7' # str |  (optional)
@@ -187,7 +187,7 @@ configuration = tampa_events_api.Configuration(
 with tampa_events_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tampa_events_api.FeedsApi(api_client)
-    groups = 'tampa-devs,suncoast-js' # str |  (optional)
+    groups = 'tampadevs,suncoast-js' # str |  (optional)
     noonline = '1' # str |  (optional)
     within_hours = '24' # str |  (optional)
     within_days = '7' # str |  (optional)
@@ -262,7 +262,7 @@ configuration = tampa_events_api.Configuration(
 with tampa_events_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tampa_events_api.FeedsApi(api_client)
-    groups = 'tampa-devs,suncoast-js' # str |  (optional)
+    groups = 'tampadevs,suncoast-js' # str |  (optional)
     noonline = '1' # str |  (optional)
     within_hours = '24' # str |  (optional)
     within_days = '7' # str |  (optional)
@@ -337,7 +337,7 @@ configuration = tampa_events_api.Configuration(
 with tampa_events_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tampa_events_api.FeedsApi(api_client)
-    groups = 'tampa-devs,suncoast-js' # str |  (optional)
+    groups = 'tampadevs,suncoast-js' # str |  (optional)
     noonline = '1' # str |  (optional)
     within_hours = '24' # str |  (optional)
     within_days = '7' # str |  (optional)

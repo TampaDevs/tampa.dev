@@ -11,7 +11,7 @@ Method | HTTP request | Description
 
 ## Call20260125SchemasGet
 
-> ApiApi20260125SchemasGet200Response Call20260125SchemasGet(ctx).Execute()
+> Model20260125SchemasGet200Response Call20260125SchemasGet(ctx).Execute()
 
 List all JSON schemas
 
@@ -38,7 +38,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error when calling `SchemasAPI.Call20260125SchemasGet``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `Call20260125SchemasGet`: ApiApi20260125SchemasGet200Response
+	// response from `Call20260125SchemasGet`: Model20260125SchemasGet200Response
 	fmt.Fprintf(os.Stdout, "Response from `SchemasAPI.Call20260125SchemasGet`: %v\n", resp)
 }
 ```
@@ -54,7 +54,7 @@ Other parameters are passed through a pointer to a apiCall20260125SchemasGetRequ
 
 ### Return type
 
-[**ApiApi20260125SchemasGet200Response**](Api20260125SchemasGet200Response.md)
+[**Model20260125SchemasGet200Response**](20260125SchemasGet200Response.md)
 
 ### Authorization
 

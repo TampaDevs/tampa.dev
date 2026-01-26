@@ -24,7 +24,7 @@ require 'tampa_events_api'
 
 api_instance = TampaEventsAPI::EventsApi.new
 opts = {
-  groups: 'tampa-devs,suncoast-js', # String | 
+  groups: 'tampadevs,suncoast-js', # String | 
   noonline: '1', # String | 
   within_hours: '24', # String | 
   within_days: '7', # String | 
@@ -98,7 +98,7 @@ require 'tampa_events_api'
 
 api_instance = TampaEventsAPI::EventsApi.new
 opts = {
-  groups: 'tampa-devs,suncoast-js', # String | 
+  groups: 'tampadevs,suncoast-js', # String | 
   noonline: '1', # String | 
   within_hours: '24', # String | 
   within_days: '7', # String | 

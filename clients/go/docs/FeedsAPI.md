@@ -33,7 +33,7 @@ import (
 )
 
 func main() {
-	groups := "tampa-devs,suncoast-js" // string |  (optional)
+	groups := "tampadevs,suncoast-js" // string |  (optional)
 	noonline := "1" // string |  (optional)
 	withinHours := "24" // string |  (optional)
 	withinDays := "7" // string |  (optional)
@@ -107,7 +107,7 @@ import (
 )
 
 func main() {
-	groups := "tampa-devs,suncoast-js" // string |  (optional)
+	groups := "tampadevs,suncoast-js" // string |  (optional)
 	noonline := "1" // string |  (optional)
 	withinHours := "24" // string |  (optional)
 	withinDays := "7" // string |  (optional)
@@ -181,7 +181,7 @@ import (
 )
 
 func main() {
-	groups := "tampa-devs,suncoast-js" // string |  (optional)
+	groups := "tampadevs,suncoast-js" // string |  (optional)
 	noonline := "1" // string |  (optional)
 	withinHours := "24" // string |  (optional)
 	withinDays := "7" // string |  (optional)
@@ -255,7 +255,7 @@ import (
 )
 
 func main() {
-	groups := "tampa-devs,suncoast-js" // string |  (optional)
+	groups := "tampadevs,suncoast-js" // string |  (optional)
 	noonline := "1" // string |  (optional)
 	withinHours := "24" // string |  (optional)
 	withinDays := "7" // string |  (optional)
@@ -329,7 +329,7 @@ import (
 )
 
 func main() {
-	groups := "tampa-devs,suncoast-js" // string |  (optional)
+	groups := "tampadevs,suncoast-js" // string |  (optional)
 	noonline := "1" // string |  (optional)
 	withinHours := "24" // string |  (optional)
 	withinDays := "7" // string |  (optional)

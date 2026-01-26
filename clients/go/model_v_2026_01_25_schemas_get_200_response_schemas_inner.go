@@ -16,25 +16,25 @@ import (
 	"fmt"
 )
 
-// checks if the 20260125SchemasGet200ResponseSchemasInner type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &20260125SchemasGet200ResponseSchemasInner{}
+// checks if the V20260125SchemasGet200ResponseSchemasInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &V20260125SchemasGet200ResponseSchemasInner{}
 
-// 20260125SchemasGet200ResponseSchemasInner struct for 20260125SchemasGet200ResponseSchemasInner
-type 20260125SchemasGet200ResponseSchemasInner struct {
+// V20260125SchemasGet200ResponseSchemasInner struct for V20260125SchemasGet200ResponseSchemasInner
+type V20260125SchemasGet200ResponseSchemasInner struct {
 	Name string `json:"name"`
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Url string `json:"url"`
 }
 
-type _20260125SchemasGet200ResponseSchemasInner 20260125SchemasGet200ResponseSchemasInner
+type _V20260125SchemasGet200ResponseSchemasInner V20260125SchemasGet200ResponseSchemasInner
 
-// New20260125SchemasGet200ResponseSchemasInner instantiates a new 20260125SchemasGet200ResponseSchemasInner object
+// New20260125SchemasGet200ResponseSchemasInner instantiates a new V20260125SchemasGet200ResponseSchemasInner object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func New20260125SchemasGet200ResponseSchemasInner(name string, title string, description string, url string) *20260125SchemasGet200ResponseSchemasInner {
-	this := 20260125SchemasGet200ResponseSchemasInner{}
+func New20260125SchemasGet200ResponseSchemasInner(name string, title string, description string, url string) *V20260125SchemasGet200ResponseSchemasInner {
+	this := V20260125SchemasGet200ResponseSchemasInner{}
 	this.Name = name
 	this.Title = title
 	this.Description = description
@@ -42,16 +42,16 @@ func New20260125SchemasGet200ResponseSchemasInner(name string, title string, des
 	return &this
 }
 
-// New20260125SchemasGet200ResponseSchemasInnerWithDefaults instantiates a new 20260125SchemasGet200ResponseSchemasInner object
+// New20260125SchemasGet200ResponseSchemasInnerWithDefaults instantiates a new V20260125SchemasGet200ResponseSchemasInner object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func New20260125SchemasGet200ResponseSchemasInnerWithDefaults() *20260125SchemasGet200ResponseSchemasInner {
-	this := 20260125SchemasGet200ResponseSchemasInner{}
+func New20260125SchemasGet200ResponseSchemasInnerWithDefaults() *V20260125SchemasGet200ResponseSchemasInner {
+	this := V20260125SchemasGet200ResponseSchemasInner{}
 	return &this
 }
 
 // GetName returns the Name field value
-func (o *20260125SchemasGet200ResponseSchemasInner) GetName() string {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetName() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -62,7 +62,7 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetName() string {
 
 // GetNameOk returns a tuple with the Name field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasGet200ResponseSchemasInner) GetNameOk() (*string, bool) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -70,12 +70,12 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetNameOk() (*string, bool) 
 }
 
 // SetName sets field value
-func (o *20260125SchemasGet200ResponseSchemasInner) SetName(v string) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) SetName(v string) {
 	o.Name = v
 }
 
 // GetTitle returns the Title field value
-func (o *20260125SchemasGet200ResponseSchemasInner) GetTitle() string {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetTitle() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -86,7 +86,7 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetTitle() string {
 
 // GetTitleOk returns a tuple with the Title field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasGet200ResponseSchemasInner) GetTitleOk() (*string, bool) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetTitleOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -94,12 +94,12 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetTitleOk() (*string, bool)
 }
 
 // SetTitle sets field value
-func (o *20260125SchemasGet200ResponseSchemasInner) SetTitle(v string) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) SetTitle(v string) {
 	o.Title = v
 }
 
 // GetDescription returns the Description field value
-func (o *20260125SchemasGet200ResponseSchemasInner) GetDescription() string {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetDescription() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -110,7 +110,7 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetDescription() string {
 
 // GetDescriptionOk returns a tuple with the Description field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasGet200ResponseSchemasInner) GetDescriptionOk() (*string, bool) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetDescriptionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -118,12 +118,12 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetDescriptionOk() (*string,
 }
 
 // SetDescription sets field value
-func (o *20260125SchemasGet200ResponseSchemasInner) SetDescription(v string) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) SetDescription(v string) {
 	o.Description = v
 }
 
 // GetUrl returns the Url field value
-func (o *20260125SchemasGet200ResponseSchemasInner) GetUrl() string {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetUrl() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -134,7 +134,7 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetUrl() string {
 
 // GetUrlOk returns a tuple with the Url field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasGet200ResponseSchemasInner) GetUrlOk() (*string, bool) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) GetUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -142,11 +142,11 @@ func (o *20260125SchemasGet200ResponseSchemasInner) GetUrlOk() (*string, bool) {
 }
 
 // SetUrl sets field value
-func (o *20260125SchemasGet200ResponseSchemasInner) SetUrl(v string) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) SetUrl(v string) {
 	o.Url = v
 }
 
-func (o 20260125SchemasGet200ResponseSchemasInner) MarshalJSON() ([]byte, error) {
+func (o V20260125SchemasGet200ResponseSchemasInner) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -154,7 +154,7 @@ func (o 20260125SchemasGet200ResponseSchemasInner) MarshalJSON() ([]byte, error)
 	return json.Marshal(toSerialize)
 }
 
-func (o 20260125SchemasGet200ResponseSchemasInner) ToMap() (map[string]interface{}, error) {
+func (o V20260125SchemasGet200ResponseSchemasInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["name"] = o.Name
 	toSerialize["title"] = o.Title
@@ -163,7 +163,7 @@ func (o 20260125SchemasGet200ResponseSchemasInner) ToMap() (map[string]interface
 	return toSerialize, nil
 }
 
-func (o *20260125SchemasGet200ResponseSchemasInner) UnmarshalJSON(data []byte) (err error) {
+func (o *V20260125SchemasGet200ResponseSchemasInner) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -188,7 +188,7 @@ func (o *20260125SchemasGet200ResponseSchemasInner) UnmarshalJSON(data []byte) (
 		}
 	}
 
-	var20260125SchemasGet200ResponseSchemasInner := _20260125SchemasGet200ResponseSchemasInner{}
+	var20260125SchemasGet200ResponseSchemasInner := _V20260125SchemasGet200ResponseSchemasInner{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -198,21 +198,21 @@ func (o *20260125SchemasGet200ResponseSchemasInner) UnmarshalJSON(data []byte) (
 		return err
 	}
 
-	*o = 20260125SchemasGet200ResponseSchemasInner(var20260125SchemasGet200ResponseSchemasInner)
+	*o = V20260125SchemasGet200ResponseSchemasInner(var20260125SchemasGet200ResponseSchemasInner)
 
 	return err
 }
 
 type Nullable20260125SchemasGet200ResponseSchemasInner struct {
-	value *20260125SchemasGet200ResponseSchemasInner
+	value *V20260125SchemasGet200ResponseSchemasInner
 	isSet bool
 }
 
-func (v Nullable20260125SchemasGet200ResponseSchemasInner) Get() *20260125SchemasGet200ResponseSchemasInner {
+func (v Nullable20260125SchemasGet200ResponseSchemasInner) Get() *V20260125SchemasGet200ResponseSchemasInner {
 	return v.value
 }
 
-func (v *Nullable20260125SchemasGet200ResponseSchemasInner) Set(val *20260125SchemasGet200ResponseSchemasInner) {
+func (v *Nullable20260125SchemasGet200ResponseSchemasInner) Set(val *V20260125SchemasGet200ResponseSchemasInner) {
 	v.value = val
 	v.isSet = true
 }
@@ -226,7 +226,7 @@ func (v *Nullable20260125SchemasGet200ResponseSchemasInner) Unset() {
 	v.isSet = false
 }
 
-func NewNullable20260125SchemasGet200ResponseSchemasInner(val *20260125SchemasGet200ResponseSchemasInner) *Nullable20260125SchemasGet200ResponseSchemasInner {
+func NewNullable20260125SchemasGet200ResponseSchemasInner(val *V20260125SchemasGet200ResponseSchemasInner) *Nullable20260125SchemasGet200ResponseSchemasInner {
 	return &Nullable20260125SchemasGet200ResponseSchemasInner{value: val, isSet: true}
 }
 

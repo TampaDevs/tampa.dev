@@ -18,7 +18,7 @@ Returns metadata about all available JSON schemas for the API models
 import {
     SchemasApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new SchemasApi(configuration);
@@ -62,7 +62,7 @@ Returns the JSON Schema for a specific model type
 import {
     SchemasApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new SchemasApi(configuration);

@@ -21,7 +21,7 @@ Alias for /rss - returns events as an RSS 2.0 feed
 import {
     FeedsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new FeedsApi(configuration);
@@ -84,7 +84,7 @@ Alias for /ics - returns events as an iCalendar (.ics) feed
 import {
     FeedsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new FeedsApi(configuration);
@@ -147,7 +147,7 @@ Returns events as an iCalendar (.ics) feed
 import {
     FeedsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new FeedsApi(configuration);
@@ -210,7 +210,7 @@ Returns events as an RSS 2.0 feed
 import {
     FeedsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new FeedsApi(configuration);
@@ -273,7 +273,7 @@ Returns events as an iCalendar feed (same as /ics, for webcal:// protocol)
 import {
     FeedsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new FeedsApi(configuration);

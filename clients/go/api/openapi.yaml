@@ -23,8 +23,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -91,8 +91,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -201,8 +201,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -261,8 +261,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -321,8 +321,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -381,8 +381,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -442,8 +442,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -548,8 +548,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true
@@ -609,8 +609,8 @@ paths:
         required: false
         schema:
           description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampa-devs,suncoast-js\")"
-          example: "tampa-devs,suncoast-js"
+            tampadevs,suncoast-js\")"
+          example: "tampadevs,suncoast-js"
           type: string
         style: form
       - explode: true

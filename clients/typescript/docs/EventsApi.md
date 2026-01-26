@@ -18,7 +18,7 @@ Returns a list of all upcoming events, optionally filtered by query parameters
 import {
     EventsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new EventsApi(configuration);
@@ -82,7 +82,7 @@ Returns one upcoming event for each group (the next event)
 import {
     EventsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new EventsApi(configuration);
