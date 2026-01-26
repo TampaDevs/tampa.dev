@@ -143,11 +143,12 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Publishing version: $VERSION"
 
-      - name: Update gemspec version
+      - name: Update gem version
         working-directory: clients/ruby
         run: |
-          sed -i "s/s.version = .*/s.version = \"${{ steps.version.outputs.version }}\"/" tampa_events_api.gemspec
-          cat tampa_events_api.gemspec | head -20
+          # Version is defined in lib/tampa_events_api/version.rb
+          sed -i "s/VERSION = '.*'/VERSION = '${{ steps.version.outputs.version }}'/" lib/tampa_events_api/version.rb
+          cat lib/tampa_events_api/version.rb
 
       - name: Build gem
         working-directory: clients/ruby
