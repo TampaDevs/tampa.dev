@@ -12,6 +12,11 @@ kv_namespaces = [
 [version_metadata]
 binding = "CF_VERSION_METADATA"
 
+# Cron triggers for event aggregation
+# Runs every 30 minutes to fetch fresh data from external sources
+[triggers]
+crons = ["0,30 * * * *"]
+
 [env.pr]
 name = "events-api-pr"
 
@@ -20,3 +25,9 @@ name = "events-api-tampa-dev"
 kv_namespaces = [
   { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" }
 ]
+
+[env.production.version_metadata]
+binding = "CF_VERSION_METADATA"
+
+[env.production.triggers]
+crons = ["0,30 * * * *"]

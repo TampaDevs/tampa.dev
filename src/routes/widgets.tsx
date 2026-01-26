@@ -4,7 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import * as util from '../../lib/utils.js';
 import { WidgetNextEvent, WidgetCarousel } from '../components/index.js';
-import { getCachedResponse, cacheResponse } from '../cache.js';
+import { getCachedResponse, cacheResponse, getDataHash, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
  * Widget query parameters
@@ -74,10 +74,15 @@ const carouselWidgetRoute = createRoute({
 export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // GET /widget/next-event
   app.openapi(nextEventWidgetRoute, async (c) => {
-    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
+    const dataHash = await getDataHash(c.env.kv);
+
+    // Check for conditional request (If-None-Match)
+    if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
+      return createNotModifiedResponse(dataHash);
+    }
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, cacheVersion);
+    const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
     if (cached) {
       return cached;
     }
@@ -88,15 +93,20 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, html, cacheVersion, waitUntil);
+    return cacheResponse(c.req.raw, html, dataHash || undefined, waitUntil);
   });
 
   // GET /widget/carousel
   app.openapi(carouselWidgetRoute, async (c) => {
-    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
+    const dataHash = await getDataHash(c.env.kv);
+
+    // Check for conditional request (If-None-Match)
+    if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
+      return createNotModifiedResponse(dataHash);
+    }
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, cacheVersion);
+    const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
     if (cached) {
       return cached;
     }
@@ -108,6 +118,6 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, html, cacheVersion, waitUntil);
+    return cacheResponse(c.req.raw, html, dataHash || undefined, waitUntil);
   });
 }

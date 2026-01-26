@@ -1,12 +1,61 @@
 /**
  * Cloudflare Cache API wrapper for response caching
  *
- * Caches full responses based on URL with a 30-minute TTL.
- * Cache is automatically invalidated on deployment via version ID.
+ * Uses data hash for cache invalidation - responses are cached indefinitely
+ * until the underlying event data changes (detected via hash).
  */
 
-const CACHE_TTL_SECONDS = 30 * 60; // 30 minutes
-const CACHE_NAME = 'events-api-v1';
+import {
+  CACHE_NAME,
+  METADATA_EDGE_CACHE_TTL,
+  RESPONSE_CACHE_MAX_AGE,
+  STALE_WHILE_REVALIDATE,
+} from './config/cache.js';
+
+/**
+ * Aggregation metadata stored in KV
+ */
+export interface AggregationMetadata {
+  lastRunAt: string;
+  durationMs: number;
+  groupsProcessed: number;
+  groupsFailed: number;
+  dataHash: string;
+  errors: string[];
+}
+
+/**
+ * Get the current data hash from KV metadata
+ * Uses edge caching to avoid KV reads on every request
+ */
+export async function getDataHash(kv: KVNamespace): Promise<string | null> {
+  try {
+    const metadataJson = await kv.get('aggregation_metadata', { cacheTtl: METADATA_EDGE_CACHE_TTL });
+    if (metadataJson) {
+      const metadata: AggregationMetadata = JSON.parse(metadataJson);
+      return metadata.dataHash;
+    }
+  } catch {
+    // Metadata not available
+  }
+  return null;
+}
+
+/**
+ * Get the full aggregation metadata from KV
+ * Uses edge caching to avoid KV reads on every request
+ */
+export async function getAggregationMetadata(kv: KVNamespace): Promise<AggregationMetadata | null> {
+  try {
+    const metadataJson = await kv.get('aggregation_metadata', { cacheTtl: METADATA_EDGE_CACHE_TTL });
+    if (metadataJson) {
+      return JSON.parse(metadataJson);
+    }
+  } catch {
+    // Metadata not available
+  }
+  return null;
+}
 
 /**
  * Generate a hash of the event data (kept for backwards compatibility with tests)
@@ -23,12 +72,13 @@ export function generateDataHash(data: string): string {
 
 /**
  * Build a versioned cache key URL
- * Includes version ID to invalidate cache on deployment
+ * Uses data hash for cache invalidation - when data changes, hash changes,
+ * creating a new cache key and effectively invalidating old cached responses.
  */
-function buildCacheKeyUrl(request: Request, cacheVersion?: string): string {
+function buildCacheKeyUrl(request: Request, dataHash?: string): string {
   const url = new URL(request.url);
-  if (cacheVersion) {
-    url.searchParams.set('_v', cacheVersion);
+  if (dataHash) {
+    url.searchParams.set('_h', dataHash);
   }
   return url.toString();
 }
@@ -38,11 +88,11 @@ function buildCacheKeyUrl(request: Request, cacheVersion?: string): string {
  */
 export async function getCachedResponse(
   request: Request,
-  cacheVersion?: string
+  dataHash?: string
 ): Promise<Response | null> {
   try {
     const cache = await caches.open(CACHE_NAME);
-    const cacheKeyUrl = buildCacheKeyUrl(request, cacheVersion);
+    const cacheKeyUrl = buildCacheKeyUrl(request, dataHash);
 
     const cachedResponse = await cache.match(cacheKeyUrl);
 
@@ -67,13 +117,13 @@ export async function getCachedResponse(
  * Cache a response for the given request
  * @param request - The original request
  * @param response - The response to cache
- * @param cacheVersion - Optional version for cache invalidation
+ * @param dataHash - Data hash for cache key (enables indefinite caching)
  * @param waitUntil - Optional waitUntil function from execution context
  */
 export async function cacheResponse(
   request: Request,
   response: Response,
-  cacheVersion?: string,
+  dataHash?: string,
   waitUntil?: (promise: Promise<unknown>) => void
 ): Promise<Response> {
   // Clone the response first so we can return it
@@ -81,8 +131,19 @@ export async function cacheResponse(
 
   // Create a new response with cache headers for storage
   const headers = new Headers(response.headers);
-  headers.set('Cache-Control', `public, max-age=${CACHE_TTL_SECONDS}`);
+
+  // Use long cache with stale-while-revalidate
+  // The data hash in the URL ensures we get fresh data when content changes
+  headers.set(
+    'Cache-Control',
+    `public, max-age=${RESPONSE_CACHE_MAX_AGE}, stale-while-revalidate=${STALE_WHILE_REVALIDATE}`
+  );
   headers.set('X-Cache', 'MISS');
+
+  // Add ETag based on data hash for conditional requests
+  if (dataHash) {
+    headers.set('ETag', `"${dataHash}"`);
+  }
 
   const responseForClient = new Response(responseToReturn.body, {
     status: responseToReturn.status,
@@ -94,7 +155,7 @@ export async function cacheResponse(
   const cacheOperation = (async () => {
     try {
       const cache = await caches.open(CACHE_NAME);
-      const cacheKeyUrl = buildCacheKeyUrl(request, cacheVersion);
+      const cacheKeyUrl = buildCacheKeyUrl(request, dataHash);
       await cache.put(cacheKeyUrl, responseForClient.clone());
     } catch {
       // Cache API not available or failed - continue without caching
@@ -106,4 +167,31 @@ export async function cacheResponse(
   }
 
   return responseForClient;
+}
+
+/**
+ * Check if the request has a matching ETag (for 304 responses)
+ */
+export function checkConditionalRequest(request: Request, dataHash: string): boolean {
+  const ifNoneMatch = request.headers.get('If-None-Match');
+  if (ifNoneMatch) {
+    // Handle both quoted and unquoted ETags
+    const etag = ifNoneMatch.replace(/^"|"$/g, '').replace(/^W\//, '');
+    return etag === dataHash;
+  }
+  return false;
+}
+
+/**
+ * Create a 304 Not Modified response
+ */
+export function createNotModifiedResponse(dataHash: string): Response {
+  return new Response(null, {
+    status: 304,
+    headers: {
+      'ETag': `"${dataHash}"`,
+      'Cache-Control': `public, max-age=${RESPONSE_CACHE_MAX_AGE}, stale-while-revalidate=${STALE_WHILE_REVALIDATE}`,
+      'X-Cache': 'NOT_MODIFIED',
+    },
+  });
 }

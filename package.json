@@ -31,6 +31,7 @@
     "test": "mocha",
     "test:watch": "mocha --watch",
     "generate-schemas": "tsx scripts/generate-schemas.ts",
-    "generate-openapi": "tsx scripts/generate-openapi.ts"
+    "generate-openapi": "tsx scripts/generate-openapi.ts",
+    "aggregate": "tsx scripts/run-aggregation.ts"
   }
 }
