@@ -36,5 +36,4 @@ model__service_status_get_200_response_aggregation.go
 model__service_status_get_200_response_groups_inner.go
 model__service_status_get_200_response_platforms_inner.go
 response.go
-test/api_service_test.go
 utils.go

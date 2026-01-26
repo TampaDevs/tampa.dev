@@ -47,9 +47,4 @@ tampa_events_api/py.typed
 tampa_events_api/rest.py
 test-requirements.txt
 test/__init__.py
-test/test_service_api.py
-test/test_service_status_get200_response.py
-test/test_service_status_get200_response_aggregation.py
-test/test_service_status_get200_response_groups_inner.py
-test/test_service_status_get200_response_platforms_inner.py
 tox.ini
