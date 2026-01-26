@@ -4,6 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import { FeedController } from '../controllers/FeedController.js';
 import { EventQuerySchema } from './events.js';
+import { getCachedResponse, cacheResponse } from '../cache.js';
 
 /**
  * GET /2026-01-25/rss - RSS feed
@@ -131,24 +132,56 @@ const webcalRoute = createRoute({
 export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // RSS handler
   const rssHandler = async (c: any) => {
+    // Get data hash for cache key
+    const dataHash = await EventController.getDataHash(c);
+
+    // Check cache first
+    const cached = await getCachedResponse(c.req.raw, dataHash);
+    if (cached) {
+      return cached;
+    }
+
+    // Generate fresh response
     const events = await EventController.getAllEvents(c);
     const rss = FeedController.generateRSS(events, c.req.raw);
 
-    c.header('Content-Type', 'application/rss+xml; charset=utf-8');
-    c.header('Cache-Control', 'public, max-age=3600');
+    const response = new Response(rss, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=1800',
+      },
+    });
 
-    return c.text(rss);
+    // Cache and return
+    return cacheResponse(c.req.raw, response, dataHash);
   };
 
   // iCalendar handler
   const icalHandler = async (c: any) => {
+    // Get data hash for cache key
+    const dataHash = await EventController.getDataHash(c);
+
+    // Check cache first
+    const cached = await getCachedResponse(c.req.raw, dataHash);
+    if (cached) {
+      return cached;
+    }
+
+    // Generate fresh response
     const events = await EventController.getAllEvents(c);
     const ical = FeedController.generateICal(events);
 
-    c.header('Content-Type', 'text/calendar; charset=utf-8');
-    c.header('Cache-Control', 'public, max-age=3600');
+    const response = new Response(ical, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/calendar; charset=utf-8',
+        'Cache-Control': 'public, max-age=1800',
+      },
+    });
 
-    return c.text(ical);
+    // Cache and return
+    return cacheResponse(c.req.raw, response, dataHash);
   };
 
   // Versioned RSS routes

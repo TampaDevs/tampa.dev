@@ -2,6 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
+import { getCachedResponse, cacheResponse } from '../cache.js';
 
 /**
  * Query parameters schema for event filtering
@@ -12,8 +13,8 @@ export const EventQuerySchema = z.object({
       name: 'groups',
       in: 'query',
     },
-    description: 'Comma-separated list of group urlnames to filter (e.g., "tampa-devs,suncoast-js")',
-    example: 'tampa-devs,suncoast-js',
+    description: 'Comma-separated list of group urlnames to filter (e.g., "tampadevs,suncoast-js")',
+    example: 'tampadevs,suncoast-js',
   }),
   noonline: z.string().optional().openapi({
     param: {
@@ -142,14 +143,30 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for all events
   const allEventsHandler = async (c: any) => {
     try {
+      // Get data hash for cache key
+      const dataHash = await EventController.getDataHash(c);
+
+      // Check cache first
+      const cached = await getCachedResponse(c.req.raw, dataHash);
+      if (cached) {
+        return cached;
+      }
+
+      // Generate fresh response
       const events = await EventController.getAllEvents(c);
       const json = events.map((e) => e.toJSON()) as z.infer<typeof EventResponseSchema>[];
 
-      c.header('Content-Type', 'application/json');
-      c.header('Cache-Control', 'public, max-age=3600');
-      c.header('ETag', EventController.generateETag(json));
+      const response = new Response(JSON.stringify(json), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=1800',
+          'ETag': EventController.generateETag(json),
+        },
+      });
 
-      return c.json(json, 200);
+      // Cache and return
+      return cacheResponse(c.req.raw, response, dataHash);
     } catch (error) {
       return c.text('No event data available', 503);
     }
@@ -158,14 +175,30 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for next events
   const nextEventsHandler = async (c: any) => {
     try {
+      // Get data hash for cache key
+      const dataHash = await EventController.getDataHash(c);
+
+      // Check cache first
+      const cached = await getCachedResponse(c.req.raw, dataHash);
+      if (cached) {
+        return cached;
+      }
+
+      // Generate fresh response
       const events = await EventController.getNextEvents(c);
       const json = events.map((e) => e.toJSON()) as z.infer<typeof EventResponseSchema>[];
 
-      c.header('Content-Type', 'application/json');
-      c.header('Cache-Control', 'public, max-age=3600');
-      c.header('ETag', EventController.generateETag(json));
+      const response = new Response(JSON.stringify(json), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=1800',
+          'ETag': EventController.generateETag(json),
+        },
+      });
 
-      return c.json(json, 200);
+      // Cache and return
+      return cacheResponse(c.req.raw, response, dataHash);
     } catch (error) {
       return c.text('No event data available', 503);
     }
