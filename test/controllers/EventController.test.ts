@@ -35,7 +35,7 @@ describe('EventController', () => {
       const rawData = await EventController.loadRawData(c);
 
       expect(rawData).to.be.an('object');
-      expect(rawData).to.have.property('tampa-devs');
+      expect(rawData).to.have.property('tampadevs');
     });
 
     it('should throw error when no data available', async () => {
@@ -55,7 +55,7 @@ describe('EventController', () => {
   describe('getQueryParams()', () => {
     it('should extract query parameters', () => {
       const c = createMockContext({
-        groups: 'tampa-devs,suncoast-js',
+        groups: 'tampadevs,suncoast-js',
         noonline: '1',
         within_days: '7',
       });
@@ -63,7 +63,7 @@ describe('EventController', () => {
       const params = EventController.getQueryParams(c);
 
       expect(params).to.deep.equal({
-        groups: 'tampa-devs,suncoast-js',
+        groups: 'tampadevs,suncoast-js',
         noonline: '1',
         within_days: '7',
       });
@@ -90,12 +90,12 @@ describe('EventController', () => {
     });
 
     it('should filter events by groups param', async () => {
-      const c = createMockContext({ groups: 'tampa-devs' });
+      const c = createMockContext({ groups: 'tampadevs' });
       const events = await EventController.loadEvents(c);
 
       expect(events).to.be.an('array');
       events.forEach(event => {
-        expect(event.group.urlname).to.equal('tampa-devs');
+        expect(event.group.urlname).to.equal('tampadevs');
       });
     });
   });

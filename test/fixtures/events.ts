@@ -25,8 +25,8 @@ export const testGroups = {
   tampadevs: new Group({
     id: 'group-1',
     name: 'Tampa Devs',
-    urlname: 'tampa-devs',
-    link: 'https://www.meetup.com/tampa-devs',
+    urlname: 'tampadevs',
+    link: 'https://www.meetup.com/tampadevs',
     memberCount: 5000,
   }),
   suncoastjs: new Group({
@@ -54,7 +54,7 @@ export const testEvents = {
     description: 'Join us for our monthly meetup!',
     dateTime: daysFromNow(2),
     duration: 'PT2H',
-    eventUrl: 'https://www.meetup.com/tampa-devs/events/event-1',
+    eventUrl: 'https://www.meetup.com/tampadevs/events/event-1',
     status: EventStatus.ACTIVE,
     eventType: EventType.PHYSICAL,
     rsvpCount: 45,
@@ -76,7 +76,7 @@ export const testEvents = {
     description: 'Hands-on coding workshop',
     dateTime: daysFromNow(10),
     duration: 'PT3H',
-    eventUrl: 'https://www.meetup.com/tampa-devs/events/event-2',
+    eventUrl: 'https://www.meetup.com/tampadevs/events/event-2',
     status: EventStatus.ACTIVE,
     eventType: EventType.HYBRID,
     rsvpCount: 30,
@@ -141,7 +141,7 @@ export const testEvents = {
     description: 'This event was cancelled',
     dateTime: daysFromNow(7),
     duration: 'PT2H',
-    eventUrl: 'https://www.meetup.com/tampa-devs/events/event-5',
+    eventUrl: 'https://www.meetup.com/tampadevs/events/event-5',
     status: EventStatus.CANCELLED,
     eventType: EventType.PHYSICAL,
     rsvpCount: 0,
@@ -160,7 +160,7 @@ export const testEvents = {
     description: 'Quick meetup happening soon!',
     dateTime: hoursFromNow(12),
     duration: 'PT1H30M',
-    eventUrl: 'https://www.meetup.com/tampa-devs/events/event-6',
+    eventUrl: 'https://www.meetup.com/tampadevs/events/event-6',
     status: EventStatus.ACTIVE,
     eventType: EventType.PHYSICAL,
     rsvpCount: 10,
@@ -181,11 +181,11 @@ export const allTestEvents = Object.values(testEvents);
 
 // Mock Meetup API data structure
 export const mockMeetupData = {
-  'tampa-devs': {
+  'tampadevs': {
     id: 'group-1',
     name: 'Tampa Devs',
-    urlname: 'tampa-devs',
-    link: 'https://www.meetup.com/tampa-devs',
+    urlname: 'tampadevs',
+    link: 'https://www.meetup.com/tampadevs',
     memberCount: 5000,
     keyGroupPhoto: {
       id: 'photo-1',
@@ -208,7 +208,7 @@ export const mockMeetupData = {
             description: 'Join us for our monthly meetup!',
             dateTime: daysFromNow(2),
             duration: 'PT2H',
-            eventUrl: 'https://www.meetup.com/tampa-devs/events/event-1',
+            eventUrl: 'https://www.meetup.com/tampadevs/events/event-1',
             going: 45,
             eventType: 'PHYSICAL',
             status: 'ACTIVE',
