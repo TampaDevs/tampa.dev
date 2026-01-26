@@ -66,9 +66,9 @@ const EventResponseSchema = z.object({
   venues: z.array(z.any()),
   photo: z.any().optional(),
   group: z.any(),
-  address: z.string().nullable(),
-  googleMapsUrl: z.string().nullable(),
-  photoUrl: z.string().nullable(),
+  address: z.string().nullish(),
+  googleMapsUrl: z.string().nullish(),
+  photoUrl: z.string().nullish(),
   isOnline: z.boolean(),
 });
 

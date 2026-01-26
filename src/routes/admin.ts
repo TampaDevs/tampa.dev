@@ -34,14 +34,14 @@ const serviceStatusRoute = createRoute({
             totalGroups: z.number(),
             aggregation: z
               .object({
-                lastRunAt: z.string().nullable(),
-                durationMs: z.number().nullable(),
-                groupsProcessed: z.number().nullable(),
-                groupsFailed: z.number().nullable(),
-                dataHash: z.string().nullable(),
+                lastRunAt: z.string().nullish(),
+                durationMs: z.number().nullish(),
+                groupsProcessed: z.number().nullish(),
+                groupsFailed: z.number().nullish(),
+                dataHash: z.string().nullish(),
                 errors: z.array(z.string()),
               })
-              .nullable(),
+              .nullish(),
           }),
         },
       },
