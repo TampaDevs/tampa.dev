@@ -4,6 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import { EventQuerySchema } from './events.js';
 import { EventsPage } from '../components/index.js';
+import { getCachedResponse, cacheResponse } from '../cache.js';
 
 /**
  * GET /html - HTML page with upcoming events
@@ -58,13 +59,21 @@ const upcomingEventsRoute = createRoute({
  */
 export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   const htmlHandler = async (c: any) => {
+    // Get data hash for cache key
+    const dataHash = await EventController.getDataHash(c);
+
+    // Check cache first
+    const cached = await getCachedResponse(c.req.raw, dataHash);
+    if (cached) {
+      return cached;
+    }
+
+    // Generate fresh response
     const nextEvents = await EventController.getNextEvents(c);
+    const html = await c.html(<EventsPage events={nextEvents} />);
 
-    c.header('Content-Type', 'text/html; charset=utf-8');
-    c.header('Cache-Control', 'public, max-age=3600');
-    c.header('Etag', EventController.generateETag({ events: nextEvents }));
-
-    return c.html(<EventsPage events={nextEvents} />);
+    // Cache and return
+    return cacheResponse(c.req.raw, html, dataHash);
   };
 
   app.openapi(htmlPageRoute, htmlHandler);

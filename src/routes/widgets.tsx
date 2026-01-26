@@ -4,6 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import * as util from '../../lib/utils.js';
 import { WidgetNextEvent, WidgetCarousel } from '../components/index.js';
+import { getCachedResponse, cacheResponse } from '../cache.js';
 
 /**
  * Widget query parameters
@@ -73,24 +74,40 @@ const carouselWidgetRoute = createRoute({
 export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // GET /widget/next-event
   app.openapi(nextEventWidgetRoute, async (c) => {
+    // Get data hash for cache key
+    const dataHash = await EventController.getDataHash(c);
+
+    // Check cache first
+    const cached = await getCachedResponse(c.req.raw, dataHash);
+    if (cached) {
+      return cached;
+    }
+
+    // Generate fresh response
     const events = await EventController.getNextEvents(c);
+    const html = await c.html(<WidgetNextEvent events={events} />);
 
-    c.header('Content-Type', 'text/html; charset=utf-8');
-    c.header('Cache-Control', 'public, max-age=3600');
-    c.header('Etag', EventController.generateETag({ events }));
-
-    return c.html(<WidgetNextEvent events={events} />);
+    // Cache and return
+    return cacheResponse(c.req.raw, html, dataHash);
   });
 
   // GET /widget/carousel
   app.openapi(carouselWidgetRoute, async (c) => {
+    // Get data hash for cache key
+    const dataHash = await EventController.getDataHash(c);
+
+    // Check cache first
+    const cached = await getCachedResponse(c.req.raw, dataHash);
+    if (cached) {
+      return cached;
+    }
+
+    // Generate fresh response
     const events = await EventController.getAllEvents(c);
     const sortedEvents = util.getSortedEvents(events);
+    const html = await c.html(<WidgetCarousel events={sortedEvents} />);
 
-    c.header('Content-Type', 'text/html; charset=utf-8');
-    c.header('Cache-Control', 'public, max-age=3600');
-    c.header('Etag', EventController.generateETag({ events: sortedEvents }));
-
-    return c.html(<WidgetCarousel events={sortedEvents} />);
+    // Cache and return
+    return cacheResponse(c.req.raw, html, dataHash);
   });
 }
