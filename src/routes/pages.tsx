@@ -4,7 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import { EventQuerySchema } from './events.js';
 import { EventsPage } from '../components/index.js';
-import { getCachedResponse, cacheResponse } from '../cache.js';
+import { getCachedResponse, cacheResponse, getDataHash, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
  * GET /html - HTML page with upcoming events
@@ -59,10 +59,15 @@ const upcomingEventsRoute = createRoute({
  */
 export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   const htmlHandler = async (c: any) => {
-    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
+    const dataHash = await getDataHash(c.env.kv);
+
+    // Check for conditional request (If-None-Match)
+    if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
+      return createNotModifiedResponse(dataHash);
+    }
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, cacheVersion);
+    const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
     if (cached) {
       return cached;
     }
@@ -73,7 +78,7 @@ export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, html, cacheVersion, waitUntil);
+    return cacheResponse(c.req.raw, html, dataHash || undefined, waitUntil);
   };
 
   app.openapi(htmlPageRoute, htmlHandler);

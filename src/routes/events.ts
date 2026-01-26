@@ -2,7 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
-import { getCachedResponse, cacheResponse } from '../cache.js';
+import { getCachedResponse, cacheResponse, getDataHash, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
  * Query parameters schema for event filtering
@@ -143,10 +143,16 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for all events
   const allEventsHandler = async (c: any) => {
     try {
-      const cacheVersion = c.env.CF_VERSION_METADATA?.id;
+      // Get data hash for cache key (enables indefinite caching until data changes)
+      const dataHash = await getDataHash(c.env.kv);
+
+      // Check for conditional request (If-None-Match)
+      if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
+        return createNotModifiedResponse(dataHash);
+      }
 
       // Check cache first
-      const cached = await getCachedResponse(c.req.raw, cacheVersion);
+      const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
       if (cached) {
         return cached;
       }
@@ -159,14 +165,12 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=1800',
-          'ETag': EventController.generateETag(json),
         },
       });
 
       // Cache and return (pass waitUntil to ensure cache operation completes)
       const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-      return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
+      return cacheResponse(c.req.raw, response, dataHash || undefined, waitUntil);
     } catch (error) {
       return c.text('No event data available', 503);
     }
@@ -175,10 +179,16 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for next events
   const nextEventsHandler = async (c: any) => {
     try {
-      const cacheVersion = c.env.CF_VERSION_METADATA?.id;
+      // Get data hash for cache key (enables indefinite caching until data changes)
+      const dataHash = await getDataHash(c.env.kv);
+
+      // Check for conditional request (If-None-Match)
+      if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
+        return createNotModifiedResponse(dataHash);
+      }
 
       // Check cache first
-      const cached = await getCachedResponse(c.req.raw, cacheVersion);
+      const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
       if (cached) {
         return cached;
       }
@@ -191,14 +201,12 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=1800',
-          'ETag': EventController.generateETag(json),
         },
       });
 
       // Cache and return (pass waitUntil to ensure cache operation completes)
       const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-      return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
+      return cacheResponse(c.req.raw, response, dataHash || undefined, waitUntil);
     } catch (error) {
       return c.text('No event data available', 503);
     }

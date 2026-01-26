@@ -68,6 +68,31 @@ export interface AggregationResult {
 }
 
 /**
+ * Metadata stored alongside aggregated data for caching and diagnostics
+ */
+export interface AggregationMetadata {
+  lastRunAt: string; // ISO 8601 timestamp
+  durationMs: number;
+  groupsProcessed: number;
+  groupsFailed: number;
+  dataHash: string;
+  errors: string[];
+}
+
+/**
+ * Generate a hash of the data for cache invalidation
+ */
+function generateDataHash(data: string): string {
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    const char = data.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+/**
  * Run the event aggregation process
  *
  * Fetches events from all configured platforms and stores
@@ -154,12 +179,30 @@ export async function runAggregation(env: Env): Promise<AggregationResult> {
     }
   }
 
-  // Store aggregated data in KV
+  // Store aggregated data and metadata in KV
+  result.durationMs = Date.now() - startTime;
+
   if (result.groupsProcessed > 0) {
     try {
-      await env.kv.put('event_data', JSON.stringify(aggregatedData));
+      const eventDataJson = JSON.stringify(aggregatedData);
+      const dataHash = generateDataHash(eventDataJson);
+
+      // Store event data
+      await env.kv.put('event_data', eventDataJson);
+
+      // Store metadata for caching and diagnostics
+      const metadata: AggregationMetadata = {
+        lastRunAt: new Date().toISOString(),
+        durationMs: result.durationMs,
+        groupsProcessed: result.groupsProcessed,
+        groupsFailed: result.groupsFailed,
+        dataHash,
+        errors: result.errors,
+      };
+      await env.kv.put('aggregation_metadata', JSON.stringify(metadata));
+
       result.success = true;
-      console.log(`Stored ${result.groupsProcessed} groups in KV`);
+      console.log(`Stored ${result.groupsProcessed} groups in KV (hash: ${dataHash})`);
     } catch (error) {
       const errorMsg = `Failed to store data in KV: ${error instanceof Error ? error.message : 'Unknown error'}`;
       result.errors.push(errorMsg);
@@ -167,6 +210,5 @@ export async function runAggregation(env: Env): Promise<AggregationResult> {
     }
   }
 
-  result.durationMs = Date.now() - startTime;
   return result;
 }

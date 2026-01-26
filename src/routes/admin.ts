@@ -1,6 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
+import { getAggregationMetadata } from '../cache.js';
 
 /**
  * GET /service/status - Service status and configuration info
@@ -10,7 +11,7 @@ const serviceStatusRoute = createRoute({
   path: '/service/status',
   summary: 'Service status',
   description:
-    'Returns service status and configuration information, including which event platforms are configured.',
+    'Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.',
   tags: ['Service'],
   responses: {
     200: {
@@ -24,7 +25,23 @@ const serviceStatusRoute = createRoute({
                 configured: z.boolean(),
               })
             ),
+            groups: z.array(
+              z.object({
+                urlname: z.string(),
+                platform: z.string(),
+              })
+            ),
             totalGroups: z.number(),
+            aggregation: z
+              .object({
+                lastRunAt: z.string().nullable(),
+                durationMs: z.number().nullable(),
+                groupsProcessed: z.number().nullable(),
+                groupsFailed: z.number().nullable(),
+                dataHash: z.string().nullable(),
+                errors: z.array(z.string()),
+              })
+              .nullable(),
           }),
         },
       },
@@ -47,11 +64,32 @@ export function registerAdminRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       configured: p.isConfigured(c.env),
     }));
 
-    const totalGroups = getAllGroups().length;
+    const groups = getAllGroups().map((g: any) => ({
+      urlname: g.urlname,
+      platform: g.platform,
+    }));
+
+    const totalGroups = groups.length;
+
+    // Get aggregation metadata from KV
+    const metadata = await getAggregationMetadata(c.env.kv);
+
+    const aggregation = metadata
+      ? {
+          lastRunAt: metadata.lastRunAt,
+          durationMs: metadata.durationMs,
+          groupsProcessed: metadata.groupsProcessed,
+          groupsFailed: metadata.groupsFailed,
+          dataHash: metadata.dataHash,
+          errors: metadata.errors,
+        }
+      : null;
 
     return c.json({
       platforms,
+      groups,
       totalGroups,
+      aggregation,
     });
   });
 }

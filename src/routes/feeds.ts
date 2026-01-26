@@ -4,7 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import { FeedController } from '../controllers/FeedController.js';
 import { EventQuerySchema } from './events.js';
-import { getCachedResponse, cacheResponse } from '../cache.js';
+import { getCachedResponse, cacheResponse, getDataHash, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
  * GET /2026-01-25/rss - RSS feed
@@ -132,10 +132,15 @@ const webcalRoute = createRoute({
 export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // RSS handler
   const rssHandler = async (c: any) => {
-    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
+    const dataHash = await getDataHash(c.env.kv);
+
+    // Check for conditional request (If-None-Match)
+    if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
+      return createNotModifiedResponse(dataHash);
+    }
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, cacheVersion);
+    const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
     if (cached) {
       return cached;
     }
@@ -148,21 +153,25 @@ export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       status: 200,
       headers: {
         'Content-Type': 'application/rss+xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=1800',
       },
     });
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
+    return cacheResponse(c.req.raw, response, dataHash || undefined, waitUntil);
   };
 
   // iCalendar handler
   const icalHandler = async (c: any) => {
-    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
+    const dataHash = await getDataHash(c.env.kv);
+
+    // Check for conditional request (If-None-Match)
+    if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
+      return createNotModifiedResponse(dataHash);
+    }
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, cacheVersion);
+    const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
     if (cached) {
       return cached;
     }
@@ -175,13 +184,12 @@ export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       status: 200,
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Cache-Control': 'public, max-age=1800',
       },
     });
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, response, cacheVersion, waitUntil);
+    return cacheResponse(c.req.raw, response, dataHash || undefined, waitUntil);
   };
 
   // Versioned RSS routes
