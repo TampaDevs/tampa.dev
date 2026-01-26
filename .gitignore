@@ -7,6 +7,7 @@ assets/*
 .claude/
 
 # Generated clients - ignore build artifacts but keep source
+openapitools.json
 clients/**/node_modules/
 clients/**/__pycache__/
 clients/**/*.pyc
