@@ -6,6 +6,7 @@ api_events.go
 api_feeds.go
 api_pages.go
 api_schemas.go
+api_service.go
 api_widgets.go
 client.go
 configuration.go
@@ -17,6 +18,11 @@ docs/EventsAPI.md
 docs/FeedsAPI.md
 docs/PagesAPI.md
 docs/SchemasAPI.md
+docs/ServiceAPI.md
+docs/ServiceStatusGet200Response.md
+docs/ServiceStatusGet200ResponseAggregation.md
+docs/ServiceStatusGet200ResponseGroupsInner.md
+docs/ServiceStatusGet200ResponsePlatformsInner.md
 docs/WidgetsAPI.md
 git_push.sh
 go.mod
@@ -25,5 +31,10 @@ model__2026_01_25_events_get_200_response_inner.go
 model__2026_01_25_schemas__name__get_404_response.go
 model__2026_01_25_schemas_get_200_response.go
 model__2026_01_25_schemas_get_200_response_schemas_inner.go
+model__service_status_get_200_response.go
+model__service_status_get_200_response_aggregation.go
+model__service_status_get_200_response_groups_inner.go
+model__service_status_get_200_response_platforms_inner.go
 response.go
+test/api_service_test.go
 utils.go

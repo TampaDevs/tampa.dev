@@ -14,6 +14,11 @@ docs/EventsApi.md
 docs/FeedsApi.md
 docs/PagesApi.md
 docs/SchemasApi.md
+docs/ServiceApi.md
+docs/ServiceStatusGet200Response.md
+docs/ServiceStatusGet200ResponseAggregation.md
+docs/ServiceStatusGet200ResponseGroupsInner.md
+docs/ServiceStatusGet200ResponsePlatformsInner.md
 docs/WidgetsApi.md
 git_push.sh
 lib/tampa_events_api.rb
@@ -21,6 +26,7 @@ lib/tampa_events_api/api/events_api.rb
 lib/tampa_events_api/api/feeds_api.rb
 lib/tampa_events_api/api/pages_api.rb
 lib/tampa_events_api/api/schemas_api.rb
+lib/tampa_events_api/api/service_api.rb
 lib/tampa_events_api/api/widgets_api.rb
 lib/tampa_events_api/api_client.rb
 lib/tampa_events_api/api_error.rb
@@ -30,6 +36,15 @@ lib/tampa_events_api/models/20260125_events_get200_response_inner.rb
 lib/tampa_events_api/models/20260125_schemas_get200_response.rb
 lib/tampa_events_api/models/20260125_schemas_get200_response_schemas_inner.rb
 lib/tampa_events_api/models/20260125_schemas_name_get404_response.rb
+lib/tampa_events_api/models/service_status_get200_response.rb
+lib/tampa_events_api/models/service_status_get200_response_aggregation.rb
+lib/tampa_events_api/models/service_status_get200_response_groups_inner.rb
+lib/tampa_events_api/models/service_status_get200_response_platforms_inner.rb
 lib/tampa_events_api/version.rb
+spec/api/service_api_spec.rb
+spec/models/service_status_get200_response_aggregation_spec.rb
+spec/models/service_status_get200_response_groups_inner_spec.rb
+spec/models/service_status_get200_response_platforms_inner_spec.rb
+spec/models/service_status_get200_response_spec.rb
 spec/spec_helper.rb
 tampa_events_api.gemspec

@@ -1044,6 +1044,114 @@
           }
         }
       }
+    },
+    "/service/status": {
+      "get": {
+        "summary": "Service status",
+        "description": "Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.",
+        "tags": [
+          "Service"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "platforms": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "configured": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "configured"
+                        ]
+                      }
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "urlname": {
+                            "type": "string"
+                          },
+                          "platform": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "urlname",
+                          "platform"
+                        ]
+                      }
+                    },
+                    "totalGroups": {
+                      "type": "number"
+                    },
+                    "aggregation": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "lastRunAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "durationMs": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "groupsProcessed": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "groupsFailed": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "dataHash": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "errors": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "lastRunAt",
+                        "durationMs",
+                        "groupsProcessed",
+                        "groupsFailed",
+                        "dataHash",
+                        "errors"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "platforms",
+                    "groups",
+                    "totalGroups",
+                    "aggregation"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -659,6 +659,20 @@ paths:
       summary: Upcoming events HTML page
       tags:
       - Pages
+  /service/status:
+    get:
+      description: "Returns service status and configuration information, including\
+        \ platforms, groups, and aggregation diagnostics."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_service_status_get_200_response"
+          description: Service status
+      summary: Service status
+      tags:
+      - Service
 components:
   parameters: {}
   schemas:
@@ -798,3 +812,105 @@ components:
       required:
       - available
       - error
+    _service_status_get_200_response_platforms_inner:
+      example:
+        configured: true
+        name: name
+      properties:
+        name:
+          type: string
+        configured:
+          type: boolean
+      required:
+      - configured
+      - name
+    _service_status_get_200_response_groups_inner:
+      example:
+        urlname: urlname
+        platform: platform
+      properties:
+        urlname:
+          type: string
+        platform:
+          type: string
+      required:
+      - platform
+      - urlname
+    _service_status_get_200_response_aggregation:
+      example:
+        lastRunAt: lastRunAt
+        groupsProcessed: 1.4658129805029452
+        dataHash: dataHash
+        groupsFailed: 5.962133916683182
+        durationMs: 6.027456183070403
+        errors:
+        - errors
+        - errors
+      properties:
+        lastRunAt:
+          type: string
+          nullable: true
+        durationMs:
+          type: number
+          nullable: true
+        groupsProcessed:
+          type: number
+          nullable: true
+        groupsFailed:
+          type: number
+          nullable: true
+        dataHash:
+          type: string
+          nullable: true
+        errors:
+          items:
+            type: string
+          type: array
+      required:
+      - dataHash
+      - durationMs
+      - errors
+      - groupsFailed
+      - groupsProcessed
+      - lastRunAt
+      nullable: true
+    _service_status_get_200_response:
+      example:
+        groups:
+        - urlname: urlname
+          platform: platform
+        - urlname: urlname
+          platform: platform
+        totalGroups: 0.8008281904610115
+        aggregation:
+          lastRunAt: lastRunAt
+          groupsProcessed: 1.4658129805029452
+          dataHash: dataHash
+          groupsFailed: 5.962133916683182
+          durationMs: 6.027456183070403
+          errors:
+          - errors
+          - errors
+        platforms:
+        - configured: true
+          name: name
+        - configured: true
+          name: name
+      properties:
+        platforms:
+          items:
+            $ref: "#/components/schemas/_service_status_get_200_response_platforms_inner"
+          type: array
+        groups:
+          items:
+            $ref: "#/components/schemas/_service_status_get_200_response_groups_inner"
+          type: array
+        totalGroups:
+          type: number
+        aggregation:
+          $ref: "#/components/schemas/_service_status_get_200_response_aggregation"
+      required:
+      - aggregation
+      - groups
+      - platforms
+      - totalGroups
