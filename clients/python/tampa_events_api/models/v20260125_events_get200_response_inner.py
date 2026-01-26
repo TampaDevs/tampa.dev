@@ -38,9 +38,9 @@ class V20260125EventsGet200ResponseInner(BaseModel):
     venues: List[Any]
     photo: Optional[Any] = None
     group: Optional[Any] = None
-    address: StrictStr
-    google_maps_url: StrictStr = Field(alias="googleMapsUrl")
-    photo_url: StrictStr = Field(alias="photoUrl")
+    address: Optional[StrictStr] = None
+    google_maps_url: Optional[StrictStr] = Field(default=None, alias="googleMapsUrl")
+    photo_url: Optional[StrictStr] = Field(default=None, alias="photoUrl")
     is_online: StrictBool = Field(alias="isOnline")
     __properties: ClassVar[List[str]] = ["id", "title", "description", "dateTime", "duration", "eventUrl", "status", "eventType", "rsvpCount", "venues", "photo", "group", "address", "googleMapsUrl", "photoUrl", "isOnline"]
 

@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **platforms** | [**List[VServiceStatusGet200ResponsePlatformsInner]**](VServiceStatusGet200ResponsePlatformsInner.md) |  | 
 **groups** | [**List[VServiceStatusGet200ResponseGroupsInner]**](VServiceStatusGet200ResponseGroupsInner.md) |  | 
 **total_groups** | **float** |  | 
-**aggregation** | [**VServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | 
+**aggregation** | [**VServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | [optional] 
 
 ## Example
 

@@ -7,7 +7,7 @@
 | **platforms** | [**Array&lt;VServiceStatusGet200ResponsePlatformsInner&gt;**](VServiceStatusGet200ResponsePlatformsInner.md) |  |  |
 | **groups** | [**Array&lt;VServiceStatusGet200ResponseGroupsInner&gt;**](VServiceStatusGet200ResponseGroupsInner.md) |  |  |
 | **total_groups** | **Float** |  |  |
-| **aggregation** | [**VServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  |  |
+| **aggregation** | [**VServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | [optional] |
 
 ## Example
 

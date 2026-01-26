@@ -7,13 +7,13 @@ Name | Type | Description | Notes
 **Platforms** | [**[]VVServiceStatusGet200ResponsePlatformsInner**](VVServiceStatusGet200ResponsePlatformsInner.md) |  | 
 **Groups** | [**[]VVServiceStatusGet200ResponseGroupsInner**](VVServiceStatusGet200ResponseGroupsInner.md) |  | 
 **TotalGroups** | **float32** |  | 
-**Aggregation** | [**VVServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | 
+**Aggregation** | Pointer to [**VVServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | [optional] 
 
 ## Methods
 
 ### NewVServiceStatusGet200Response
 
-`func NewVServiceStatusGet200Response(platforms []VVServiceStatusGet200ResponsePlatformsInner, groups []VVServiceStatusGet200ResponseGroupsInner, totalGroups float32, aggregation VVServiceStatusGet200ResponseAggregation, ) *VServiceStatusGet200Response`
+`func NewVServiceStatusGet200Response(platforms []VVServiceStatusGet200ResponsePlatformsInner, groups []VVServiceStatusGet200ResponseGroupsInner, totalGroups float32, ) *VServiceStatusGet200Response`
 
 NewVServiceStatusGet200Response instantiates a new VServiceStatusGet200Response object
 This constructor will assign default values to properties that have it defined,
@@ -107,6 +107,11 @@ and a boolean to check if the value has been set.
 
 SetAggregation sets Aggregation field to given value.
 
+### HasAggregation
+
+`func (o *VServiceStatusGet200Response) HasAggregation() bool`
+
+HasAggregation returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

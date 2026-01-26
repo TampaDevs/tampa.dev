@@ -33,9 +33,9 @@ type V20260125EventsGet200ResponseInner struct {
 	Venues []interface{} `json:"venues"`
 	Photo interface{} `json:"photo,omitempty"`
 	Group interface{} `json:"group,omitempty"`
-	Address string `json:"address"`
-	GoogleMapsUrl string `json:"googleMapsUrl"`
-	PhotoUrl string `json:"photoUrl"`
+	Address *string `json:"address,omitempty"`
+	GoogleMapsUrl *string `json:"googleMapsUrl,omitempty"`
+	PhotoUrl *string `json:"photoUrl,omitempty"`
 	IsOnline bool `json:"isOnline"`
 }
 
@@ -45,7 +45,7 @@ type _V20260125EventsGet200ResponseInner V20260125EventsGet200ResponseInner
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewV20260125EventsGet200ResponseInner(id string, title string, dateTime string, eventUrl string, status string, rsvpCount float32, venues []interface{}, address string, googleMapsUrl string, photoUrl string, isOnline bool) *V20260125EventsGet200ResponseInner {
+func NewV20260125EventsGet200ResponseInner(id string, title string, dateTime string, eventUrl string, status string, rsvpCount float32, venues []interface{}, isOnline bool) *V20260125EventsGet200ResponseInner {
 	this := V20260125EventsGet200ResponseInner{}
 	this.Id = id
 	this.Title = title
@@ -54,9 +54,6 @@ func NewV20260125EventsGet200ResponseInner(id string, title string, dateTime str
 	this.Status = status
 	this.RsvpCount = rsvpCount
 	this.Venues = venues
-	this.Address = address
-	this.GoogleMapsUrl = googleMapsUrl
-	this.PhotoUrl = photoUrl
 	this.IsOnline = isOnline
 	return &this
 }
@@ -399,76 +396,100 @@ func (o *V20260125EventsGet200ResponseInner) SetGroup(v interface{}) {
 	o.Group = v
 }
 
-// GetAddress returns the Address field value
+// GetAddress returns the Address field value if set, zero value otherwise.
 func (o *V20260125EventsGet200ResponseInner) GetAddress() string {
-	if o == nil {
+	if o == nil || IsNil(o.Address) {
 		var ret string
 		return ret
 	}
-
-	return o.Address
+	return *o.Address
 }
 
-// GetAddressOk returns a tuple with the Address field value
+// GetAddressOk returns a tuple with the Address field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *V20260125EventsGet200ResponseInner) GetAddressOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Address) {
 		return nil, false
 	}
-	return &o.Address, true
+	return o.Address, true
 }
 
-// SetAddress sets field value
+// HasAddress returns a boolean if a field has been set.
+func (o *V20260125EventsGet200ResponseInner) HasAddress() bool {
+	if o != nil && !IsNil(o.Address) {
+		return true
+	}
+
+	return false
+}
+
+// SetAddress gets a reference to the given string and assigns it to the Address field.
 func (o *V20260125EventsGet200ResponseInner) SetAddress(v string) {
-	o.Address = v
+	o.Address = &v
 }
 
-// GetGoogleMapsUrl returns the GoogleMapsUrl field value
+// GetGoogleMapsUrl returns the GoogleMapsUrl field value if set, zero value otherwise.
 func (o *V20260125EventsGet200ResponseInner) GetGoogleMapsUrl() string {
-	if o == nil {
+	if o == nil || IsNil(o.GoogleMapsUrl) {
 		var ret string
 		return ret
 	}
-
-	return o.GoogleMapsUrl
+	return *o.GoogleMapsUrl
 }
 
-// GetGoogleMapsUrlOk returns a tuple with the GoogleMapsUrl field value
+// GetGoogleMapsUrlOk returns a tuple with the GoogleMapsUrl field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *V20260125EventsGet200ResponseInner) GetGoogleMapsUrlOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.GoogleMapsUrl) {
 		return nil, false
 	}
-	return &o.GoogleMapsUrl, true
+	return o.GoogleMapsUrl, true
 }
 
-// SetGoogleMapsUrl sets field value
+// HasGoogleMapsUrl returns a boolean if a field has been set.
+func (o *V20260125EventsGet200ResponseInner) HasGoogleMapsUrl() bool {
+	if o != nil && !IsNil(o.GoogleMapsUrl) {
+		return true
+	}
+
+	return false
+}
+
+// SetGoogleMapsUrl gets a reference to the given string and assigns it to the GoogleMapsUrl field.
 func (o *V20260125EventsGet200ResponseInner) SetGoogleMapsUrl(v string) {
-	o.GoogleMapsUrl = v
+	o.GoogleMapsUrl = &v
 }
 
-// GetPhotoUrl returns the PhotoUrl field value
+// GetPhotoUrl returns the PhotoUrl field value if set, zero value otherwise.
 func (o *V20260125EventsGet200ResponseInner) GetPhotoUrl() string {
-	if o == nil {
+	if o == nil || IsNil(o.PhotoUrl) {
 		var ret string
 		return ret
 	}
-
-	return o.PhotoUrl
+	return *o.PhotoUrl
 }
 
-// GetPhotoUrlOk returns a tuple with the PhotoUrl field value
+// GetPhotoUrlOk returns a tuple with the PhotoUrl field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *V20260125EventsGet200ResponseInner) GetPhotoUrlOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.PhotoUrl) {
 		return nil, false
 	}
-	return &o.PhotoUrl, true
+	return o.PhotoUrl, true
 }
 
-// SetPhotoUrl sets field value
+// HasPhotoUrl returns a boolean if a field has been set.
+func (o *V20260125EventsGet200ResponseInner) HasPhotoUrl() bool {
+	if o != nil && !IsNil(o.PhotoUrl) {
+		return true
+	}
+
+	return false
+}
+
+// SetPhotoUrl gets a reference to the given string and assigns it to the PhotoUrl field.
 func (o *V20260125EventsGet200ResponseInner) SetPhotoUrl(v string) {
-	o.PhotoUrl = v
+	o.PhotoUrl = &v
 }
 
 // GetIsOnline returns the IsOnline field value
@@ -527,9 +548,15 @@ func (o V20260125EventsGet200ResponseInner) ToMap() (map[string]interface{}, err
 	if o.Group != nil {
 		toSerialize["group"] = o.Group
 	}
-	toSerialize["address"] = o.Address
-	toSerialize["googleMapsUrl"] = o.GoogleMapsUrl
-	toSerialize["photoUrl"] = o.PhotoUrl
+	if !IsNil(o.Address) {
+		toSerialize["address"] = o.Address
+	}
+	if !IsNil(o.GoogleMapsUrl) {
+		toSerialize["googleMapsUrl"] = o.GoogleMapsUrl
+	}
+	if !IsNil(o.PhotoUrl) {
+		toSerialize["photoUrl"] = o.PhotoUrl
+	}
 	toSerialize["isOnline"] = o.IsOnline
 	return toSerialize, nil
 }
@@ -546,9 +573,6 @@ func (o *V20260125EventsGet200ResponseInner) UnmarshalJSON(data []byte) (err err
 		"status",
 		"rsvpCount",
 		"venues",
-		"address",
-		"googleMapsUrl",
-		"photoUrl",
 		"isOnline",
 	}
 

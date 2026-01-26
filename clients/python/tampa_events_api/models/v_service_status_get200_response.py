@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt
-from typing import Any, ClassVar, Dict, List, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 from tampa_events_api.models.v_service_status_get200_response_aggregation import VServiceStatusGet200ResponseAggregation
 from tampa_events_api.models.v_service_status_get200_response_groups_inner import VServiceStatusGet200ResponseGroupsInner
 from tampa_events_api.models.v_service_status_get200_response_platforms_inner import VServiceStatusGet200ResponsePlatformsInner
@@ -32,7 +32,7 @@ class VServiceStatusGet200Response(BaseModel):
     platforms: List[VServiceStatusGet200ResponsePlatformsInner]
     groups: List[VServiceStatusGet200ResponseGroupsInner]
     total_groups: Union[StrictFloat, StrictInt] = Field(alias="totalGroups")
-    aggregation: VServiceStatusGet200ResponseAggregation
+    aggregation: Optional[VServiceStatusGet200ResponseAggregation] = None
     __properties: ClassVar[List[str]] = ["platforms", "groups", "totalGroups", "aggregation"]
 
     model_config = ConfigDict(

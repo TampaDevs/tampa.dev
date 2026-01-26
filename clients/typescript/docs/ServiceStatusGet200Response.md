@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **platforms** | [**Array&lt;VServiceStatusGet200ResponsePlatformsInner&gt;**](VServiceStatusGet200ResponsePlatformsInner.md) |  | [default to undefined]
 **groups** | [**Array&lt;VServiceStatusGet200ResponseGroupsInner&gt;**](VServiceStatusGet200ResponseGroupsInner.md) |  | [default to undefined]
 **totalGroups** | **number** |  | [default to undefined]
-**aggregation** | [**VServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | [default to undefined]
+**aggregation** | [**VServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | [optional] [default to undefined]
 
 ## Example
 

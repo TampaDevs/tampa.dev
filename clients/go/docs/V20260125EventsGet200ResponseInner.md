@@ -16,16 +16,16 @@ Name | Type | Description | Notes
 **Venues** | **[]interface{}** |  | 
 **Photo** | Pointer to **interface{}** |  | [optional] 
 **Group** | Pointer to **interface{}** |  | [optional] 
-**Address** | **string** |  | 
-**GoogleMapsUrl** | **string** |  | 
-**PhotoUrl** | **string** |  | 
+**Address** | Pointer to **string** |  | [optional] 
+**GoogleMapsUrl** | Pointer to **string** |  | [optional] 
+**PhotoUrl** | Pointer to **string** |  | [optional] 
 **IsOnline** | **bool** |  | 
 
 ## Methods
 
 ### NewV20260125EventsGet200ResponseInner
 
-`func NewV20260125EventsGet200ResponseInner(id string, title string, dateTime string, eventUrl string, status string, rsvpCount float32, venues []interface{}, address string, googleMapsUrl string, photoUrl string, isOnline bool, ) *V20260125EventsGet200ResponseInner`
+`func NewV20260125EventsGet200ResponseInner(id string, title string, dateTime string, eventUrl string, status string, rsvpCount float32, venues []interface{}, isOnline bool, ) *V20260125EventsGet200ResponseInner`
 
 NewV20260125EventsGet200ResponseInner instantiates a new V20260125EventsGet200ResponseInner object
 This constructor will assign default values to properties that have it defined,
@@ -344,6 +344,11 @@ and a boolean to check if the value has been set.
 
 SetAddress sets Address field to given value.
 
+### HasAddress
+
+`func (o *V20260125EventsGet200ResponseInner) HasAddress() bool`
+
+HasAddress returns a boolean if a field has been set.
 
 ### GetGoogleMapsUrl
 
@@ -364,6 +369,11 @@ and a boolean to check if the value has been set.
 
 SetGoogleMapsUrl sets GoogleMapsUrl field to given value.
 
+### HasGoogleMapsUrl
+
+`func (o *V20260125EventsGet200ResponseInner) HasGoogleMapsUrl() bool`
+
+HasGoogleMapsUrl returns a boolean if a field has been set.
 
 ### GetPhotoUrl
 
@@ -384,6 +394,11 @@ and a boolean to check if the value has been set.
 
 SetPhotoUrl sets PhotoUrl field to given value.
 
+### HasPhotoUrl
+
+`func (o *V20260125EventsGet200ResponseInner) HasPhotoUrl() bool`
+
+HasPhotoUrl returns a boolean if a field has been set.
 
 ### GetIsOnline
 

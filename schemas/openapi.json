@@ -166,9 +166,6 @@
                       "status",
                       "rsvpCount",
                       "venues",
-                      "address",
-                      "googleMapsUrl",
-                      "photoUrl",
                       "isOnline"
                     ]
                   }
@@ -331,9 +328,6 @@
                       "status",
                       "rsvpCount",
                       "venues",
-                      "address",
-                      "googleMapsUrl",
-                      "photoUrl",
                       "isOnline"
                     ]
                   }
@@ -1131,11 +1125,6 @@
                         }
                       },
                       "required": [
-                        "lastRunAt",
-                        "durationMs",
-                        "groupsProcessed",
-                        "groupsFailed",
-                        "dataHash",
                         "errors"
                       ]
                     }
@@ -1143,8 +1132,7 @@
                   "required": [
                     "platforms",
                     "groups",
-                    "totalGroups",
-                    "aggregation"
+                    "totalGroups"
                   ]
                 }
               }
