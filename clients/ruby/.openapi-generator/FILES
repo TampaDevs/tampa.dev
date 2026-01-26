@@ -41,10 +41,5 @@ lib/tampa_events_api/models/service_status_get200_response_aggregation.rb
 lib/tampa_events_api/models/service_status_get200_response_groups_inner.rb
 lib/tampa_events_api/models/service_status_get200_response_platforms_inner.rb
 lib/tampa_events_api/version.rb
-spec/api/service_api_spec.rb
-spec/models/service_status_get200_response_aggregation_spec.rb
-spec/models/service_status_get200_response_groups_inner_spec.rb
-spec/models/service_status_get200_response_platforms_inner_spec.rb
-spec/models/service_status_get200_response_spec.rb
 spec/spec_helper.rb
 tampa_events_api.gemspec
