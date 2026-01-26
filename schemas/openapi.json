@@ -899,85 +899,12 @@
         }
       }
     },
-    "/v1": {
-      "get": {
-        "summary": "Legacy v1 API (deprecated)",
-        "description": "Returns raw Meetup API data structure for backward compatibility. Use /2026-01-25/events instead.",
-        "tags": [
-          "Legacy"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampa-devs,suncoast-js\")",
-              "example": "tampa-devs,suncoast-js"
-            },
-            "required": false,
-            "name": "groups",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Exclude online events (set to \"1\" to exclude)",
-              "example": "1"
-            },
-            "required": false,
-            "name": "noonline",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Only show events within the next N hours",
-              "example": "24"
-            },
-            "required": false,
-            "name": "within_hours",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Only show events within the next N days",
-              "example": "7"
-            },
-            "required": false,
-            "name": "within_days",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Exclude groups with no events (set to \"1\" to exclude)",
-              "example": "1"
-            },
-            "required": false,
-            "name": "noempty",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy nested data structure",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "nullable": true
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/html": {
       "get": {
-        "summary": "Legacy HTML page (deprecated)",
-        "description": "Returns HTML page with upcoming events. Use /widget/next-event instead.",
+        "summary": "HTML page with upcoming events",
+        "description": "Returns a formatted HTML page displaying upcoming events",
         "tags": [
-          "Legacy"
+          "Pages"
         ],
         "parameters": [
           {
@@ -1047,10 +974,10 @@
     },
     "/upcoming-events": {
       "get": {
-        "summary": "Legacy HTML page (deprecated)",
-        "description": "Alias for /html. Use /widget/next-event instead.",
+        "summary": "Upcoming events HTML page",
+        "description": "Alias for /html - returns a formatted HTML page displaying upcoming events",
         "tags": [
-          "Legacy"
+          "Pages"
         ],
         "parameters": [
           {

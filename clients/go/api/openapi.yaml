@@ -1,0 +1,800 @@
+openapi: 3.1.0
+info:
+  contact:
+    name: Tampa Devs
+    url: https://tampa.dev
+  description: Community events aggregation API for Tampa Bay tech meetups and events
+  title: Tampa Events API
+  version: 2026-01-25
+servers:
+- description: Production
+  url: https://events.api.tampa.dev
+- description: Development
+  url: http://localhost:8787
+paths:
+  /2026-01-25/events:
+    get:
+      description: "Returns a list of all upcoming events, optionally filtered by\
+        \ query parameters"
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/_2026_01_25_events_get_200_response_inner"
+                type: array
+          description: List of events
+        "503":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Service unavailable - no event data
+      summary: Get all events
+      tags:
+      - Events
+  /2026-01-25/events/next:
+    get:
+      description: Returns one upcoming event for each group (the next event)
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/_2026_01_25_events_get_200_response_inner"
+                type: array
+          description: Next event for each group
+        "503":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Service unavailable - no event data
+      summary: Get next event per group
+      tags:
+      - Events
+  /2026-01-25/schemas:
+    get:
+      description: Returns metadata about all available JSON schemas for the API models
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_2026_01_25_schemas_get_200_response"
+          description: List of available schemas
+      summary: List all JSON schemas
+      tags:
+      - Schemas
+  /2026-01-25/schemas/{name}:
+    get:
+      description: Returns the JSON Schema for a specific model type
+      parameters:
+      - explode: false
+        in: path
+        name: name
+        required: true
+        schema:
+          description: "Schema name (event, group, venue, photo, meetup)"
+          example: event
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/schema+json:
+              schema:
+                nullable: true
+          description: JSON Schema
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_2026_01_25_schemas__name__get_404_response"
+          description: Schema not found
+      summary: Get specific JSON schema
+      tags:
+      - Schemas
+  /2026-01-25/rss:
+    get:
+      description: Returns events as an RSS 2.0 feed
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+          description: RSS feed
+      summary: Get RSS feed
+      tags:
+      - Feeds
+  /2026-01-25/feed:
+    get:
+      description: Alias for /rss - returns events as an RSS 2.0 feed
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+          description: RSS feed
+      summary: Get RSS feed (alias)
+      tags:
+      - Feeds
+  /2026-01-25/ics:
+    get:
+      description: Returns events as an iCalendar (.ics) feed
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/calendar:
+              schema:
+                type: string
+          description: iCalendar feed
+      summary: Get iCalendar feed
+      tags:
+      - Feeds
+  /2026-01-25/ical:
+    get:
+      description: Alias for /ics - returns events as an iCalendar (.ics) feed
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/calendar:
+              schema:
+                type: string
+          description: iCalendar feed
+      summary: Get iCalendar feed (alias)
+      tags:
+      - Feeds
+  /2026-01-25/webcal:
+    get:
+      description: "Returns events as an iCalendar feed (same as /ics, for webcal://\
+        \ protocol)"
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/calendar:
+              schema:
+                type: string
+          description: iCalendar feed
+      summary: Get webcal feed
+      tags:
+      - Feeds
+  /widget/next-event:
+    get:
+      description: Returns an HTML widget showing the next upcoming event
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: Comma-separated list of group URL names to filter by
+          example: "tampadevs,suncoast-js"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: HTML widget
+      summary: Next event HTML widget
+      tags:
+      - Widgets
+  /widget/carousel:
+    get:
+      description: Returns an HTML carousel widget showing upcoming events
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: Comma-separated list of group URL names to filter by
+          example: "tampadevs,suncoast-js"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: HTML carousel widget
+      summary: Carousel HTML widget
+      tags:
+      - Widgets
+  /html:
+    get:
+      description: Returns a formatted HTML page displaying upcoming events
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: HTML page
+      summary: HTML page with upcoming events
+      tags:
+      - Pages
+  /upcoming-events:
+    get:
+      description: Alias for /html - returns a formatted HTML page displaying upcoming
+        events
+      parameters:
+      - explode: true
+        in: query
+        name: groups
+        required: false
+        schema:
+          description: "Comma-separated list of group urlnames to filter (e.g., \"\
+            tampa-devs,suncoast-js\")"
+          example: "tampa-devs,suncoast-js"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noonline
+        required: false
+        schema:
+          description: Exclude online events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_hours
+        required: false
+        schema:
+          description: Only show events within the next N hours
+          example: "24"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: within_days
+        required: false
+        schema:
+          description: Only show events within the next N days
+          example: "7"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: noempty
+        required: false
+        schema:
+          description: Exclude groups with no events (set to "1" to exclude)
+          example: "1"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: HTML page
+      summary: Upcoming events HTML page
+      tags:
+      - Pages
+components:
+  parameters: {}
+  schemas:
+    _2026_01_25_events_get_200_response_inner:
+      example:
+        dateTime: dateTime
+        address: address
+        eventUrl: eventUrl
+        description: description
+        photo: ""
+        isOnline: true
+        eventType: PHYSICAL
+        title: title
+        duration: duration
+        googleMapsUrl: googleMapsUrl
+        photoUrl: photoUrl
+        rsvpCount: 0.8008281904610115
+        venues:
+        - ""
+        - ""
+        id: id
+        status: ACTIVE
+        group: ""
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        dateTime:
+          type: string
+        duration:
+          type: string
+        eventUrl:
+          type: string
+        status:
+          enum:
+          - ACTIVE
+          - CANCELLED
+          - DRAFT
+          type: string
+        eventType:
+          enum:
+          - PHYSICAL
+          - ONLINE
+          - HYBRID
+          type: string
+        rsvpCount:
+          type: number
+        venues:
+          items:
+            nullable: true
+          type: array
+        photo:
+          nullable: true
+        group:
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        googleMapsUrl:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        isOnline:
+          type: boolean
+      required:
+      - address
+      - dateTime
+      - eventUrl
+      - googleMapsUrl
+      - id
+      - isOnline
+      - photoUrl
+      - rsvpCount
+      - status
+      - title
+      - venues
+    _2026_01_25_schemas_get_200_response_schemas_inner:
+      example:
+        name: name
+        description: description
+        title: title
+        url: url
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+      required:
+      - description
+      - name
+      - title
+      - url
+    _2026_01_25_schemas_get_200_response:
+      example:
+        schemas:
+        - name: name
+          description: description
+          title: title
+          url: url
+        - name: name
+          description: description
+          title: title
+          url: url
+        version: version
+      properties:
+        schemas:
+          items:
+            $ref: "#/components/schemas/_2026_01_25_schemas_get_200_response_schemas_inner"
+          type: array
+        version:
+          type: string
+      required:
+      - schemas
+      - version
+    _2026_01_25_schemas__name__get_404_response:
+      example:
+        available:
+        - available
+        - available
+        error: error
+      properties:
+        error:
+          type: string
+        available:
+          items:
+            type: string
+          type: array
+      required:
+      - available
+      - error
