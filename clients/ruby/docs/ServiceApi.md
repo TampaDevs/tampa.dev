@@ -9,7 +9,7 @@ All URIs are relative to *https://events.api.tampa.dev*
 
 ## service_status_get
 
-> <ServiceStatusGet200Response> service_status_get
+> <VServiceStatusGet200Response> service_status_get
 
 Service status
 
@@ -36,7 +36,7 @@ end
 
 This returns an Array which contains the response data, status code and headers.
 
-> <Array(<ServiceStatusGet200Response>, Integer, Hash)> service_status_get_with_http_info
+> <Array(<VServiceStatusGet200Response>, Integer, Hash)> service_status_get_with_http_info
 
 ```ruby
 begin
@@ -44,7 +44,7 @@ begin
   data, status_code, headers = api_instance.service_status_get_with_http_info
   p status_code # => 2xx
   p headers # => { ... }
-  p data # => <ServiceStatusGet200Response>
+  p data # => <VServiceStatusGet200Response>
 rescue TampaEventsAPI::ApiError => e
   puts "Error when calling ServiceApi->service_status_get_with_http_info: #{e}"
 end
@@ -56,7 +56,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**ServiceStatusGet200Response**](ServiceStatusGet200Response.md)
+[**VServiceStatusGet200Response**](VServiceStatusGet200Response.md)
 
 ### Authorization
 

@@ -1,4 +1,4 @@
-# ServiceStatusGet200ResponseGroupsInner
+# VServiceStatusGet200ResponseGroupsInner
 
 
 ## Properties
@@ -11,9 +11,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ServiceStatusGet200ResponseGroupsInner } from '@tampadevs/events-api-client';
+import { VServiceStatusGet200ResponseGroupsInner } from '@tampadevs/events-api-client';
 
-const instance: ServiceStatusGet200ResponseGroupsInner = {
+const instance: VServiceStatusGet200ResponseGroupsInner = {
     urlname,
     platform,
 };

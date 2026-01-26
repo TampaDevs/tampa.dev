@@ -22,7 +22,7 @@ module TampaEventsAPI
     # Service status
     # Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
     # @param [Hash] opts the optional parameters
-    # @return [ServiceStatusGet200Response]
+    # @return [VServiceStatusGet200Response]
     def service_status_get(opts = {})
       data, _status_code, _headers = service_status_get_with_http_info(opts)
       data
@@ -31,7 +31,7 @@ module TampaEventsAPI
     # Service status
     # Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
     # @param [Hash] opts the optional parameters
-    # @return [Array<(ServiceStatusGet200Response, Integer, Hash)>] ServiceStatusGet200Response data, response status code and response headers
+    # @return [Array<(VServiceStatusGet200Response, Integer, Hash)>] VServiceStatusGet200Response data, response status code and response headers
     def service_status_get_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: ServiceApi.service_status_get ...'
@@ -54,7 +54,7 @@ module TampaEventsAPI
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'ServiceStatusGet200Response'
+      return_type = opts[:debug_return_type] || 'VServiceStatusGet200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || []

@@ -9,7 +9,7 @@ Method | HTTP request | Description
 
 
 # **call_20260125_events_get**
-> List[Model20260125EventsGet200ResponseInner] call_20260125_events_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
+> List[V20260125EventsGet200ResponseInner] call_20260125_events_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
 
 Get all events
 
@@ -20,7 +20,7 @@ Returns a list of all upcoming events, optionally filtered by query parameters
 
 ```python
 import tampa_events_api
-from tampa_events_api.models.model20260125_events_get200_response_inner import Model20260125EventsGet200ResponseInner
+from tampa_events_api.models.v20260125_events_get200_response_inner import V20260125EventsGet200ResponseInner
 from tampa_events_api.rest import ApiException
 from pprint import pprint
 
@@ -65,7 +65,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**List[Model20260125EventsGet200ResponseInner]**](Model20260125EventsGet200ResponseInner.md)
+[**List[V20260125EventsGet200ResponseInner]**](V20260125EventsGet200ResponseInner.md)
 
 ### Authorization
 
@@ -86,7 +86,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **call_20260125_events_next_get**
-> List[Model20260125EventsGet200ResponseInner] call_20260125_events_next_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
+> List[V20260125EventsGet200ResponseInner] call_20260125_events_next_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
 
 Get next event per group
 
@@ -97,7 +97,7 @@ Returns one upcoming event for each group (the next event)
 
 ```python
 import tampa_events_api
-from tampa_events_api.models.model20260125_events_get200_response_inner import Model20260125EventsGet200ResponseInner
+from tampa_events_api.models.v20260125_events_get200_response_inner import V20260125EventsGet200ResponseInner
 from tampa_events_api.rest import ApiException
 from pprint import pprint
 
@@ -142,7 +142,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**List[Model20260125EventsGet200ResponseInner]**](Model20260125EventsGet200ResponseInner.md)
+[**List[V20260125EventsGet200ResponseInner]**](V20260125EventsGet200ResponseInner.md)
 
 ### Authorization
 

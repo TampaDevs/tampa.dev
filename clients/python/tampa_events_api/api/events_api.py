@@ -18,7 +18,7 @@ from typing_extensions import Annotated
 
 from pydantic import StrictStr
 from typing import List, Optional
-from tampa_events_api.models.model20260125_events_get200_response_inner import Model20260125EventsGet200ResponseInner
+from tampa_events_api.models.v20260125_events_get200_response_inner import V20260125EventsGet200ResponseInner
 
 from tampa_events_api.api_client import ApiClient, RequestSerialized
 from tampa_events_api.api_response import ApiResponse
@@ -58,7 +58,7 @@ class EventsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> List[Model20260125EventsGet200ResponseInner]:
+    ) -> List[V20260125EventsGet200ResponseInner]:
         """Get all events
 
         Returns a list of all upcoming events, optionally filtered by query parameters
@@ -108,7 +108,7 @@ class EventsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "List[Model20260125EventsGet200ResponseInner]",
+            '200': "List[V20260125EventsGet200ResponseInner]",
             '503': "str",
         }
         response_data = self.api_client.call_api(
@@ -142,7 +142,7 @@ class EventsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[List[Model20260125EventsGet200ResponseInner]]:
+    ) -> ApiResponse[List[V20260125EventsGet200ResponseInner]]:
         """Get all events
 
         Returns a list of all upcoming events, optionally filtered by query parameters
@@ -192,7 +192,7 @@ class EventsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "List[Model20260125EventsGet200ResponseInner]",
+            '200': "List[V20260125EventsGet200ResponseInner]",
             '503': "str",
         }
         response_data = self.api_client.call_api(
@@ -276,7 +276,7 @@ class EventsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "List[Model20260125EventsGet200ResponseInner]",
+            '200': "List[V20260125EventsGet200ResponseInner]",
             '503': "str",
         }
         response_data = self.api_client.call_api(
@@ -392,7 +392,7 @@ class EventsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> List[Model20260125EventsGet200ResponseInner]:
+    ) -> List[V20260125EventsGet200ResponseInner]:
         """Get next event per group
 
         Returns one upcoming event for each group (the next event)
@@ -442,7 +442,7 @@ class EventsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "List[Model20260125EventsGet200ResponseInner]",
+            '200': "List[V20260125EventsGet200ResponseInner]",
             '503': "str",
         }
         response_data = self.api_client.call_api(
@@ -476,7 +476,7 @@ class EventsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[List[Model20260125EventsGet200ResponseInner]]:
+    ) -> ApiResponse[List[V20260125EventsGet200ResponseInner]]:
         """Get next event per group
 
         Returns one upcoming event for each group (the next event)
@@ -526,7 +526,7 @@ class EventsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "List[Model20260125EventsGet200ResponseInner]",
+            '200': "List[V20260125EventsGet200ResponseInner]",
             '503': "str",
         }
         response_data = self.api_client.call_api(
@@ -610,7 +610,7 @@ class EventsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "List[Model20260125EventsGet200ResponseInner]",
+            '200': "List[V20260125EventsGet200ResponseInner]",
             '503': "str",
         }
         response_data = self.api_client.call_api(

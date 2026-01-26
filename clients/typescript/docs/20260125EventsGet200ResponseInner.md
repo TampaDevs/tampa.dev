@@ -1,4 +1,4 @@
-# Model20260125EventsGet200ResponseInner
+# V20260125EventsGet200ResponseInner
 
 
 ## Properties
@@ -25,9 +25,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { Model20260125EventsGet200ResponseInner } from '@tampadevs/events-api-client';
+import { V20260125EventsGet200ResponseInner } from '@tampadevs/events-api-client';
 
-const instance: Model20260125EventsGet200ResponseInner = {
+const instance: V20260125EventsGet200ResponseInner = {
     id,
     title,
     description,

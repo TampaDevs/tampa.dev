@@ -18,14 +18,14 @@ require 'tampa_events_api/version'
 require 'tampa_events_api/configuration'
 
 # Models
-require 'tampa_events_api/models/20260125_events_get200_response_inner'
-require 'tampa_events_api/models/20260125_schemas_get200_response'
-require 'tampa_events_api/models/20260125_schemas_get200_response_schemas_inner'
-require 'tampa_events_api/models/20260125_schemas_name_get404_response'
-require 'tampa_events_api/models/service_status_get200_response'
-require 'tampa_events_api/models/service_status_get200_response_aggregation'
-require 'tampa_events_api/models/service_status_get200_response_groups_inner'
-require 'tampa_events_api/models/service_status_get200_response_platforms_inner'
+require 'tampa_events_api/models/v20260125_events_get200_response_inner'
+require 'tampa_events_api/models/v20260125_schemas_get200_response'
+require 'tampa_events_api/models/v20260125_schemas_get200_response_schemas_inner'
+require 'tampa_events_api/models/v20260125_schemas_name_get404_response'
+require 'tampa_events_api/models/v_service_status_get200_response'
+require 'tampa_events_api/models/v_service_status_get200_response_aggregation'
+require 'tampa_events_api/models/v_service_status_get200_response_groups_inner'
+require 'tampa_events_api/models/v_service_status_get200_response_platforms_inner'
 
 # APIs
 require 'tampa_events_api/api/events_api'

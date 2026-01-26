@@ -1,4 +1,4 @@
-# Model20260125SchemasNameGet404Response
+# V20260125SchemasNameGet404Response
 
 
 ## Properties
@@ -11,9 +11,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { Model20260125SchemasNameGet404Response } from '@tampadevs/events-api-client';
+import { V20260125SchemasNameGet404Response } from '@tampadevs/events-api-client';
 
-const instance: Model20260125SchemasNameGet404Response = {
+const instance: V20260125SchemasNameGet404Response = {
     error,
     available,
 };

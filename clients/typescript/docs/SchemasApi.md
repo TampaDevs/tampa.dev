@@ -8,7 +8,7 @@ All URIs are relative to *https://events.api.tampa.dev*
 |[**_20260125schemasNameGet**](#_20260125schemasnameget) | **GET** /2026-01-25/schemas/{name} | Get specific JSON schema|
 
 # **_20260125schemasGet**
-> Model20260125SchemasGet200Response _20260125schemasGet()
+> V20260125SchemasGet200Response _20260125schemasGet()
 
 Returns metadata about all available JSON schemas for the API models
 
@@ -32,7 +32,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**Model20260125SchemasGet200Response**
+**V20260125SchemasGet200Response**
 
 ### Authorization
 

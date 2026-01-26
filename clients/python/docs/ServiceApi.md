@@ -8,7 +8,7 @@ Method | HTTP request | Description
 
 
 # **service_status_get**
-> ServiceStatusGet200Response service_status_get()
+> VServiceStatusGet200Response service_status_get()
 
 Service status
 
@@ -19,7 +19,7 @@ Returns service status and configuration information, including platforms, group
 
 ```python
 import tampa_events_api
-from tampa_events_api.models.service_status_get200_response import ServiceStatusGet200Response
+from tampa_events_api.models.v_service_status_get200_response import VServiceStatusGet200Response
 from tampa_events_api.rest import ApiException
 from pprint import pprint
 
@@ -52,7 +52,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**ServiceStatusGet200Response**](ServiceStatusGet200Response.md)
+[**VServiceStatusGet200Response**](VServiceStatusGet200Response.md)
 
 ### Authorization
 

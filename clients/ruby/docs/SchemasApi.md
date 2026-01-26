@@ -10,7 +10,7 @@ All URIs are relative to *https://events.api.tampa.dev*
 
 ## call_20260125_schemas_get
 
-> <20260125SchemasGet200Response> call_20260125_schemas_get
+> <V20260125SchemasGet200Response> call_20260125_schemas_get
 
 List all JSON schemas
 
@@ -37,7 +37,7 @@ end
 
 This returns an Array which contains the response data, status code and headers.
 
-> <Array(<20260125SchemasGet200Response>, Integer, Hash)> call_20260125_schemas_get_with_http_info
+> <Array(<V20260125SchemasGet200Response>, Integer, Hash)> call_20260125_schemas_get_with_http_info
 
 ```ruby
 begin
@@ -45,7 +45,7 @@ begin
   data, status_code, headers = api_instance.call_20260125_schemas_get_with_http_info
   p status_code # => 2xx
   p headers # => { ... }
-  p data # => <20260125SchemasGet200Response>
+  p data # => <V20260125SchemasGet200Response>
 rescue TampaEventsAPI::ApiError => e
   puts "Error when calling SchemasApi->call_20260125_schemas_get_with_http_info: #{e}"
 end
@@ -57,7 +57,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**20260125SchemasGet200Response**](20260125SchemasGet200Response.md)
+[**V20260125SchemasGet200Response**](V20260125SchemasGet200Response.md)
 
 ### Authorization
 
