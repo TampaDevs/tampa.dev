@@ -11,6 +11,10 @@ export interface Env {
     tag: string;
     timestamp: string;
   };
+  // Secrets for event aggregation (set via `wrangler secret put`)
+  MEETUP_CLIENT_KEY?: string;
+  MEETUP_SIGNING_KEY?: string;
+  MEETUP_MEMBER_ID?: string;
 }
 
 /**

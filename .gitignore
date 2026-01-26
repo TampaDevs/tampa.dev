@@ -1,5 +1,7 @@
 node_modules/
 .dev.env
+.dev.vars
+.aggregation-output.json
 node_modules
 assets/*
 !assets/.gitkeep
