@@ -176,7 +176,7 @@ describe('Event Model', () => {
         photo,
       });
 
-      expect(eventWithPhoto.photoUrl).to.equal('https://example.com/');
+      expect(eventWithPhoto.photoUrl).to.equal('https://example.com/photo-123/676x380.webp');
     });
 
     it('should fall back to group photo if no event photo', () => {
@@ -189,7 +189,7 @@ describe('Event Model', () => {
         group: groupWithPhoto,
       });
 
-      expect(event.photoUrl).to.equal('https://group.com/');
+      expect(event.photoUrl).to.equal('https://group.com/group-photo/676x380.webp');
     });
   });
 
