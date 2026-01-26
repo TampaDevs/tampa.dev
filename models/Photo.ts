@@ -26,11 +26,21 @@ export class Photo {
   }
 
   /**
-   * Get the full URL for this photo
-   * Can be extended in the future to support different sizes, formats, etc.
+   * Get the full URL for this photo at a standard size
+   * Format: {baseUrl}{id}/{width}x{height}.webp
    */
   get url(): string {
-    return this.baseUrl;
+    return `${this.baseUrl}${this.id}/676x380.webp`;
+  }
+
+  /**
+   * Get a photo URL at a specific size
+   * @param width - Width in pixels
+   * @param height - Height in pixels
+   * @param format - Image format (default: webp)
+   */
+  getUrl(width: number, height: number, format: string = 'webp'): string {
+    return `${this.baseUrl}${this.id}/${width}x${height}.${format}`;
   }
 
   /**
