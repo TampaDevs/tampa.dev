@@ -18,7 +18,7 @@ Returns an HTML carousel widget showing upcoming events
 import {
     WidgetsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new WidgetsApi(configuration);
@@ -69,7 +69,7 @@ Returns an HTML widget showing the next upcoming event
 import {
     WidgetsApi,
     Configuration
-} from '@tampa-devs/events-api-client';
+} from '@tampadevs/events-api-client';
 
 const configuration = new Configuration();
 const apiInstance = new WidgetsApi(configuration);

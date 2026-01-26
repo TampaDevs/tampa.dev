@@ -16,38 +16,38 @@ import (
 	"fmt"
 )
 
-// checks if the 20260125SchemasGet200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &20260125SchemasGet200Response{}
+// checks if the V20260125SchemasGet200Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &V20260125SchemasGet200Response{}
 
-// 20260125SchemasGet200Response struct for 20260125SchemasGet200Response
-type 20260125SchemasGet200Response struct {
+// V20260125SchemasGet200Response struct for V20260125SchemasGet200Response
+type V20260125SchemasGet200Response struct {
 	Schemas []Model20260125SchemasGet200ResponseSchemasInner `json:"schemas"`
 	Version string `json:"version"`
 }
 
-type _20260125SchemasGet200Response 20260125SchemasGet200Response
+type _V20260125SchemasGet200Response V20260125SchemasGet200Response
 
-// New20260125SchemasGet200Response instantiates a new 20260125SchemasGet200Response object
+// New20260125SchemasGet200Response instantiates a new V20260125SchemasGet200Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func New20260125SchemasGet200Response(schemas []Model20260125SchemasGet200ResponseSchemasInner, version string) *20260125SchemasGet200Response {
-	this := 20260125SchemasGet200Response{}
+func New20260125SchemasGet200Response(schemas []Model20260125SchemasGet200ResponseSchemasInner, version string) *V20260125SchemasGet200Response {
+	this := V20260125SchemasGet200Response{}
 	this.Schemas = schemas
 	this.Version = version
 	return &this
 }
 
-// New20260125SchemasGet200ResponseWithDefaults instantiates a new 20260125SchemasGet200Response object
+// New20260125SchemasGet200ResponseWithDefaults instantiates a new V20260125SchemasGet200Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func New20260125SchemasGet200ResponseWithDefaults() *20260125SchemasGet200Response {
-	this := 20260125SchemasGet200Response{}
+func New20260125SchemasGet200ResponseWithDefaults() *V20260125SchemasGet200Response {
+	this := V20260125SchemasGet200Response{}
 	return &this
 }
 
 // GetSchemas returns the Schemas field value
-func (o *20260125SchemasGet200Response) GetSchemas() []Model20260125SchemasGet200ResponseSchemasInner {
+func (o *V20260125SchemasGet200Response) GetSchemas() []Model20260125SchemasGet200ResponseSchemasInner {
 	if o == nil {
 		var ret []Model20260125SchemasGet200ResponseSchemasInner
 		return ret
@@ -58,7 +58,7 @@ func (o *20260125SchemasGet200Response) GetSchemas() []Model20260125SchemasGet20
 
 // GetSchemasOk returns a tuple with the Schemas field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasGet200Response) GetSchemasOk() ([]Model20260125SchemasGet200ResponseSchemasInner, bool) {
+func (o *V20260125SchemasGet200Response) GetSchemasOk() ([]Model20260125SchemasGet200ResponseSchemasInner, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -66,12 +66,12 @@ func (o *20260125SchemasGet200Response) GetSchemasOk() ([]Model20260125SchemasGe
 }
 
 // SetSchemas sets field value
-func (o *20260125SchemasGet200Response) SetSchemas(v []Model20260125SchemasGet200ResponseSchemasInner) {
+func (o *V20260125SchemasGet200Response) SetSchemas(v []Model20260125SchemasGet200ResponseSchemasInner) {
 	o.Schemas = v
 }
 
 // GetVersion returns the Version field value
-func (o *20260125SchemasGet200Response) GetVersion() string {
+func (o *V20260125SchemasGet200Response) GetVersion() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -82,7 +82,7 @@ func (o *20260125SchemasGet200Response) GetVersion() string {
 
 // GetVersionOk returns a tuple with the Version field value
 // and a boolean to check if the value has been set.
-func (o *20260125SchemasGet200Response) GetVersionOk() (*string, bool) {
+func (o *V20260125SchemasGet200Response) GetVersionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,11 +90,11 @@ func (o *20260125SchemasGet200Response) GetVersionOk() (*string, bool) {
 }
 
 // SetVersion sets field value
-func (o *20260125SchemasGet200Response) SetVersion(v string) {
+func (o *V20260125SchemasGet200Response) SetVersion(v string) {
 	o.Version = v
 }
 
-func (o 20260125SchemasGet200Response) MarshalJSON() ([]byte, error) {
+func (o V20260125SchemasGet200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -102,14 +102,14 @@ func (o 20260125SchemasGet200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o 20260125SchemasGet200Response) ToMap() (map[string]interface{}, error) {
+func (o V20260125SchemasGet200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["schemas"] = o.Schemas
 	toSerialize["version"] = o.Version
 	return toSerialize, nil
 }
 
-func (o *20260125SchemasGet200Response) UnmarshalJSON(data []byte) (err error) {
+func (o *V20260125SchemasGet200Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -132,7 +132,7 @@ func (o *20260125SchemasGet200Response) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	var20260125SchemasGet200Response := _20260125SchemasGet200Response{}
+	var20260125SchemasGet200Response := _V20260125SchemasGet200Response{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -142,21 +142,21 @@ func (o *20260125SchemasGet200Response) UnmarshalJSON(data []byte) (err error) {
 		return err
 	}
 
-	*o = 20260125SchemasGet200Response(var20260125SchemasGet200Response)
+	*o = V20260125SchemasGet200Response(var20260125SchemasGet200Response)
 
 	return err
 }
 
 type Nullable20260125SchemasGet200Response struct {
-	value *20260125SchemasGet200Response
+	value *V20260125SchemasGet200Response
 	isSet bool
 }
 
-func (v Nullable20260125SchemasGet200Response) Get() *20260125SchemasGet200Response {
+func (v Nullable20260125SchemasGet200Response) Get() *V20260125SchemasGet200Response {
 	return v.value
 }
 
-func (v *Nullable20260125SchemasGet200Response) Set(val *20260125SchemasGet200Response) {
+func (v *Nullable20260125SchemasGet200Response) Set(val *V20260125SchemasGet200Response) {
 	v.value = val
 	v.isSet = true
 }
@@ -170,7 +170,7 @@ func (v *Nullable20260125SchemasGet200Response) Unset() {
 	v.isSet = false
 }
 
-func NewNullable20260125SchemasGet200Response(val *20260125SchemasGet200Response) *Nullable20260125SchemasGet200Response {
+func NewNullable20260125SchemasGet200Response(val *V20260125SchemasGet200Response) *Nullable20260125SchemasGet200Response {
 	return &Nullable20260125SchemasGet200Response{value: val, isSet: true}
 }
 

@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { Model20260125SchemasGet200ResponseSchemasInner } from '@tampa-devs/events-api-client';
+import { Model20260125SchemasGet200ResponseSchemasInner } from '@tampadevs/events-api-client';
 
 const instance: Model20260125SchemasGet200ResponseSchemasInner = {
     name,

@@ -1,18 +1,19 @@
 {
-  "name": "@tampa-devs/events-api-client",
+  "name": "@tampadevs/events-api-client",
   "version": "1.0.0",
-  "description": "OpenAPI client for @tampa-devs/events-api-client",
+  "description": "OpenAPI client for @tampadevs/events-api-client",
   "author": "OpenAPI-Generator Contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GIT_USER_ID/GIT_REPO_ID.git"
+    "url": "https://github.com/TampaDevs/events.api.tampa.dev.git",
+    "directory": "clients/typescript"
   },
   "keywords": [
     "axios",
     "typescript",
     "openapi-client",
     "openapi-generator",
-    "@tampa-devs/events-api-client"
+    "@tampadevs/events-api-client"
   ],
   "license": "Unlicense",
   "main": "./dist/index.js",

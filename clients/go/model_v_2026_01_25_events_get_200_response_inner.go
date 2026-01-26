@@ -16,11 +16,11 @@ import (
 	"fmt"
 )
 
-// checks if the 20260125EventsGet200ResponseInner type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &20260125EventsGet200ResponseInner{}
+// checks if the V20260125EventsGet200ResponseInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &V20260125EventsGet200ResponseInner{}
 
-// 20260125EventsGet200ResponseInner struct for 20260125EventsGet200ResponseInner
-type 20260125EventsGet200ResponseInner struct {
+// V20260125EventsGet200ResponseInner struct for V20260125EventsGet200ResponseInner
+type V20260125EventsGet200ResponseInner struct {
 	Id string `json:"id"`
 	Title string `json:"title"`
 	Description *string `json:"description,omitempty"`
@@ -39,14 +39,14 @@ type 20260125EventsGet200ResponseInner struct {
 	IsOnline bool `json:"isOnline"`
 }
 
-type _20260125EventsGet200ResponseInner 20260125EventsGet200ResponseInner
+type _V20260125EventsGet200ResponseInner V20260125EventsGet200ResponseInner
 
-// New20260125EventsGet200ResponseInner instantiates a new 20260125EventsGet200ResponseInner object
+// New20260125EventsGet200ResponseInner instantiates a new V20260125EventsGet200ResponseInner object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func New20260125EventsGet200ResponseInner(id string, title string, dateTime string, eventUrl string, status string, rsvpCount float32, venues []interface{}, address string, googleMapsUrl string, photoUrl string, isOnline bool) *20260125EventsGet200ResponseInner {
-	this := 20260125EventsGet200ResponseInner{}
+func New20260125EventsGet200ResponseInner(id string, title string, dateTime string, eventUrl string, status string, rsvpCount float32, venues []interface{}, address string, googleMapsUrl string, photoUrl string, isOnline bool) *V20260125EventsGet200ResponseInner {
+	this := V20260125EventsGet200ResponseInner{}
 	this.Id = id
 	this.Title = title
 	this.DateTime = dateTime
@@ -61,16 +61,16 @@ func New20260125EventsGet200ResponseInner(id string, title string, dateTime stri
 	return &this
 }
 
-// New20260125EventsGet200ResponseInnerWithDefaults instantiates a new 20260125EventsGet200ResponseInner object
+// New20260125EventsGet200ResponseInnerWithDefaults instantiates a new V20260125EventsGet200ResponseInner object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func New20260125EventsGet200ResponseInnerWithDefaults() *20260125EventsGet200ResponseInner {
-	this := 20260125EventsGet200ResponseInner{}
+func New20260125EventsGet200ResponseInnerWithDefaults() *V20260125EventsGet200ResponseInner {
+	this := V20260125EventsGet200ResponseInner{}
 	return &this
 }
 
 // GetId returns the Id field value
-func (o *20260125EventsGet200ResponseInner) GetId() string {
+func (o *V20260125EventsGet200ResponseInner) GetId() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -81,7 +81,7 @@ func (o *20260125EventsGet200ResponseInner) GetId() string {
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetIdOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -89,12 +89,12 @@ func (o *20260125EventsGet200ResponseInner) GetIdOk() (*string, bool) {
 }
 
 // SetId sets field value
-func (o *20260125EventsGet200ResponseInner) SetId(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetId(v string) {
 	o.Id = v
 }
 
 // GetTitle returns the Title field value
-func (o *20260125EventsGet200ResponseInner) GetTitle() string {
+func (o *V20260125EventsGet200ResponseInner) GetTitle() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -105,7 +105,7 @@ func (o *20260125EventsGet200ResponseInner) GetTitle() string {
 
 // GetTitleOk returns a tuple with the Title field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetTitleOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetTitleOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -113,12 +113,12 @@ func (o *20260125EventsGet200ResponseInner) GetTitleOk() (*string, bool) {
 }
 
 // SetTitle sets field value
-func (o *20260125EventsGet200ResponseInner) SetTitle(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetTitle(v string) {
 	o.Title = v
 }
 
 // GetDescription returns the Description field value if set, zero value otherwise.
-func (o *20260125EventsGet200ResponseInner) GetDescription() string {
+func (o *V20260125EventsGet200ResponseInner) GetDescription() string {
 	if o == nil || IsNil(o.Description) {
 		var ret string
 		return ret
@@ -128,7 +128,7 @@ func (o *20260125EventsGet200ResponseInner) GetDescription() string {
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetDescriptionOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetDescriptionOk() (*string, bool) {
 	if o == nil || IsNil(o.Description) {
 		return nil, false
 	}
@@ -136,7 +136,7 @@ func (o *20260125EventsGet200ResponseInner) GetDescriptionOk() (*string, bool) {
 }
 
 // HasDescription returns a boolean if a field has been set.
-func (o *20260125EventsGet200ResponseInner) HasDescription() bool {
+func (o *V20260125EventsGet200ResponseInner) HasDescription() bool {
 	if o != nil && !IsNil(o.Description) {
 		return true
 	}
@@ -145,12 +145,12 @@ func (o *20260125EventsGet200ResponseInner) HasDescription() bool {
 }
 
 // SetDescription gets a reference to the given string and assigns it to the Description field.
-func (o *20260125EventsGet200ResponseInner) SetDescription(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetDescription(v string) {
 	o.Description = &v
 }
 
 // GetDateTime returns the DateTime field value
-func (o *20260125EventsGet200ResponseInner) GetDateTime() string {
+func (o *V20260125EventsGet200ResponseInner) GetDateTime() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -161,7 +161,7 @@ func (o *20260125EventsGet200ResponseInner) GetDateTime() string {
 
 // GetDateTimeOk returns a tuple with the DateTime field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetDateTimeOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetDateTimeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -169,12 +169,12 @@ func (o *20260125EventsGet200ResponseInner) GetDateTimeOk() (*string, bool) {
 }
 
 // SetDateTime sets field value
-func (o *20260125EventsGet200ResponseInner) SetDateTime(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetDateTime(v string) {
 	o.DateTime = v
 }
 
 // GetDuration returns the Duration field value if set, zero value otherwise.
-func (o *20260125EventsGet200ResponseInner) GetDuration() string {
+func (o *V20260125EventsGet200ResponseInner) GetDuration() string {
 	if o == nil || IsNil(o.Duration) {
 		var ret string
 		return ret
@@ -184,7 +184,7 @@ func (o *20260125EventsGet200ResponseInner) GetDuration() string {
 
 // GetDurationOk returns a tuple with the Duration field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetDurationOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetDurationOk() (*string, bool) {
 	if o == nil || IsNil(o.Duration) {
 		return nil, false
 	}
@@ -192,7 +192,7 @@ func (o *20260125EventsGet200ResponseInner) GetDurationOk() (*string, bool) {
 }
 
 // HasDuration returns a boolean if a field has been set.
-func (o *20260125EventsGet200ResponseInner) HasDuration() bool {
+func (o *V20260125EventsGet200ResponseInner) HasDuration() bool {
 	if o != nil && !IsNil(o.Duration) {
 		return true
 	}
@@ -201,12 +201,12 @@ func (o *20260125EventsGet200ResponseInner) HasDuration() bool {
 }
 
 // SetDuration gets a reference to the given string and assigns it to the Duration field.
-func (o *20260125EventsGet200ResponseInner) SetDuration(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetDuration(v string) {
 	o.Duration = &v
 }
 
 // GetEventUrl returns the EventUrl field value
-func (o *20260125EventsGet200ResponseInner) GetEventUrl() string {
+func (o *V20260125EventsGet200ResponseInner) GetEventUrl() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -217,7 +217,7 @@ func (o *20260125EventsGet200ResponseInner) GetEventUrl() string {
 
 // GetEventUrlOk returns a tuple with the EventUrl field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetEventUrlOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetEventUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -225,12 +225,12 @@ func (o *20260125EventsGet200ResponseInner) GetEventUrlOk() (*string, bool) {
 }
 
 // SetEventUrl sets field value
-func (o *20260125EventsGet200ResponseInner) SetEventUrl(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetEventUrl(v string) {
 	o.EventUrl = v
 }
 
 // GetStatus returns the Status field value
-func (o *20260125EventsGet200ResponseInner) GetStatus() string {
+func (o *V20260125EventsGet200ResponseInner) GetStatus() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -241,7 +241,7 @@ func (o *20260125EventsGet200ResponseInner) GetStatus() string {
 
 // GetStatusOk returns a tuple with the Status field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetStatusOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetStatusOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -249,12 +249,12 @@ func (o *20260125EventsGet200ResponseInner) GetStatusOk() (*string, bool) {
 }
 
 // SetStatus sets field value
-func (o *20260125EventsGet200ResponseInner) SetStatus(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetStatus(v string) {
 	o.Status = v
 }
 
 // GetEventType returns the EventType field value if set, zero value otherwise.
-func (o *20260125EventsGet200ResponseInner) GetEventType() string {
+func (o *V20260125EventsGet200ResponseInner) GetEventType() string {
 	if o == nil || IsNil(o.EventType) {
 		var ret string
 		return ret
@@ -264,7 +264,7 @@ func (o *20260125EventsGet200ResponseInner) GetEventType() string {
 
 // GetEventTypeOk returns a tuple with the EventType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetEventTypeOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetEventTypeOk() (*string, bool) {
 	if o == nil || IsNil(o.EventType) {
 		return nil, false
 	}
@@ -272,7 +272,7 @@ func (o *20260125EventsGet200ResponseInner) GetEventTypeOk() (*string, bool) {
 }
 
 // HasEventType returns a boolean if a field has been set.
-func (o *20260125EventsGet200ResponseInner) HasEventType() bool {
+func (o *V20260125EventsGet200ResponseInner) HasEventType() bool {
 	if o != nil && !IsNil(o.EventType) {
 		return true
 	}
@@ -281,12 +281,12 @@ func (o *20260125EventsGet200ResponseInner) HasEventType() bool {
 }
 
 // SetEventType gets a reference to the given string and assigns it to the EventType field.
-func (o *20260125EventsGet200ResponseInner) SetEventType(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetEventType(v string) {
 	o.EventType = &v
 }
 
 // GetRsvpCount returns the RsvpCount field value
-func (o *20260125EventsGet200ResponseInner) GetRsvpCount() float32 {
+func (o *V20260125EventsGet200ResponseInner) GetRsvpCount() float32 {
 	if o == nil {
 		var ret float32
 		return ret
@@ -297,7 +297,7 @@ func (o *20260125EventsGet200ResponseInner) GetRsvpCount() float32 {
 
 // GetRsvpCountOk returns a tuple with the RsvpCount field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetRsvpCountOk() (*float32, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetRsvpCountOk() (*float32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -305,12 +305,12 @@ func (o *20260125EventsGet200ResponseInner) GetRsvpCountOk() (*float32, bool) {
 }
 
 // SetRsvpCount sets field value
-func (o *20260125EventsGet200ResponseInner) SetRsvpCount(v float32) {
+func (o *V20260125EventsGet200ResponseInner) SetRsvpCount(v float32) {
 	o.RsvpCount = v
 }
 
 // GetVenues returns the Venues field value
-func (o *20260125EventsGet200ResponseInner) GetVenues() []interface{} {
+func (o *V20260125EventsGet200ResponseInner) GetVenues() []interface{} {
 	if o == nil {
 		var ret []interface{}
 		return ret
@@ -321,7 +321,7 @@ func (o *20260125EventsGet200ResponseInner) GetVenues() []interface{} {
 
 // GetVenuesOk returns a tuple with the Venues field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetVenuesOk() ([]interface{}, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetVenuesOk() ([]interface{}, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -329,12 +329,12 @@ func (o *20260125EventsGet200ResponseInner) GetVenuesOk() ([]interface{}, bool) 
 }
 
 // SetVenues sets field value
-func (o *20260125EventsGet200ResponseInner) SetVenues(v []interface{}) {
+func (o *V20260125EventsGet200ResponseInner) SetVenues(v []interface{}) {
 	o.Venues = v
 }
 
 // GetPhoto returns the Photo field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *20260125EventsGet200ResponseInner) GetPhoto() interface{} {
+func (o *V20260125EventsGet200ResponseInner) GetPhoto() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -345,7 +345,7 @@ func (o *20260125EventsGet200ResponseInner) GetPhoto() interface{} {
 // GetPhotoOk returns a tuple with the Photo field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *20260125EventsGet200ResponseInner) GetPhotoOk() (*interface{}, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetPhotoOk() (*interface{}, bool) {
 	if o == nil || IsNil(o.Photo) {
 		return nil, false
 	}
@@ -353,7 +353,7 @@ func (o *20260125EventsGet200ResponseInner) GetPhotoOk() (*interface{}, bool) {
 }
 
 // HasPhoto returns a boolean if a field has been set.
-func (o *20260125EventsGet200ResponseInner) HasPhoto() bool {
+func (o *V20260125EventsGet200ResponseInner) HasPhoto() bool {
 	if o != nil && !IsNil(o.Photo) {
 		return true
 	}
@@ -362,12 +362,12 @@ func (o *20260125EventsGet200ResponseInner) HasPhoto() bool {
 }
 
 // SetPhoto gets a reference to the given interface{} and assigns it to the Photo field.
-func (o *20260125EventsGet200ResponseInner) SetPhoto(v interface{}) {
+func (o *V20260125EventsGet200ResponseInner) SetPhoto(v interface{}) {
 	o.Photo = v
 }
 
 // GetGroup returns the Group field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *20260125EventsGet200ResponseInner) GetGroup() interface{} {
+func (o *V20260125EventsGet200ResponseInner) GetGroup() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -378,7 +378,7 @@ func (o *20260125EventsGet200ResponseInner) GetGroup() interface{} {
 // GetGroupOk returns a tuple with the Group field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *20260125EventsGet200ResponseInner) GetGroupOk() (*interface{}, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetGroupOk() (*interface{}, bool) {
 	if o == nil || IsNil(o.Group) {
 		return nil, false
 	}
@@ -386,7 +386,7 @@ func (o *20260125EventsGet200ResponseInner) GetGroupOk() (*interface{}, bool) {
 }
 
 // HasGroup returns a boolean if a field has been set.
-func (o *20260125EventsGet200ResponseInner) HasGroup() bool {
+func (o *V20260125EventsGet200ResponseInner) HasGroup() bool {
 	if o != nil && !IsNil(o.Group) {
 		return true
 	}
@@ -395,12 +395,12 @@ func (o *20260125EventsGet200ResponseInner) HasGroup() bool {
 }
 
 // SetGroup gets a reference to the given interface{} and assigns it to the Group field.
-func (o *20260125EventsGet200ResponseInner) SetGroup(v interface{}) {
+func (o *V20260125EventsGet200ResponseInner) SetGroup(v interface{}) {
 	o.Group = v
 }
 
 // GetAddress returns the Address field value
-func (o *20260125EventsGet200ResponseInner) GetAddress() string {
+func (o *V20260125EventsGet200ResponseInner) GetAddress() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -411,7 +411,7 @@ func (o *20260125EventsGet200ResponseInner) GetAddress() string {
 
 // GetAddressOk returns a tuple with the Address field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetAddressOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetAddressOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -419,12 +419,12 @@ func (o *20260125EventsGet200ResponseInner) GetAddressOk() (*string, bool) {
 }
 
 // SetAddress sets field value
-func (o *20260125EventsGet200ResponseInner) SetAddress(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetAddress(v string) {
 	o.Address = v
 }
 
 // GetGoogleMapsUrl returns the GoogleMapsUrl field value
-func (o *20260125EventsGet200ResponseInner) GetGoogleMapsUrl() string {
+func (o *V20260125EventsGet200ResponseInner) GetGoogleMapsUrl() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -435,7 +435,7 @@ func (o *20260125EventsGet200ResponseInner) GetGoogleMapsUrl() string {
 
 // GetGoogleMapsUrlOk returns a tuple with the GoogleMapsUrl field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetGoogleMapsUrlOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetGoogleMapsUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -443,12 +443,12 @@ func (o *20260125EventsGet200ResponseInner) GetGoogleMapsUrlOk() (*string, bool)
 }
 
 // SetGoogleMapsUrl sets field value
-func (o *20260125EventsGet200ResponseInner) SetGoogleMapsUrl(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetGoogleMapsUrl(v string) {
 	o.GoogleMapsUrl = v
 }
 
 // GetPhotoUrl returns the PhotoUrl field value
-func (o *20260125EventsGet200ResponseInner) GetPhotoUrl() string {
+func (o *V20260125EventsGet200ResponseInner) GetPhotoUrl() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -459,7 +459,7 @@ func (o *20260125EventsGet200ResponseInner) GetPhotoUrl() string {
 
 // GetPhotoUrlOk returns a tuple with the PhotoUrl field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetPhotoUrlOk() (*string, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetPhotoUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -467,12 +467,12 @@ func (o *20260125EventsGet200ResponseInner) GetPhotoUrlOk() (*string, bool) {
 }
 
 // SetPhotoUrl sets field value
-func (o *20260125EventsGet200ResponseInner) SetPhotoUrl(v string) {
+func (o *V20260125EventsGet200ResponseInner) SetPhotoUrl(v string) {
 	o.PhotoUrl = v
 }
 
 // GetIsOnline returns the IsOnline field value
-func (o *20260125EventsGet200ResponseInner) GetIsOnline() bool {
+func (o *V20260125EventsGet200ResponseInner) GetIsOnline() bool {
 	if o == nil {
 		var ret bool
 		return ret
@@ -483,7 +483,7 @@ func (o *20260125EventsGet200ResponseInner) GetIsOnline() bool {
 
 // GetIsOnlineOk returns a tuple with the IsOnline field value
 // and a boolean to check if the value has been set.
-func (o *20260125EventsGet200ResponseInner) GetIsOnlineOk() (*bool, bool) {
+func (o *V20260125EventsGet200ResponseInner) GetIsOnlineOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -491,11 +491,11 @@ func (o *20260125EventsGet200ResponseInner) GetIsOnlineOk() (*bool, bool) {
 }
 
 // SetIsOnline sets field value
-func (o *20260125EventsGet200ResponseInner) SetIsOnline(v bool) {
+func (o *V20260125EventsGet200ResponseInner) SetIsOnline(v bool) {
 	o.IsOnline = v
 }
 
-func (o 20260125EventsGet200ResponseInner) MarshalJSON() ([]byte, error) {
+func (o V20260125EventsGet200ResponseInner) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -503,7 +503,7 @@ func (o 20260125EventsGet200ResponseInner) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o 20260125EventsGet200ResponseInner) ToMap() (map[string]interface{}, error) {
+func (o V20260125EventsGet200ResponseInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
 	toSerialize["title"] = o.Title
@@ -534,7 +534,7 @@ func (o 20260125EventsGet200ResponseInner) ToMap() (map[string]interface{}, erro
 	return toSerialize, nil
 }
 
-func (o *20260125EventsGet200ResponseInner) UnmarshalJSON(data []byte) (err error) {
+func (o *V20260125EventsGet200ResponseInner) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -566,7 +566,7 @@ func (o *20260125EventsGet200ResponseInner) UnmarshalJSON(data []byte) (err erro
 		}
 	}
 
-	var20260125EventsGet200ResponseInner := _20260125EventsGet200ResponseInner{}
+	var20260125EventsGet200ResponseInner := _V20260125EventsGet200ResponseInner{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -576,21 +576,21 @@ func (o *20260125EventsGet200ResponseInner) UnmarshalJSON(data []byte) (err erro
 		return err
 	}
 
-	*o = 20260125EventsGet200ResponseInner(var20260125EventsGet200ResponseInner)
+	*o = V20260125EventsGet200ResponseInner(var20260125EventsGet200ResponseInner)
 
 	return err
 }
 
 type Nullable20260125EventsGet200ResponseInner struct {
-	value *20260125EventsGet200ResponseInner
+	value *V20260125EventsGet200ResponseInner
 	isSet bool
 }
 
-func (v Nullable20260125EventsGet200ResponseInner) Get() *20260125EventsGet200ResponseInner {
+func (v Nullable20260125EventsGet200ResponseInner) Get() *V20260125EventsGet200ResponseInner {
 	return v.value
 }
 
-func (v *Nullable20260125EventsGet200ResponseInner) Set(val *20260125EventsGet200ResponseInner) {
+func (v *Nullable20260125EventsGet200ResponseInner) Set(val *V20260125EventsGet200ResponseInner) {
 	v.value = val
 	v.isSet = true
 }
@@ -604,7 +604,7 @@ func (v *Nullable20260125EventsGet200ResponseInner) Unset() {
 	v.isSet = false
 }
 
-func NewNullable20260125EventsGet200ResponseInner(val *20260125EventsGet200ResponseInner) *Nullable20260125EventsGet200ResponseInner {
+func NewNullable20260125EventsGet200ResponseInner(val *V20260125EventsGet200ResponseInner) *Nullable20260125EventsGet200ResponseInner {
 	return &Nullable20260125EventsGet200ResponseInner{value: val, isSet: true}
 }
 
