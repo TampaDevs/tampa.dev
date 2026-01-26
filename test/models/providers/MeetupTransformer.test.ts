@@ -3,11 +3,11 @@ import { MeetupTransformer, Event, EventStatus, EventType } from '../../../model
 
 describe('MeetupTransformer', () => {
   const mockMeetupData = {
-    'tampa-devs': {
+    'tampadevs': {
       id: 'group-123',
       name: 'Tampa Devs',
-      urlname: 'tampa-devs',
-      link: 'https://meetup.com/tampa-devs',
+      urlname: 'tampadevs',
+      link: 'https://meetup.com/tampadevs',
       keyGroupPhoto: {
         id: 'photo-123',
         baseUrl: 'https://photos.meetup.com/',
@@ -24,7 +24,7 @@ describe('MeetupTransformer', () => {
               description: 'Learn TypeScript',
               dateTime: '2026-02-15T18:00:00-05:00',
               duration: 'PT2H',
-              eventUrl: 'https://meetup.com/tampa-devs/events/123',
+              eventUrl: 'https://meetup.com/tampadevs/events/123',
               status: 'ACTIVE',
               eventType: 'PHYSICAL',
               rsvps: {
@@ -86,7 +86,7 @@ describe('MeetupTransformer', () => {
       expect(event.id).to.equal('event-123');
       expect(event.title).to.equal('TypeScript Workshop');
       expect(event.description).to.equal('Learn TypeScript');
-      expect(event.eventUrl).to.equal('https://meetup.com/tampa-devs/events/123');
+      expect(event.eventUrl).to.equal('https://meetup.com/tampadevs/events/123');
       expect(event.rsvpCount).to.equal(25);
       expect(event.status).to.equal(EventStatus.ACTIVE);
       expect(event.eventType).to.equal(EventType.PHYSICAL);
@@ -98,7 +98,7 @@ describe('MeetupTransformer', () => {
 
       expect(event.group.id).to.equal('group-123');
       expect(event.group.name).to.equal('Tampa Devs');
-      expect(event.group.urlname).to.equal('tampa-devs');
+      expect(event.group.urlname).to.equal('tampadevs');
       expect(event.group.memberCount).to.equal(500);
     });
 
@@ -118,13 +118,13 @@ describe('MeetupTransformer', () => {
 
     it('should handle events with no photo', () => {
       const dataWithoutPhoto = {
-        'tampa-devs': {
-          ...mockMeetupData['tampa-devs'],
+        'tampadevs': {
+          ...mockMeetupData['tampadevs'],
           events: {
             edges: [
               {
                 node: {
-                  ...mockMeetupData['tampa-devs'].events.edges[0].node,
+                  ...mockMeetupData['tampadevs'].events.edges[0].node,
                   featuredEventPhoto: undefined,
                 },
               },
@@ -141,13 +141,13 @@ describe('MeetupTransformer', () => {
 
     it('should handle events with no rsvps', () => {
       const dataWithoutRsvps = {
-        'tampa-devs': {
-          ...mockMeetupData['tampa-devs'],
+        'tampadevs': {
+          ...mockMeetupData['tampadevs'],
           events: {
             edges: [
               {
                 node: {
-                  ...mockMeetupData['tampa-devs'].events.edges[0].node,
+                  ...mockMeetupData['tampadevs'].events.edges[0].node,
                   rsvps: undefined,
                 },
               },
@@ -171,7 +171,7 @@ describe('MeetupTransformer', () => {
       expect(grouped.size).to.equal(1);
 
       const [group, events] = Array.from(grouped.entries())[0];
-      expect(group.urlname).to.equal('tampa-devs');
+      expect(group.urlname).to.equal('tampadevs');
       expect(events).to.have.lengthOf(1);
       expect(events[0]).to.be.instanceOf(Event);
     });
@@ -224,7 +224,7 @@ describe('MeetupTransformer', () => {
   describe('Multiple Groups', () => {
     it('should handle multiple groups with multiple events', () => {
       const multiGroupData = {
-        'tampa-devs': mockMeetupData['tampa-devs'],
+        'tampadevs': mockMeetupData['tampadevs'],
         'suncoast-js': {
           id: 'group-456',
           name: 'Suncoast JS',
@@ -260,7 +260,7 @@ describe('MeetupTransformer', () => {
       const events = MeetupTransformer.transformAll(multiGroupData);
       expect(events).to.have.lengthOf(2);
 
-      const tampaDevsEvent = events.find((e) => e.group.urlname === 'tampa-devs');
+      const tampaDevsEvent = events.find((e) => e.group.urlname === 'tampadevs');
       const suncoastJsEvent = events.find((e) => e.group.urlname === 'suncoast-js');
 
       expect(tampaDevsEvent).to.exist;

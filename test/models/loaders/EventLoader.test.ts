@@ -5,8 +5,8 @@ describe('EventLoader', () => {
   const mockGroup1 = new Group({
     id: 'group-1',
     name: 'Tampa Devs',
-    urlname: 'tampa-devs',
-    link: 'https://meetup.com/tampa-devs',
+    urlname: 'tampadevs',
+    link: 'https://meetup.com/tampadevs',
     memberCount: 500,
   });
 
@@ -49,11 +49,11 @@ describe('EventLoader', () => {
       const suncoastEvent = createEvent({ group: mockGroup2 });
 
       const filtered = EventLoader.filter([tampaEvent, suncoastEvent], {
-        groups: ['tampa-devs'],
+        groups: ['tampadevs'],
       });
 
       expect(filtered).to.have.lengthOf(1);
-      expect(filtered[0].group.urlname).to.equal('tampa-devs');
+      expect(filtered[0].group.urlname).to.equal('tampadevs');
     });
 
     it('should exclude online events', () => {
@@ -126,12 +126,12 @@ describe('EventLoader', () => {
       ];
 
       const filtered = EventLoader.filter(events, {
-        groups: ['tampa-devs'],
+        groups: ['tampadevs'],
         excludeOnline: true,
       });
 
       expect(filtered).to.have.lengthOf(1);
-      expect(filtered[0].group.urlname).to.equal('tampa-devs');
+      expect(filtered[0].group.urlname).to.equal('tampadevs');
       expect(filtered[0].isOnline).to.be.false;
     });
   });
@@ -228,7 +228,7 @@ describe('EventLoader', () => {
       const nextEvents = EventLoader.getNextEventPerGroup([event1, event2, event3]);
 
       expect(nextEvents).to.have.lengthOf(2);
-      expect(nextEvents.find((e) => e.group.urlname === 'tampa-devs')?.id).to.equal('event-2');
+      expect(nextEvents.find((e) => e.group.urlname === 'tampadevs')?.id).to.equal('event-2');
       expect(nextEvents.find((e) => e.group.urlname === 'suncoast-js')?.id).to.equal('event-3');
     });
   });
@@ -242,7 +242,7 @@ describe('EventLoader', () => {
       const grouped = EventLoader.groupByGroup([event1, event2, event3]);
 
       expect(grouped.size).to.equal(2);
-      expect(grouped.get('tampa-devs')).to.have.lengthOf(2);
+      expect(grouped.get('tampadevs')).to.have.lengthOf(2);
       expect(grouped.get('suncoast-js')).to.have.lengthOf(1);
     });
   });
@@ -267,11 +267,11 @@ describe('EventLoader', () => {
   describe('load()', () => {
     it('should load, filter, and sort in one operation', () => {
       const mockMeetupData = {
-        'tampa-devs': {
+        'tampadevs': {
           id: 'group-1',
           name: 'Tampa Devs',
-          urlname: 'tampa-devs',
-          link: 'https://meetup.com/tampa-devs',
+          urlname: 'tampadevs',
+          link: 'https://meetup.com/tampadevs',
           keyGroupPhoto: undefined,
           memberships: { totalCount: 500 },
           events: {

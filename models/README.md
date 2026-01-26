@@ -137,7 +137,7 @@ const events = EventLoader.fromMeetupData(rawData);
 
 // Filter events
 const filtered = EventLoader.filter(events, {
-  groups: ['tampa-devs', 'suncoast-js'],  // Specific groups
+  groups: ['tampadevs', 'suncoast-js'],  // Specific groups
   excludeOnline: true,                     // No online events
   withinDays: 7,                           // Next 7 days only
   onlyActive: true,                        // Only active events
@@ -287,7 +287,7 @@ const nextEvents = EventLoader.getNextEventPerGroup(allEvents);
 ### Example 3: Filter specific groups, no online events
 ```typescript
 const inPersonEvents = EventLoader.load(rawData, {
-  groups: ['tampa-devs', 'suncoast-js'],
+  groups: ['tampadevs', 'suncoast-js'],
   excludeOnline: true,
   onlyActive: true,
 });

@@ -5,8 +5,8 @@ describe('Event Model', () => {
   const mockGroup = new Group({
     id: 'group-123',
     name: 'Tampa Devs',
-    urlname: 'tampa-devs',
-    link: 'https://meetup.com/tampa-devs',
+    urlname: 'tampadevs',
+    link: 'https://meetup.com/tampadevs',
     memberCount: 500,
   });
 
@@ -26,7 +26,7 @@ describe('Event Model', () => {
     description: 'This is a test event',
     dateTime: '2026-02-15T18:00:00-05:00',
     duration: 'PT2H',
-    eventUrl: 'https://meetup.com/tampa-devs/events/123',
+    eventUrl: 'https://meetup.com/tampadevs/events/123',
     status: EventStatus.ACTIVE,
     eventType: EventType.PHYSICAL,
     rsvpCount: 25,
@@ -41,7 +41,7 @@ describe('Event Model', () => {
       expect(event.id).to.equal('event-123');
       expect(event.title).to.equal('Test Event');
       expect(event.description).to.equal('This is a test event');
-      expect(event.eventUrl).to.equal('https://meetup.com/tampa-devs/events/123');
+      expect(event.eventUrl).to.equal('https://meetup.com/tampadevs/events/123');
       expect(event.status).to.equal(EventStatus.ACTIVE);
       expect(event.eventType).to.equal(EventType.PHYSICAL);
       expect(event.rsvpCount).to.equal(25);
