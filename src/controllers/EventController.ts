@@ -2,7 +2,6 @@ import type { Context } from 'hono';
 import type { Env } from '../app.js';
 import * as util from '../../lib/utils.js';
 import { Event } from '../../models/index.js';
-import { generateDataHash } from '../cache.js';
 
 /**
  * EventController
@@ -10,30 +9,14 @@ import { generateDataHash } from '../cache.js';
  */
 export class EventController {
   /**
-   * Load raw event data string from KV storage
+   * Load raw event data from KV storage
    */
-  static async loadRawDataString(c: Context<{ Bindings: Env }>): Promise<string> {
+  static async loadRawData(c: Context<{ Bindings: Env }>): Promise<unknown> {
     const rawData = await c.env.kv.get('event_data');
     if (!rawData) {
       throw new Error('No event data available');
     }
-    return rawData;
-  }
-
-  /**
-   * Load raw event data from KV storage
-   */
-  static async loadRawData(c: Context<{ Bindings: Env }>): Promise<unknown> {
-    const rawData = await this.loadRawDataString(c);
     return JSON.parse(rawData);
-  }
-
-  /**
-   * Get the hash of the current event data for cache invalidation
-   */
-  static async getDataHash(c: Context<{ Bindings: Env }>): Promise<string> {
-    const rawData = await this.loadRawDataString(c);
-    return generateDataHash(rawData);
   }
 
   /**

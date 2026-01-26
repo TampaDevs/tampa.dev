@@ -6,6 +6,11 @@ import { swaggerUI } from '@hono/swagger-ui';
  */
 export interface Env {
   kv: KVNamespace;
+  CF_VERSION_METADATA: {
+    id: string;
+    tag: string;
+    timestamp: string;
+  };
 }
 
 /**

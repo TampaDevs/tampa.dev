@@ -74,11 +74,10 @@ const carouselWidgetRoute = createRoute({
 export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // GET /widget/next-event
   app.openapi(nextEventWidgetRoute, async (c) => {
-    // Get data hash for cache key
-    const dataHash = await EventController.getDataHash(c);
+    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, dataHash);
+    const cached = await getCachedResponse(c.req.raw, cacheVersion);
     if (cached) {
       return cached;
     }
@@ -88,16 +87,15 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const html = await c.html(<WidgetNextEvent events={events} />);
 
     // Cache and return
-    return cacheResponse(c.req.raw, html, dataHash);
+    return cacheResponse(c.req.raw, html, cacheVersion);
   });
 
   // GET /widget/carousel
   app.openapi(carouselWidgetRoute, async (c) => {
-    // Get data hash for cache key
-    const dataHash = await EventController.getDataHash(c);
+    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, dataHash);
+    const cached = await getCachedResponse(c.req.raw, cacheVersion);
     if (cached) {
       return cached;
     }
@@ -108,6 +106,6 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const html = await c.html(<WidgetCarousel events={sortedEvents} />);
 
     // Cache and return
-    return cacheResponse(c.req.raw, html, dataHash);
+    return cacheResponse(c.req.raw, html, cacheVersion);
   });
 }

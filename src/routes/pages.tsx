@@ -59,11 +59,10 @@ const upcomingEventsRoute = createRoute({
  */
 export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   const htmlHandler = async (c: any) => {
-    // Get data hash for cache key
-    const dataHash = await EventController.getDataHash(c);
+    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, dataHash);
+    const cached = await getCachedResponse(c.req.raw, cacheVersion);
     if (cached) {
       return cached;
     }
@@ -73,7 +72,7 @@ export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const html = await c.html(<EventsPage events={nextEvents} />);
 
     // Cache and return
-    return cacheResponse(c.req.raw, html, dataHash);
+    return cacheResponse(c.req.raw, html, cacheVersion);
   };
 
   app.openapi(htmlPageRoute, htmlHandler);

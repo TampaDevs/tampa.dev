@@ -132,11 +132,10 @@ const webcalRoute = createRoute({
 export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // RSS handler
   const rssHandler = async (c: any) => {
-    // Get data hash for cache key
-    const dataHash = await EventController.getDataHash(c);
+    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, dataHash);
+    const cached = await getCachedResponse(c.req.raw, cacheVersion);
     if (cached) {
       return cached;
     }
@@ -154,16 +153,15 @@ export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     });
 
     // Cache and return
-    return cacheResponse(c.req.raw, response, dataHash);
+    return cacheResponse(c.req.raw, response, cacheVersion);
   };
 
   // iCalendar handler
   const icalHandler = async (c: any) => {
-    // Get data hash for cache key
-    const dataHash = await EventController.getDataHash(c);
+    const cacheVersion = c.env.CF_VERSION_METADATA?.id;
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, dataHash);
+    const cached = await getCachedResponse(c.req.raw, cacheVersion);
     if (cached) {
       return cached;
     }
@@ -181,7 +179,7 @@ export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     });
 
     // Cache and return
-    return cacheResponse(c.req.raw, response, dataHash);
+    return cacheResponse(c.req.raw, response, cacheVersion);
   };
 
   // Versioned RSS routes

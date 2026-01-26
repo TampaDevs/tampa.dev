@@ -1,16 +1,14 @@
 /**
  * Cloudflare Cache API wrapper for response caching
  *
- * Caches full responses based on URL + event data hash.
- * Responses are invalidated when:
- * - Event data changes (hash mismatch)
- * - 30 minutes have passed (TTL)
+ * Caches full responses based on URL with a 30-minute TTL.
+ * Cache is automatically invalidated on deployment via CACHE_VERSION.
  */
 
 const CACHE_TTL_SECONDS = 30 * 60; // 30 minutes
 
 /**
- * Generate a hash of the event data for cache invalidation
+ * Generate a hash of the event data (kept for backwards compatibility with tests)
  */
 export function generateDataHash(data: string): string {
   let hash = 0;
@@ -23,13 +21,21 @@ export function generateDataHash(data: string): string {
 }
 
 /**
- * Build a cache key from the request URL and data hash
+ * Build a versioned cache key from the request
+ * Includes CACHE_VERSION to invalidate cache on deployment
  */
-function buildCacheKey(request: Request, dataHash: string): string {
+function buildCacheKey(request: Request, cacheVersion?: string): Request {
+  if (!cacheVersion) {
+    return request;
+  }
+
   const url = new URL(request.url);
-  // Include the data hash in the cache key URL
-  url.searchParams.set('_dataHash', dataHash);
-  return url.toString();
+  url.searchParams.set('_v', cacheVersion);
+
+  return new Request(url.toString(), {
+    method: request.method,
+    headers: request.headers,
+  });
 }
 
 /**
@@ -37,10 +43,10 @@ function buildCacheKey(request: Request, dataHash: string): string {
  */
 export async function getCachedResponse(
   request: Request,
-  dataHash: string
+  cacheVersion?: string
 ): Promise<Response | null> {
   const cache = caches.default;
-  const cacheKey = buildCacheKey(request, dataHash);
+  const cacheKey = buildCacheKey(request, cacheVersion);
 
   const cachedResponse = await cache.match(cacheKey);
 
@@ -64,10 +70,10 @@ export async function getCachedResponse(
 export async function cacheResponse(
   request: Request,
   response: Response,
-  dataHash: string
+  cacheVersion?: string
 ): Promise<Response> {
   const cache = caches.default;
-  const cacheKey = buildCacheKey(request, dataHash);
+  const cacheKey = buildCacheKey(request, cacheVersion);
 
   // Clone the response to cache it
   const responseToCache = response.clone();
@@ -76,7 +82,6 @@ export async function cacheResponse(
   const headers = new Headers(responseToCache.headers);
   headers.set('Cache-Control', `public, max-age=${CACHE_TTL_SECONDS}`);
   headers.set('X-Cache', 'MISS');
-  headers.set('X-Data-Hash', dataHash);
 
   const cachedResponse = new Response(responseToCache.body, {
     status: responseToCache.status,
@@ -88,37 +93,4 @@ export async function cacheResponse(
   cache.put(cacheKey, cachedResponse.clone());
 
   return cachedResponse;
-}
-
-/**
- * Wrapper for cached route handlers
- *
- * Usage:
- * ```
- * const handler = withCache(async (c) => {
- *   // Your handler logic
- *   return c.json(data);
- * });
- * ```
- */
-export function withCache<T>(
-  handler: (c: T) => Promise<Response>,
-  getDataHash: (c: T) => Promise<string>
-) {
-  return async (c: T & { req: { raw: Request } }): Promise<Response> => {
-    const request = c.req.raw;
-    const dataHash = await getDataHash(c);
-
-    // Try to get cached response
-    const cached = await getCachedResponse(request, dataHash);
-    if (cached) {
-      return cached;
-    }
-
-    // Generate fresh response
-    const response = await handler(c);
-
-    // Cache and return
-    return cacheResponse(request, response, dataHash);
-  };
 }

@@ -143,11 +143,10 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for all events
   const allEventsHandler = async (c: any) => {
     try {
-      // Get data hash for cache key
-      const dataHash = await EventController.getDataHash(c);
+      const cacheVersion = c.env.CF_VERSION_METADATA?.id;
 
       // Check cache first
-      const cached = await getCachedResponse(c.req.raw, dataHash);
+      const cached = await getCachedResponse(c.req.raw, cacheVersion);
       if (cached) {
         return cached;
       }
@@ -166,7 +165,7 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       });
 
       // Cache and return
-      return cacheResponse(c.req.raw, response, dataHash);
+      return cacheResponse(c.req.raw, response, cacheVersion);
     } catch (error) {
       return c.text('No event data available', 503);
     }
@@ -175,11 +174,10 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for next events
   const nextEventsHandler = async (c: any) => {
     try {
-      // Get data hash for cache key
-      const dataHash = await EventController.getDataHash(c);
+      const cacheVersion = c.env.CF_VERSION_METADATA?.id;
 
       // Check cache first
-      const cached = await getCachedResponse(c.req.raw, dataHash);
+      const cached = await getCachedResponse(c.req.raw, cacheVersion);
       if (cached) {
         return cached;
       }
@@ -198,7 +196,7 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       });
 
       // Cache and return
-      return cacheResponse(c.req.raw, response, dataHash);
+      return cacheResponse(c.req.raw, response, cacheVersion);
     } catch (error) {
       return c.text('No event data available', 503);
     }
