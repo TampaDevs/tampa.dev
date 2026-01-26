@@ -22,16 +22,84 @@ The OpenAPI specification is available at:
 
 ## API Clients
 
-Auto-generated API clients are available for multiple languages:
+Auto-generated API clients are available for multiple languages. Clients are automatically regenerated and published when the API schema changes.
 
-| Language | Package |
-|----------|---------|
-| TypeScript | [`clients/typescript`](./clients/typescript) |
-| Python | [`clients/python`](./clients/python) |
-| Go | [`clients/go`](./clients/go) |
-| Ruby | [`clients/ruby`](./clients/ruby) |
+### TypeScript / JavaScript
 
-Clients are automatically regenerated when the API schema changes.
+```bash
+npm install @tampadevs/events-api-client --registry=https://npm.pkg.github.com
+```
+
+```typescript
+import { EventsApi } from '@tampadevs/events-api-client';
+
+const api = new EventsApi();
+const events = await api.getEvents();
+```
+
+### Go
+
+```bash
+go get github.com/TampaDevs/events.api.tampa.dev/clients/go
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    tampaevents "github.com/TampaDevs/events.api.tampa.dev/clients/go"
+)
+
+func main() {
+    cfg := tampaevents.NewConfiguration()
+    client := tampaevents.NewAPIClient(cfg)
+
+    events, _, err := client.EventsAPI.GetEvents(context.Background()).Execute()
+    if err != nil {
+        panic(err)
+    }
+
+    for _, event := range events {
+        fmt.Println(event.GetTitle())
+    }
+}
+```
+
+### Python
+
+```bash
+pip install git+https://github.com/TampaDevs/events.api.tampa.dev.git#subdirectory=clients/python
+```
+
+```python
+from tampa_events_api import ApiClient, EventsApi
+
+client = ApiClient()
+api = EventsApi(client)
+
+events = api.get_events()
+for event in events:
+    print(event.title)
+```
+
+### Ruby
+
+```bash
+gem install tampa_events_api --source "https://rubygems.pkg.github.com/tampadevs"
+```
+
+```ruby
+require 'tampa_events_api'
+
+api = TampaEventsAPI::EventsApi.new
+
+events = api.get_events
+events.each do |event|
+  puts event.title
+end
+```
 
 ## JSON Schemas
 

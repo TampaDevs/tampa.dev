@@ -88,7 +88,17 @@ jobs:
             -i schemas/openapi.json \
             -g typescript-axios \
             -o clients/typescript \
-            --additional-properties=npmName=@tampa-devs/events-api-client,supportsES6=true,npmVersion=1.0.0
+            --additional-properties=npmName=@tampadevs/events-api-client,supportsES6=true,npmVersion=1.0.0
+
+      - name: Fix TypeScript package metadata
+        run: |
+          cd clients/typescript
+          # Fix repository URL
+          jq '.repository = {"type": "git", "url": "https://github.com/TampaDevs/events.api.tampa.dev.git", "directory": "clients/typescript"}' package.json > package.tmp.json
+          mv package.tmp.json package.json
+          # Ensure correct package name
+          jq '.name = "@tampadevs/events-api-client"' package.json > package.tmp.json
+          mv package.tmp.json package.json
 
       - name: Generate Python Client
         run: |
@@ -106,6 +116,12 @@ jobs:
             -o clients/go \
             --additional-properties=packageName=tampaevents,packageVersion=1.0.0 \
             --model-name-prefix=Api
+
+      - name: Fix Go module path
+        run: |
+          sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/events.api.tampa.dev/clients/go|g' clients/go/go.mod
+          # Also fix any imports in Go files
+          find clients/go -name "*.go" -exec sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/events.api.tampa.dev/clients/go|g' {} \;
 
       - name: Generate Ruby Client
         run: |
