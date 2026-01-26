@@ -7,7 +7,7 @@ All URIs are relative to *https://events.api.tampa.dev*
 |[**serviceStatusGet**](#servicestatusget) | **GET** /service/status | Service status|
 
 # **serviceStatusGet**
-> ServiceStatusGet200Response serviceStatusGet()
+> VServiceStatusGet200Response serviceStatusGet()
 
 Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
 
@@ -31,7 +31,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**ServiceStatusGet200Response**
+**VServiceStatusGet200Response**
 
 ### Authorization
 

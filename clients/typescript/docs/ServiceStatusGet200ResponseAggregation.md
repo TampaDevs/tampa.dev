@@ -1,4 +1,4 @@
-# ServiceStatusGet200ResponseAggregation
+# VServiceStatusGet200ResponseAggregation
 
 
 ## Properties
@@ -15,9 +15,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ServiceStatusGet200ResponseAggregation } from '@tampadevs/events-api-client';
+import { VServiceStatusGet200ResponseAggregation } from '@tampadevs/events-api-client';
 
-const instance: ServiceStatusGet200ResponseAggregation = {
+const instance: VServiceStatusGet200ResponseAggregation = {
     lastRunAt,
     durationMs,
     groupsProcessed,

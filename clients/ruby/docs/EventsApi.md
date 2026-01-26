@@ -10,7 +10,7 @@ All URIs are relative to *https://events.api.tampa.dev*
 
 ## call_20260125_events_get
 
-> <Array<20260125EventsGet200ResponseInner>> call_20260125_events_get(opts)
+> <Array<V20260125EventsGet200ResponseInner>> call_20260125_events_get(opts)
 
 Get all events
 
@@ -44,7 +44,7 @@ end
 
 This returns an Array which contains the response data, status code and headers.
 
-> <Array(<Array<20260125EventsGet200ResponseInner>>, Integer, Hash)> call_20260125_events_get_with_http_info(opts)
+> <Array(<Array<V20260125EventsGet200ResponseInner>>, Integer, Hash)> call_20260125_events_get_with_http_info(opts)
 
 ```ruby
 begin
@@ -52,7 +52,7 @@ begin
   data, status_code, headers = api_instance.call_20260125_events_get_with_http_info(opts)
   p status_code # => 2xx
   p headers # => { ... }
-  p data # => <Array<20260125EventsGet200ResponseInner>>
+  p data # => <Array<V20260125EventsGet200ResponseInner>>
 rescue TampaEventsAPI::ApiError => e
   puts "Error when calling EventsApi->call_20260125_events_get_with_http_info: #{e}"
 end
@@ -70,7 +70,7 @@ end
 
 ### Return type
 
-[**Array&lt;20260125EventsGet200ResponseInner&gt;**](20260125EventsGet200ResponseInner.md)
+[**Array&lt;V20260125EventsGet200ResponseInner&gt;**](V20260125EventsGet200ResponseInner.md)
 
 ### Authorization
 
@@ -84,7 +84,7 @@ No authorization required
 
 ## call_20260125_events_next_get
 
-> <Array<20260125EventsGet200ResponseInner>> call_20260125_events_next_get(opts)
+> <Array<V20260125EventsGet200ResponseInner>> call_20260125_events_next_get(opts)
 
 Get next event per group
 
@@ -118,7 +118,7 @@ end
 
 This returns an Array which contains the response data, status code and headers.
 
-> <Array(<Array<20260125EventsGet200ResponseInner>>, Integer, Hash)> call_20260125_events_next_get_with_http_info(opts)
+> <Array(<Array<V20260125EventsGet200ResponseInner>>, Integer, Hash)> call_20260125_events_next_get_with_http_info(opts)
 
 ```ruby
 begin
@@ -126,7 +126,7 @@ begin
   data, status_code, headers = api_instance.call_20260125_events_next_get_with_http_info(opts)
   p status_code # => 2xx
   p headers # => { ... }
-  p data # => <Array<20260125EventsGet200ResponseInner>>
+  p data # => <Array<V20260125EventsGet200ResponseInner>>
 rescue TampaEventsAPI::ApiError => e
   puts "Error when calling EventsApi->call_20260125_events_next_get_with_http_info: #{e}"
 end
@@ -144,7 +144,7 @@ end
 
 ### Return type
 
-[**Array&lt;20260125EventsGet200ResponseInner&gt;**](20260125EventsGet200ResponseInner.md)
+[**Array&lt;V20260125EventsGet200ResponseInner&gt;**](V20260125EventsGet200ResponseInner.md)
 
 ### Authorization
 

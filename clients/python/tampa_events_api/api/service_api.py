@@ -16,7 +16,7 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from tampa_events_api.models.service_status_get200_response import ServiceStatusGet200Response
+from tampa_events_api.models.v_service_status_get200_response import VServiceStatusGet200Response
 
 from tampa_events_api.api_client import ApiClient, RequestSerialized
 from tampa_events_api.api_response import ApiResponse
@@ -51,7 +51,7 @@ class ServiceApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ServiceStatusGet200Response:
+    ) -> VServiceStatusGet200Response:
         """Service status
 
         Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
@@ -86,7 +86,7 @@ class ServiceApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "ServiceStatusGet200Response",
+            '200': "VServiceStatusGet200Response",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -114,7 +114,7 @@ class ServiceApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[ServiceStatusGet200Response]:
+    ) -> ApiResponse[VServiceStatusGet200Response]:
         """Service status
 
         Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
@@ -149,7 +149,7 @@ class ServiceApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "ServiceStatusGet200Response",
+            '200': "VServiceStatusGet200Response",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -212,7 +212,7 @@ class ServiceApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "ServiceStatusGet200Response",
+            '200': "VServiceStatusGet200Response",
         }
         response_data = self.api_client.call_api(
             *_param,

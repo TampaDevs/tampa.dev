@@ -8,7 +8,7 @@ All URIs are relative to *https://events.api.tampa.dev*
 |[**_20260125eventsNextGet**](#_20260125eventsnextget) | **GET** /2026-01-25/events/next | Get next event per group|
 
 # **_20260125eventsGet**
-> Array<Model20260125EventsGet200ResponseInner> _20260125eventsGet()
+> Array<V20260125EventsGet200ResponseInner> _20260125eventsGet()
 
 Returns a list of all upcoming events, optionally filtered by query parameters
 
@@ -51,7 +51,7 @@ const { status, data } = await apiInstance._20260125eventsGet(
 
 ### Return type
 
-**Array<Model20260125EventsGet200ResponseInner>**
+**Array<V20260125EventsGet200ResponseInner>**
 
 ### Authorization
 
@@ -72,7 +72,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **_20260125eventsNextGet**
-> Array<Model20260125EventsGet200ResponseInner> _20260125eventsNextGet()
+> Array<V20260125EventsGet200ResponseInner> _20260125eventsNextGet()
 
 Returns one upcoming event for each group (the next event)
 
@@ -115,7 +115,7 @@ const { status, data } = await apiInstance._20260125eventsNextGet(
 
 ### Return type
 
-**Array<Model20260125EventsGet200ResponseInner>**
+**Array<V20260125EventsGet200ResponseInner>**
 
 ### Authorization
 

@@ -28,7 +28,7 @@ type ApiCall20260125SchemasGetRequest struct {
 	ApiService *SchemasAPIService
 }
 
-func (r ApiCall20260125SchemasGetRequest) Execute() (*Model20260125SchemasGet200Response, *http.Response, error) {
+func (r ApiCall20260125SchemasGetRequest) Execute() (*VV20260125SchemasGet200Response, *http.Response, error) {
 	return r.ApiService.Call20260125SchemasGetExecute(r)
 }
 
@@ -48,13 +48,13 @@ func (a *SchemasAPIService) Call20260125SchemasGet(ctx context.Context) ApiCall2
 }
 
 // Execute executes the request
-//  @return Model20260125SchemasGet200Response
-func (a *SchemasAPIService) Call20260125SchemasGetExecute(r ApiCall20260125SchemasGetRequest) (*Model20260125SchemasGet200Response, *http.Response, error) {
+//  @return VV20260125SchemasGet200Response
+func (a *SchemasAPIService) Call20260125SchemasGetExecute(r ApiCall20260125SchemasGetRequest) (*VV20260125SchemasGet200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *Model20260125SchemasGet200Response
+		localVarReturnValue  *VV20260125SchemasGet200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "SchemasAPIService.Call20260125SchemasGet")
@@ -211,7 +211,7 @@ func (a *SchemasAPIService) Call20260125SchemasNameGetExecute(r ApiCall20260125S
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v Model20260125SchemasNameGet404Response
+			var v VV20260125SchemasNameGet404Response
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

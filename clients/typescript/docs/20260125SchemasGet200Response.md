@@ -1,19 +1,19 @@
-# Model20260125SchemasGet200Response
+# V20260125SchemasGet200Response
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**schemas** | [**Array&lt;Model20260125SchemasGet200ResponseSchemasInner&gt;**](Model20260125SchemasGet200ResponseSchemasInner.md) |  | [default to undefined]
+**schemas** | [**Array&lt;V20260125SchemasGet200ResponseSchemasInner&gt;**](V20260125SchemasGet200ResponseSchemasInner.md) |  | [default to undefined]
 **version** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { Model20260125SchemasGet200Response } from '@tampadevs/events-api-client';
+import { V20260125SchemasGet200Response } from '@tampadevs/events-api-client';
 
-const instance: Model20260125SchemasGet200Response = {
+const instance: V20260125SchemasGet200Response = {
     schemas,
     version,
 };

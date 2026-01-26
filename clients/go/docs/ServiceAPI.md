@@ -10,7 +10,7 @@ Method | HTTP request | Description
 
 ## ServiceStatusGet
 
-> ServiceStatusGet200Response ServiceStatusGet(ctx).Execute()
+> VVServiceStatusGet200Response ServiceStatusGet(ctx).Execute()
 
 Service status
 
@@ -37,7 +37,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error when calling `ServiceAPI.ServiceStatusGet``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `ServiceStatusGet`: ServiceStatusGet200Response
+	// response from `ServiceStatusGet`: VVServiceStatusGet200Response
 	fmt.Fprintf(os.Stdout, "Response from `ServiceAPI.ServiceStatusGet`: %v\n", resp)
 }
 ```
@@ -53,7 +53,7 @@ Other parameters are passed through a pointer to a apiServiceStatusGetRequest st
 
 ### Return type
 
-[**ServiceStatusGet200Response**](ServiceStatusGet200Response.md)
+[**VVServiceStatusGet200Response**](VServiceStatusGet200Response.md)
 
 ### Authorization
 

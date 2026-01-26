@@ -1,21 +1,21 @@
-# ServiceStatusGet200Response
+# VServiceStatusGet200Response
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**platforms** | [**Array&lt;ServiceStatusGet200ResponsePlatformsInner&gt;**](ServiceStatusGet200ResponsePlatformsInner.md) |  | [default to undefined]
-**groups** | [**Array&lt;ServiceStatusGet200ResponseGroupsInner&gt;**](ServiceStatusGet200ResponseGroupsInner.md) |  | [default to undefined]
+**platforms** | [**Array&lt;VServiceStatusGet200ResponsePlatformsInner&gt;**](VServiceStatusGet200ResponsePlatformsInner.md) |  | [default to undefined]
+**groups** | [**Array&lt;VServiceStatusGet200ResponseGroupsInner&gt;**](VServiceStatusGet200ResponseGroupsInner.md) |  | [default to undefined]
 **totalGroups** | **number** |  | [default to undefined]
-**aggregation** | [**ServiceStatusGet200ResponseAggregation**](ServiceStatusGet200ResponseAggregation.md) |  | [default to undefined]
+**aggregation** | [**VServiceStatusGet200ResponseAggregation**](VServiceStatusGet200ResponseAggregation.md) |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ServiceStatusGet200Response } from '@tampadevs/events-api-client';
+import { VServiceStatusGet200Response } from '@tampadevs/events-api-client';
 
-const instance: ServiceStatusGet200Response = {
+const instance: VServiceStatusGet200Response = {
     platforms,
     groups,
     totalGroups,

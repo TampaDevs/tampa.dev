@@ -27,7 +27,7 @@ type ApiServiceStatusGetRequest struct {
 	ApiService *ServiceAPIService
 }
 
-func (r ApiServiceStatusGetRequest) Execute() (*ServiceStatusGet200Response, *http.Response, error) {
+func (r ApiServiceStatusGetRequest) Execute() (*VVServiceStatusGet200Response, *http.Response, error) {
 	return r.ApiService.ServiceStatusGetExecute(r)
 }
 
@@ -47,13 +47,13 @@ func (a *ServiceAPIService) ServiceStatusGet(ctx context.Context) ApiServiceStat
 }
 
 // Execute executes the request
-//  @return ServiceStatusGet200Response
-func (a *ServiceAPIService) ServiceStatusGetExecute(r ApiServiceStatusGetRequest) (*ServiceStatusGet200Response, *http.Response, error) {
+//  @return VVServiceStatusGet200Response
+func (a *ServiceAPIService) ServiceStatusGetExecute(r ApiServiceStatusGetRequest) (*VVServiceStatusGet200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ServiceStatusGet200Response
+		localVarReturnValue  *VVServiceStatusGet200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ServiceAPIService.ServiceStatusGet")

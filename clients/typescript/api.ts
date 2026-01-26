@@ -23,15 +23,15 @@ import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
-export interface Model20260125EventsGet200ResponseInner {
+export interface V20260125EventsGet200ResponseInner {
     'id': string;
     'title': string;
     'description'?: string;
     'dateTime': string;
     'duration'?: string;
     'eventUrl': string;
-    'status': Model20260125EventsGet200ResponseInnerStatusEnum;
-    'eventType'?: Model20260125EventsGet200ResponseInnerEventTypeEnum;
+    'status': V20260125EventsGet200ResponseInnerStatusEnum;
+    'eventType'?: V20260125EventsGet200ResponseInnerEventTypeEnum;
     'rsvpCount': number;
     'venues': Array<any>;
     'photo'?: any;
@@ -42,42 +42,42 @@ export interface Model20260125EventsGet200ResponseInner {
     'isOnline': boolean;
 }
 
-export const Model20260125EventsGet200ResponseInnerStatusEnum = {
+export const V20260125EventsGet200ResponseInnerStatusEnum = {
     Active: 'ACTIVE',
     Cancelled: 'CANCELLED',
     Draft: 'DRAFT'
 } as const;
 
-export type Model20260125EventsGet200ResponseInnerStatusEnum = typeof Model20260125EventsGet200ResponseInnerStatusEnum[keyof typeof Model20260125EventsGet200ResponseInnerStatusEnum];
-export const Model20260125EventsGet200ResponseInnerEventTypeEnum = {
+export type V20260125EventsGet200ResponseInnerStatusEnum = typeof V20260125EventsGet200ResponseInnerStatusEnum[keyof typeof V20260125EventsGet200ResponseInnerStatusEnum];
+export const V20260125EventsGet200ResponseInnerEventTypeEnum = {
     Physical: 'PHYSICAL',
     Online: 'ONLINE',
     Hybrid: 'HYBRID'
 } as const;
 
-export type Model20260125EventsGet200ResponseInnerEventTypeEnum = typeof Model20260125EventsGet200ResponseInnerEventTypeEnum[keyof typeof Model20260125EventsGet200ResponseInnerEventTypeEnum];
+export type V20260125EventsGet200ResponseInnerEventTypeEnum = typeof V20260125EventsGet200ResponseInnerEventTypeEnum[keyof typeof V20260125EventsGet200ResponseInnerEventTypeEnum];
 
-export interface Model20260125SchemasGet200Response {
-    'schemas': Array<Model20260125SchemasGet200ResponseSchemasInner>;
+export interface V20260125SchemasGet200Response {
+    'schemas': Array<V20260125SchemasGet200ResponseSchemasInner>;
     'version': string;
 }
-export interface Model20260125SchemasGet200ResponseSchemasInner {
+export interface V20260125SchemasGet200ResponseSchemasInner {
     'name': string;
     'title': string;
     'description': string;
     'url': string;
 }
-export interface Model20260125SchemasNameGet404Response {
+export interface V20260125SchemasNameGet404Response {
     'error': string;
     'available': Array<string>;
 }
-export interface ServiceStatusGet200Response {
-    'platforms': Array<ServiceStatusGet200ResponsePlatformsInner>;
-    'groups': Array<ServiceStatusGet200ResponseGroupsInner>;
+export interface VServiceStatusGet200Response {
+    'platforms': Array<VServiceStatusGet200ResponsePlatformsInner>;
+    'groups': Array<VServiceStatusGet200ResponseGroupsInner>;
     'totalGroups': number;
-    'aggregation': ServiceStatusGet200ResponseAggregation;
+    'aggregation': VServiceStatusGet200ResponseAggregation;
 }
-export interface ServiceStatusGet200ResponseAggregation {
+export interface VServiceStatusGet200ResponseAggregation {
     'lastRunAt': string;
     'durationMs': number;
     'groupsProcessed': number;
@@ -85,11 +85,11 @@ export interface ServiceStatusGet200ResponseAggregation {
     'dataHash': string;
     'errors': Array<string>;
 }
-export interface ServiceStatusGet200ResponseGroupsInner {
+export interface VServiceStatusGet200ResponseGroupsInner {
     'urlname': string;
     'platform': string;
 }
-export interface ServiceStatusGet200ResponsePlatformsInner {
+export interface VServiceStatusGet200ResponsePlatformsInner {
     'name': string;
     'configured': boolean;
 }
@@ -229,7 +229,7 @@ export const EventsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async _20260125eventsGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Model20260125EventsGet200ResponseInner>>> {
+        async _20260125eventsGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<V20260125EventsGet200ResponseInner>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator._20260125eventsGet(groups, noonline, withinHours, withinDays, noempty, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['EventsApi._20260125eventsGet']?.[localVarOperationServerIndex]?.url;
@@ -246,7 +246,7 @@ export const EventsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async _20260125eventsNextGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Model20260125EventsGet200ResponseInner>>> {
+        async _20260125eventsNextGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<V20260125EventsGet200ResponseInner>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator._20260125eventsNextGet(groups, noonline, withinHours, withinDays, noempty, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['EventsApi._20260125eventsNextGet']?.[localVarOperationServerIndex]?.url;
@@ -272,7 +272,7 @@ export const EventsApiFactory = function (configuration?: Configuration, basePat
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        _20260125eventsGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<Model20260125EventsGet200ResponseInner>> {
+        _20260125eventsGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<V20260125EventsGet200ResponseInner>> {
             return localVarFp._20260125eventsGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(axios, basePath));
         },
         /**
@@ -286,7 +286,7 @@ export const EventsApiFactory = function (configuration?: Configuration, basePat
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        _20260125eventsNextGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<Model20260125EventsGet200ResponseInner>> {
+        _20260125eventsNextGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<V20260125EventsGet200ResponseInner>> {
             return localVarFp._20260125eventsNextGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(axios, basePath));
         },
     };
@@ -1186,7 +1186,7 @@ export const SchemasApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async _20260125schemasGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Model20260125SchemasGet200Response>> {
+        async _20260125schemasGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<V20260125SchemasGet200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator._20260125schemasGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['SchemasApi._20260125schemasGet']?.[localVarOperationServerIndex]?.url;
@@ -1220,7 +1220,7 @@ export const SchemasApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        _20260125schemasGet(options?: RawAxiosRequestConfig): AxiosPromise<Model20260125SchemasGet200Response> {
+        _20260125schemasGet(options?: RawAxiosRequestConfig): AxiosPromise<V20260125SchemasGet200Response> {
             return localVarFp._20260125schemasGet(options).then((request) => request(axios, basePath));
         },
         /**
@@ -1314,7 +1314,7 @@ export const ServiceApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async serviceStatusGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ServiceStatusGet200Response>> {
+        async serviceStatusGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VServiceStatusGet200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.serviceStatusGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ServiceApi.serviceStatusGet']?.[localVarOperationServerIndex]?.url;
@@ -1335,7 +1335,7 @@ export const ServiceApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        serviceStatusGet(options?: RawAxiosRequestConfig): AxiosPromise<ServiceStatusGet200Response> {
+        serviceStatusGet(options?: RawAxiosRequestConfig): AxiosPromise<VServiceStatusGet200Response> {
             return localVarFp.serviceStatusGet(options).then((request) => request(axios, basePath));
         },
     };

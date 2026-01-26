@@ -9,7 +9,7 @@ Method | HTTP request | Description
 
 
 # **call_20260125_schemas_get**
-> Model20260125SchemasGet200Response call_20260125_schemas_get()
+> V20260125SchemasGet200Response call_20260125_schemas_get()
 
 List all JSON schemas
 
@@ -20,7 +20,7 @@ Returns metadata about all available JSON schemas for the API models
 
 ```python
 import tampa_events_api
-from tampa_events_api.models.model20260125_schemas_get200_response import Model20260125SchemasGet200Response
+from tampa_events_api.models.v20260125_schemas_get200_response import V20260125SchemasGet200Response
 from tampa_events_api.rest import ApiException
 from pprint import pprint
 
@@ -53,7 +53,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**Model20260125SchemasGet200Response**](Model20260125SchemasGet200Response.md)
+[**V20260125SchemasGet200Response**](V20260125SchemasGet200Response.md)
 
 ### Authorization
 

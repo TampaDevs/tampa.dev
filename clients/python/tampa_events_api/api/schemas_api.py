@@ -18,7 +18,7 @@ from typing_extensions import Annotated
 
 from pydantic import StrictStr
 from typing import Any
-from tampa_events_api.models.model20260125_schemas_get200_response import Model20260125SchemasGet200Response
+from tampa_events_api.models.v20260125_schemas_get200_response import V20260125SchemasGet200Response
 
 from tampa_events_api.api_client import ApiClient, RequestSerialized
 from tampa_events_api.api_response import ApiResponse
@@ -53,7 +53,7 @@ class SchemasApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Model20260125SchemasGet200Response:
+    ) -> V20260125SchemasGet200Response:
         """List all JSON schemas
 
         Returns metadata about all available JSON schemas for the API models
@@ -88,7 +88,7 @@ class SchemasApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "Model20260125SchemasGet200Response",
+            '200': "V20260125SchemasGet200Response",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -116,7 +116,7 @@ class SchemasApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[Model20260125SchemasGet200Response]:
+    ) -> ApiResponse[V20260125SchemasGet200Response]:
         """List all JSON schemas
 
         Returns metadata about all available JSON schemas for the API models
@@ -151,7 +151,7 @@ class SchemasApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "Model20260125SchemasGet200Response",
+            '200': "V20260125SchemasGet200Response",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -214,7 +214,7 @@ class SchemasApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "Model20260125SchemasGet200Response",
+            '200': "V20260125SchemasGet200Response",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -338,7 +338,7 @@ class SchemasApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "object",
-            '404': "Model20260125SchemasNameGet404Response",
+            '404': "V20260125SchemasNameGet404Response",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -406,7 +406,7 @@ class SchemasApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "object",
-            '404': "Model20260125SchemasNameGet404Response",
+            '404': "V20260125SchemasNameGet404Response",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -474,7 +474,7 @@ class SchemasApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "object",
-            '404': "Model20260125SchemasNameGet404Response",
+            '404': "V20260125SchemasNameGet404Response",
         }
         response_data = self.api_client.call_api(
             *_param,

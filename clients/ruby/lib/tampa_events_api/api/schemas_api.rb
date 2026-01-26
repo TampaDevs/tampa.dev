@@ -22,7 +22,7 @@ module TampaEventsAPI
     # List all JSON schemas
     # Returns metadata about all available JSON schemas for the API models
     # @param [Hash] opts the optional parameters
-    # @return [20260125SchemasGet200Response]
+    # @return [V20260125SchemasGet200Response]
     def call_20260125_schemas_get(opts = {})
       data, _status_code, _headers = call_20260125_schemas_get_with_http_info(opts)
       data
@@ -31,7 +31,7 @@ module TampaEventsAPI
     # List all JSON schemas
     # Returns metadata about all available JSON schemas for the API models
     # @param [Hash] opts the optional parameters
-    # @return [Array<(20260125SchemasGet200Response, Integer, Hash)>] 20260125SchemasGet200Response data, response status code and response headers
+    # @return [Array<(V20260125SchemasGet200Response, Integer, Hash)>] V20260125SchemasGet200Response data, response status code and response headers
     def call_20260125_schemas_get_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: SchemasApi.call_20260125_schemas_get ...'
@@ -54,7 +54,7 @@ module TampaEventsAPI
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || '20260125SchemasGet200Response'
+      return_type = opts[:debug_return_type] || 'V20260125SchemasGet200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || []

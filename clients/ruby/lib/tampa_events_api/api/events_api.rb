@@ -27,7 +27,7 @@ module TampaEventsAPI
     # @option opts [String] :within_hours 
     # @option opts [String] :within_days 
     # @option opts [String] :noempty 
-    # @return [Array<20260125EventsGet200ResponseInner>]
+    # @return [Array<V20260125EventsGet200ResponseInner>]
     def call_20260125_events_get(opts = {})
       data, _status_code, _headers = call_20260125_events_get_with_http_info(opts)
       data
@@ -41,7 +41,7 @@ module TampaEventsAPI
     # @option opts [String] :within_hours 
     # @option opts [String] :within_days 
     # @option opts [String] :noempty 
-    # @return [Array<(Array<20260125EventsGet200ResponseInner>, Integer, Hash)>] Array<20260125EventsGet200ResponseInner> data, response status code and response headers
+    # @return [Array<(Array<V20260125EventsGet200ResponseInner>, Integer, Hash)>] Array<V20260125EventsGet200ResponseInner> data, response status code and response headers
     def call_20260125_events_get_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: EventsApi.call_20260125_events_get ...'
@@ -69,7 +69,7 @@ module TampaEventsAPI
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'Array<20260125EventsGet200ResponseInner>'
+      return_type = opts[:debug_return_type] || 'Array<V20260125EventsGet200ResponseInner>'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || []
@@ -99,7 +99,7 @@ module TampaEventsAPI
     # @option opts [String] :within_hours 
     # @option opts [String] :within_days 
     # @option opts [String] :noempty 
-    # @return [Array<20260125EventsGet200ResponseInner>]
+    # @return [Array<V20260125EventsGet200ResponseInner>]
     def call_20260125_events_next_get(opts = {})
       data, _status_code, _headers = call_20260125_events_next_get_with_http_info(opts)
       data
@@ -113,7 +113,7 @@ module TampaEventsAPI
     # @option opts [String] :within_hours 
     # @option opts [String] :within_days 
     # @option opts [String] :noempty 
-    # @return [Array<(Array<20260125EventsGet200ResponseInner>, Integer, Hash)>] Array<20260125EventsGet200ResponseInner> data, response status code and response headers
+    # @return [Array<(Array<V20260125EventsGet200ResponseInner>, Integer, Hash)>] Array<V20260125EventsGet200ResponseInner> data, response status code and response headers
     def call_20260125_events_next_get_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: EventsApi.call_20260125_events_next_get ...'
@@ -141,7 +141,7 @@ module TampaEventsAPI
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'Array<20260125EventsGet200ResponseInner>'
+      return_type = opts[:debug_return_type] || 'Array<V20260125EventsGet200ResponseInner>'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || []
