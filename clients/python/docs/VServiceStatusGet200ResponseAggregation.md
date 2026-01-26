@@ -5,11 +5,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**last_run_at** | **str** |  | 
-**duration_ms** | **float** |  | 
-**groups_processed** | **float** |  | 
-**groups_failed** | **float** |  | 
-**data_hash** | **str** |  | 
+**last_run_at** | **str** |  | [optional] 
+**duration_ms** | **float** |  | [optional] 
+**groups_processed** | **float** |  | [optional] 
+**groups_failed** | **float** |  | [optional] 
+**data_hash** | **str** |  | [optional] 
 **errors** | **List[str]** |  | 
 
 ## Example

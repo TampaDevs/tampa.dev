@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr
-from typing import Any, ClassVar, Dict, List, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -26,11 +26,11 @@ class VServiceStatusGet200ResponseAggregation(BaseModel):
     """
     VServiceStatusGet200ResponseAggregation
     """ # noqa: E501
-    last_run_at: StrictStr = Field(alias="lastRunAt")
-    duration_ms: Union[StrictFloat, StrictInt] = Field(alias="durationMs")
-    groups_processed: Union[StrictFloat, StrictInt] = Field(alias="groupsProcessed")
-    groups_failed: Union[StrictFloat, StrictInt] = Field(alias="groupsFailed")
-    data_hash: StrictStr = Field(alias="dataHash")
+    last_run_at: Optional[StrictStr] = Field(default=None, alias="lastRunAt")
+    duration_ms: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="durationMs")
+    groups_processed: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="groupsProcessed")
+    groups_failed: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="groupsFailed")
+    data_hash: Optional[StrictStr] = Field(default=None, alias="dataHash")
     errors: List[StrictStr]
     __properties: ClassVar[List[str]] = ["lastRunAt", "durationMs", "groupsProcessed", "groupsFailed", "dataHash", "errors"]
 

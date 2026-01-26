@@ -24,7 +24,7 @@ type VServiceStatusGet200Response struct {
 	Platforms []VVServiceStatusGet200ResponsePlatformsInner `json:"platforms"`
 	Groups []VVServiceStatusGet200ResponseGroupsInner `json:"groups"`
 	TotalGroups float32 `json:"totalGroups"`
-	Aggregation VVServiceStatusGet200ResponseAggregation `json:"aggregation"`
+	Aggregation *VVServiceStatusGet200ResponseAggregation `json:"aggregation,omitempty"`
 }
 
 type _VServiceStatusGet200Response VServiceStatusGet200Response
@@ -33,12 +33,11 @@ type _VServiceStatusGet200Response VServiceStatusGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVServiceStatusGet200Response(platforms []VVServiceStatusGet200ResponsePlatformsInner, groups []VVServiceStatusGet200ResponseGroupsInner, totalGroups float32, aggregation VVServiceStatusGet200ResponseAggregation) *VServiceStatusGet200Response {
+func NewVServiceStatusGet200Response(platforms []VVServiceStatusGet200ResponsePlatformsInner, groups []VVServiceStatusGet200ResponseGroupsInner, totalGroups float32) *VServiceStatusGet200Response {
 	this := VServiceStatusGet200Response{}
 	this.Platforms = platforms
 	this.Groups = groups
 	this.TotalGroups = totalGroups
-	this.Aggregation = aggregation
 	return &this
 }
 
@@ -122,28 +121,36 @@ func (o *VServiceStatusGet200Response) SetTotalGroups(v float32) {
 	o.TotalGroups = v
 }
 
-// GetAggregation returns the Aggregation field value
+// GetAggregation returns the Aggregation field value if set, zero value otherwise.
 func (o *VServiceStatusGet200Response) GetAggregation() VVServiceStatusGet200ResponseAggregation {
-	if o == nil {
+	if o == nil || IsNil(o.Aggregation) {
 		var ret VVServiceStatusGet200ResponseAggregation
 		return ret
 	}
-
-	return o.Aggregation
+	return *o.Aggregation
 }
 
-// GetAggregationOk returns a tuple with the Aggregation field value
+// GetAggregationOk returns a tuple with the Aggregation field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *VServiceStatusGet200Response) GetAggregationOk() (*VVServiceStatusGet200ResponseAggregation, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Aggregation) {
 		return nil, false
 	}
-	return &o.Aggregation, true
+	return o.Aggregation, true
 }
 
-// SetAggregation sets field value
+// HasAggregation returns a boolean if a field has been set.
+func (o *VServiceStatusGet200Response) HasAggregation() bool {
+	if o != nil && !IsNil(o.Aggregation) {
+		return true
+	}
+
+	return false
+}
+
+// SetAggregation gets a reference to the given VVServiceStatusGet200ResponseAggregation and assigns it to the Aggregation field.
 func (o *VServiceStatusGet200Response) SetAggregation(v VVServiceStatusGet200ResponseAggregation) {
-	o.Aggregation = v
+	o.Aggregation = &v
 }
 
 func (o VServiceStatusGet200Response) MarshalJSON() ([]byte, error) {
@@ -159,7 +166,9 @@ func (o VServiceStatusGet200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize["platforms"] = o.Platforms
 	toSerialize["groups"] = o.Groups
 	toSerialize["totalGroups"] = o.TotalGroups
-	toSerialize["aggregation"] = o.Aggregation
+	if !IsNil(o.Aggregation) {
+		toSerialize["aggregation"] = o.Aggregation
+	}
 	return toSerialize, nil
 }
 
@@ -171,7 +180,6 @@ func (o *VServiceStatusGet200Response) UnmarshalJSON(data []byte) (err error) {
 		"platforms",
 		"groups",
 		"totalGroups",
-		"aggregation",
 	}
 
 	allProperties := make(map[string]interface{})

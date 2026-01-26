@@ -5,11 +5,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**lastRunAt** | **string** |  | [default to undefined]
-**durationMs** | **number** |  | [default to undefined]
-**groupsProcessed** | **number** |  | [default to undefined]
-**groupsFailed** | **number** |  | [default to undefined]
-**dataHash** | **string** |  | [default to undefined]
+**lastRunAt** | **string** |  | [optional] [default to undefined]
+**durationMs** | **number** |  | [optional] [default to undefined]
+**groupsProcessed** | **number** |  | [optional] [default to undefined]
+**groupsFailed** | **number** |  | [optional] [default to undefined]
+**dataHash** | **string** |  | [optional] [default to undefined]
 **errors** | **Array&lt;string&gt;** |  | [default to undefined]
 
 ## Example

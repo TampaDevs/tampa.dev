@@ -4,11 +4,11 @@
 
 | Name | Type | Description | Notes |
 | ---- | ---- | ----------- | ----- |
-| **last_run_at** | **String** |  |  |
-| **duration_ms** | **Float** |  |  |
-| **groups_processed** | **Float** |  |  |
-| **groups_failed** | **Float** |  |  |
-| **data_hash** | **String** |  |  |
+| **last_run_at** | **String** |  | [optional] |
+| **duration_ms** | **Float** |  | [optional] |
+| **groups_processed** | **Float** |  | [optional] |
+| **groups_failed** | **Float** |  | [optional] |
+| **data_hash** | **String** |  | [optional] |
 | **errors** | **Array&lt;String&gt;** |  |  |
 
 ## Example

@@ -21,11 +21,11 @@ var _ MappedNullable = &VServiceStatusGet200ResponseAggregation{}
 
 // VServiceStatusGet200ResponseAggregation struct for VServiceStatusGet200ResponseAggregation
 type VServiceStatusGet200ResponseAggregation struct {
-	LastRunAt string `json:"lastRunAt"`
-	DurationMs float32 `json:"durationMs"`
-	GroupsProcessed float32 `json:"groupsProcessed"`
-	GroupsFailed float32 `json:"groupsFailed"`
-	DataHash string `json:"dataHash"`
+	LastRunAt *string `json:"lastRunAt,omitempty"`
+	DurationMs *float32 `json:"durationMs,omitempty"`
+	GroupsProcessed *float32 `json:"groupsProcessed,omitempty"`
+	GroupsFailed *float32 `json:"groupsFailed,omitempty"`
+	DataHash *string `json:"dataHash,omitempty"`
 	Errors []string `json:"errors"`
 }
 
@@ -35,13 +35,8 @@ type _VServiceStatusGet200ResponseAggregation VServiceStatusGet200ResponseAggreg
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVServiceStatusGet200ResponseAggregation(lastRunAt string, durationMs float32, groupsProcessed float32, groupsFailed float32, dataHash string, errors []string) *VServiceStatusGet200ResponseAggregation {
+func NewVServiceStatusGet200ResponseAggregation(errors []string) *VServiceStatusGet200ResponseAggregation {
 	this := VServiceStatusGet200ResponseAggregation{}
-	this.LastRunAt = lastRunAt
-	this.DurationMs = durationMs
-	this.GroupsProcessed = groupsProcessed
-	this.GroupsFailed = groupsFailed
-	this.DataHash = dataHash
 	this.Errors = errors
 	return &this
 }
@@ -54,124 +49,164 @@ func NewVServiceStatusGet200ResponseAggregationWithDefaults() *VServiceStatusGet
 	return &this
 }
 
-// GetLastRunAt returns the LastRunAt field value
+// GetLastRunAt returns the LastRunAt field value if set, zero value otherwise.
 func (o *VServiceStatusGet200ResponseAggregation) GetLastRunAt() string {
-	if o == nil {
+	if o == nil || IsNil(o.LastRunAt) {
 		var ret string
 		return ret
 	}
-
-	return o.LastRunAt
+	return *o.LastRunAt
 }
 
-// GetLastRunAtOk returns a tuple with the LastRunAt field value
+// GetLastRunAtOk returns a tuple with the LastRunAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *VServiceStatusGet200ResponseAggregation) GetLastRunAtOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.LastRunAt) {
 		return nil, false
 	}
-	return &o.LastRunAt, true
+	return o.LastRunAt, true
 }
 
-// SetLastRunAt sets field value
+// HasLastRunAt returns a boolean if a field has been set.
+func (o *VServiceStatusGet200ResponseAggregation) HasLastRunAt() bool {
+	if o != nil && !IsNil(o.LastRunAt) {
+		return true
+	}
+
+	return false
+}
+
+// SetLastRunAt gets a reference to the given string and assigns it to the LastRunAt field.
 func (o *VServiceStatusGet200ResponseAggregation) SetLastRunAt(v string) {
-	o.LastRunAt = v
+	o.LastRunAt = &v
 }
 
-// GetDurationMs returns the DurationMs field value
+// GetDurationMs returns the DurationMs field value if set, zero value otherwise.
 func (o *VServiceStatusGet200ResponseAggregation) GetDurationMs() float32 {
-	if o == nil {
+	if o == nil || IsNil(o.DurationMs) {
 		var ret float32
 		return ret
 	}
-
-	return o.DurationMs
+	return *o.DurationMs
 }
 
-// GetDurationMsOk returns a tuple with the DurationMs field value
+// GetDurationMsOk returns a tuple with the DurationMs field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *VServiceStatusGet200ResponseAggregation) GetDurationMsOk() (*float32, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.DurationMs) {
 		return nil, false
 	}
-	return &o.DurationMs, true
+	return o.DurationMs, true
 }
 
-// SetDurationMs sets field value
+// HasDurationMs returns a boolean if a field has been set.
+func (o *VServiceStatusGet200ResponseAggregation) HasDurationMs() bool {
+	if o != nil && !IsNil(o.DurationMs) {
+		return true
+	}
+
+	return false
+}
+
+// SetDurationMs gets a reference to the given float32 and assigns it to the DurationMs field.
 func (o *VServiceStatusGet200ResponseAggregation) SetDurationMs(v float32) {
-	o.DurationMs = v
+	o.DurationMs = &v
 }
 
-// GetGroupsProcessed returns the GroupsProcessed field value
+// GetGroupsProcessed returns the GroupsProcessed field value if set, zero value otherwise.
 func (o *VServiceStatusGet200ResponseAggregation) GetGroupsProcessed() float32 {
-	if o == nil {
+	if o == nil || IsNil(o.GroupsProcessed) {
 		var ret float32
 		return ret
 	}
-
-	return o.GroupsProcessed
+	return *o.GroupsProcessed
 }
 
-// GetGroupsProcessedOk returns a tuple with the GroupsProcessed field value
+// GetGroupsProcessedOk returns a tuple with the GroupsProcessed field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *VServiceStatusGet200ResponseAggregation) GetGroupsProcessedOk() (*float32, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.GroupsProcessed) {
 		return nil, false
 	}
-	return &o.GroupsProcessed, true
+	return o.GroupsProcessed, true
 }
 
-// SetGroupsProcessed sets field value
+// HasGroupsProcessed returns a boolean if a field has been set.
+func (o *VServiceStatusGet200ResponseAggregation) HasGroupsProcessed() bool {
+	if o != nil && !IsNil(o.GroupsProcessed) {
+		return true
+	}
+
+	return false
+}
+
+// SetGroupsProcessed gets a reference to the given float32 and assigns it to the GroupsProcessed field.
 func (o *VServiceStatusGet200ResponseAggregation) SetGroupsProcessed(v float32) {
-	o.GroupsProcessed = v
+	o.GroupsProcessed = &v
 }
 
-// GetGroupsFailed returns the GroupsFailed field value
+// GetGroupsFailed returns the GroupsFailed field value if set, zero value otherwise.
 func (o *VServiceStatusGet200ResponseAggregation) GetGroupsFailed() float32 {
-	if o == nil {
+	if o == nil || IsNil(o.GroupsFailed) {
 		var ret float32
 		return ret
 	}
-
-	return o.GroupsFailed
+	return *o.GroupsFailed
 }
 
-// GetGroupsFailedOk returns a tuple with the GroupsFailed field value
+// GetGroupsFailedOk returns a tuple with the GroupsFailed field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *VServiceStatusGet200ResponseAggregation) GetGroupsFailedOk() (*float32, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.GroupsFailed) {
 		return nil, false
 	}
-	return &o.GroupsFailed, true
+	return o.GroupsFailed, true
 }
 
-// SetGroupsFailed sets field value
+// HasGroupsFailed returns a boolean if a field has been set.
+func (o *VServiceStatusGet200ResponseAggregation) HasGroupsFailed() bool {
+	if o != nil && !IsNil(o.GroupsFailed) {
+		return true
+	}
+
+	return false
+}
+
+// SetGroupsFailed gets a reference to the given float32 and assigns it to the GroupsFailed field.
 func (o *VServiceStatusGet200ResponseAggregation) SetGroupsFailed(v float32) {
-	o.GroupsFailed = v
+	o.GroupsFailed = &v
 }
 
-// GetDataHash returns the DataHash field value
+// GetDataHash returns the DataHash field value if set, zero value otherwise.
 func (o *VServiceStatusGet200ResponseAggregation) GetDataHash() string {
-	if o == nil {
+	if o == nil || IsNil(o.DataHash) {
 		var ret string
 		return ret
 	}
-
-	return o.DataHash
+	return *o.DataHash
 }
 
-// GetDataHashOk returns a tuple with the DataHash field value
+// GetDataHashOk returns a tuple with the DataHash field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *VServiceStatusGet200ResponseAggregation) GetDataHashOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.DataHash) {
 		return nil, false
 	}
-	return &o.DataHash, true
+	return o.DataHash, true
 }
 
-// SetDataHash sets field value
+// HasDataHash returns a boolean if a field has been set.
+func (o *VServiceStatusGet200ResponseAggregation) HasDataHash() bool {
+	if o != nil && !IsNil(o.DataHash) {
+		return true
+	}
+
+	return false
+}
+
+// SetDataHash gets a reference to the given string and assigns it to the DataHash field.
 func (o *VServiceStatusGet200ResponseAggregation) SetDataHash(v string) {
-	o.DataHash = v
+	o.DataHash = &v
 }
 
 // GetErrors returns the Errors field value
@@ -208,11 +243,21 @@ func (o VServiceStatusGet200ResponseAggregation) MarshalJSON() ([]byte, error) {
 
 func (o VServiceStatusGet200ResponseAggregation) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["lastRunAt"] = o.LastRunAt
-	toSerialize["durationMs"] = o.DurationMs
-	toSerialize["groupsProcessed"] = o.GroupsProcessed
-	toSerialize["groupsFailed"] = o.GroupsFailed
-	toSerialize["dataHash"] = o.DataHash
+	if !IsNil(o.LastRunAt) {
+		toSerialize["lastRunAt"] = o.LastRunAt
+	}
+	if !IsNil(o.DurationMs) {
+		toSerialize["durationMs"] = o.DurationMs
+	}
+	if !IsNil(o.GroupsProcessed) {
+		toSerialize["groupsProcessed"] = o.GroupsProcessed
+	}
+	if !IsNil(o.GroupsFailed) {
+		toSerialize["groupsFailed"] = o.GroupsFailed
+	}
+	if !IsNil(o.DataHash) {
+		toSerialize["dataHash"] = o.DataHash
+	}
 	toSerialize["errors"] = o.Errors
 	return toSerialize, nil
 }
@@ -222,11 +267,6 @@ func (o *VServiceStatusGet200ResponseAggregation) UnmarshalJSON(data []byte) (er
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"lastRunAt",
-		"durationMs",
-		"groupsProcessed",
-		"groupsFailed",
-		"dataHash",
 		"errors",
 	}
 

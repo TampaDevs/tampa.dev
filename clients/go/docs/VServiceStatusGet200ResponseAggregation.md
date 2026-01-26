@@ -4,18 +4,18 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**LastRunAt** | **string** |  | 
-**DurationMs** | **float32** |  | 
-**GroupsProcessed** | **float32** |  | 
-**GroupsFailed** | **float32** |  | 
-**DataHash** | **string** |  | 
+**LastRunAt** | Pointer to **string** |  | [optional] 
+**DurationMs** | Pointer to **float32** |  | [optional] 
+**GroupsProcessed** | Pointer to **float32** |  | [optional] 
+**GroupsFailed** | Pointer to **float32** |  | [optional] 
+**DataHash** | Pointer to **string** |  | [optional] 
 **Errors** | **[]string** |  | 
 
 ## Methods
 
 ### NewVServiceStatusGet200ResponseAggregation
 
-`func NewVServiceStatusGet200ResponseAggregation(lastRunAt string, durationMs float32, groupsProcessed float32, groupsFailed float32, dataHash string, errors []string, ) *VServiceStatusGet200ResponseAggregation`
+`func NewVServiceStatusGet200ResponseAggregation(errors []string, ) *VServiceStatusGet200ResponseAggregation`
 
 NewVServiceStatusGet200ResponseAggregation instantiates a new VServiceStatusGet200ResponseAggregation object
 This constructor will assign default values to properties that have it defined,
@@ -49,6 +49,11 @@ and a boolean to check if the value has been set.
 
 SetLastRunAt sets LastRunAt field to given value.
 
+### HasLastRunAt
+
+`func (o *VServiceStatusGet200ResponseAggregation) HasLastRunAt() bool`
+
+HasLastRunAt returns a boolean if a field has been set.
 
 ### GetDurationMs
 
@@ -69,6 +74,11 @@ and a boolean to check if the value has been set.
 
 SetDurationMs sets DurationMs field to given value.
 
+### HasDurationMs
+
+`func (o *VServiceStatusGet200ResponseAggregation) HasDurationMs() bool`
+
+HasDurationMs returns a boolean if a field has been set.
 
 ### GetGroupsProcessed
 
@@ -89,6 +99,11 @@ and a boolean to check if the value has been set.
 
 SetGroupsProcessed sets GroupsProcessed field to given value.
 
+### HasGroupsProcessed
+
+`func (o *VServiceStatusGet200ResponseAggregation) HasGroupsProcessed() bool`
+
+HasGroupsProcessed returns a boolean if a field has been set.
 
 ### GetGroupsFailed
 
@@ -109,6 +124,11 @@ and a boolean to check if the value has been set.
 
 SetGroupsFailed sets GroupsFailed field to given value.
 
+### HasGroupsFailed
+
+`func (o *VServiceStatusGet200ResponseAggregation) HasGroupsFailed() bool`
+
+HasGroupsFailed returns a boolean if a field has been set.
 
 ### GetDataHash
 
@@ -129,6 +149,11 @@ and a boolean to check if the value has been set.
 
 SetDataHash sets DataHash field to given value.
 
+### HasDataHash
+
+`func (o *VServiceStatusGet200ResponseAggregation) HasDataHash() bool`
+
+HasDataHash returns a boolean if a field has been set.
 
 ### GetErrors
 

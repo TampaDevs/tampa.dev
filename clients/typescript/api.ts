@@ -36,9 +36,9 @@ export interface V20260125EventsGet200ResponseInner {
     'venues': Array<any>;
     'photo'?: any;
     'group'?: any;
-    'address': string;
-    'googleMapsUrl': string;
-    'photoUrl': string;
+    'address'?: string;
+    'googleMapsUrl'?: string;
+    'photoUrl'?: string;
     'isOnline': boolean;
 }
 
@@ -75,14 +75,14 @@ export interface VServiceStatusGet200Response {
     'platforms': Array<VServiceStatusGet200ResponsePlatformsInner>;
     'groups': Array<VServiceStatusGet200ResponseGroupsInner>;
     'totalGroups': number;
-    'aggregation': VServiceStatusGet200ResponseAggregation;
+    'aggregation'?: VServiceStatusGet200ResponseAggregation;
 }
 export interface VServiceStatusGet200ResponseAggregation {
-    'lastRunAt': string;
-    'durationMs': number;
-    'groupsProcessed': number;
-    'groupsFailed': number;
-    'dataHash': string;
+    'lastRunAt'?: string;
+    'durationMs'?: number;
+    'groupsProcessed'?: number;
+    'groupsFailed'?: number;
+    'dataHash'?: string;
     'errors': Array<string>;
 }
 export interface VServiceStatusGet200ResponseGroupsInner {

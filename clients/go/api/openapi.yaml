@@ -743,13 +743,10 @@ components:
         isOnline:
           type: boolean
       required:
-      - address
       - dateTime
       - eventUrl
-      - googleMapsUrl
       - id
       - isOnline
-      - photoUrl
       - rsvpCount
       - status
       - title
@@ -867,12 +864,7 @@ components:
             type: string
           type: array
       required:
-      - dataHash
-      - durationMs
       - errors
-      - groupsFailed
-      - groupsProcessed
-      - lastRunAt
       nullable: true
     _service_status_get_200_response:
       example:
@@ -910,7 +902,6 @@ components:
         aggregation:
           $ref: "#/components/schemas/_service_status_get_200_response_aggregation"
       required:
-      - aggregation
       - groups
       - platforms
       - totalGroups

@@ -16,9 +16,9 @@
 | **venues** | **Array&lt;Object&gt;** |  |  |
 | **photo** | **Object** |  | [optional] |
 | **group** | **Object** |  | [optional] |
-| **address** | **String** |  |  |
-| **google_maps_url** | **String** |  |  |
-| **photo_url** | **String** |  |  |
+| **address** | **String** |  | [optional] |
+| **google_maps_url** | **String** |  | [optional] |
+| **photo_url** | **String** |  | [optional] |
 | **is_online** | **Boolean** |  |  |
 
 ## Example

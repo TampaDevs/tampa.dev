@@ -17,9 +17,9 @@ Name | Type | Description | Notes
 **venues** | **Array&lt;any&gt;** |  | [default to undefined]
 **photo** | **any** |  | [optional] [default to undefined]
 **group** | **any** |  | [optional] [default to undefined]
-**address** | **string** |  | [default to undefined]
-**googleMapsUrl** | **string** |  | [default to undefined]
-**photoUrl** | **string** |  | [default to undefined]
+**address** | **string** |  | [optional] [default to undefined]
+**googleMapsUrl** | **string** |  | [optional] [default to undefined]
+**photoUrl** | **string** |  | [optional] [default to undefined]
 **isOnline** | **boolean** |  | [default to undefined]
 
 ## Example

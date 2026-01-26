@@ -85,32 +85,22 @@ module TampaEventsAPI
 
       if attributes.key?(:'last_run_at')
         self.last_run_at = attributes[:'last_run_at']
-      else
-        self.last_run_at = nil
       end
 
       if attributes.key?(:'duration_ms')
         self.duration_ms = attributes[:'duration_ms']
-      else
-        self.duration_ms = nil
       end
 
       if attributes.key?(:'groups_processed')
         self.groups_processed = attributes[:'groups_processed']
-      else
-        self.groups_processed = nil
       end
 
       if attributes.key?(:'groups_failed')
         self.groups_failed = attributes[:'groups_failed']
-      else
-        self.groups_failed = nil
       end
 
       if attributes.key?(:'data_hash')
         self.data_hash = attributes[:'data_hash']
-      else
-        self.data_hash = nil
       end
 
       if attributes.key?(:'errors')
@@ -127,26 +117,6 @@ module TampaEventsAPI
     def list_invalid_properties
       warn '[DEPRECATED] the `list_invalid_properties` method is obsolete'
       invalid_properties = Array.new
-      if @last_run_at.nil?
-        invalid_properties.push('invalid value for "last_run_at", last_run_at cannot be nil.')
-      end
-
-      if @duration_ms.nil?
-        invalid_properties.push('invalid value for "duration_ms", duration_ms cannot be nil.')
-      end
-
-      if @groups_processed.nil?
-        invalid_properties.push('invalid value for "groups_processed", groups_processed cannot be nil.')
-      end
-
-      if @groups_failed.nil?
-        invalid_properties.push('invalid value for "groups_failed", groups_failed cannot be nil.')
-      end
-
-      if @data_hash.nil?
-        invalid_properties.push('invalid value for "data_hash", data_hash cannot be nil.')
-      end
-
       if @errors.nil?
         invalid_properties.push('invalid value for "errors", errors cannot be nil.')
       end
@@ -158,63 +128,8 @@ module TampaEventsAPI
     # @return true if the model is valid
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
-      return false if @last_run_at.nil?
-      return false if @duration_ms.nil?
-      return false if @groups_processed.nil?
-      return false if @groups_failed.nil?
-      return false if @data_hash.nil?
       return false if @errors.nil?
       true
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] last_run_at Value to be assigned
-    def last_run_at=(last_run_at)
-      if last_run_at.nil?
-        fail ArgumentError, 'last_run_at cannot be nil'
-      end
-
-      @last_run_at = last_run_at
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] duration_ms Value to be assigned
-    def duration_ms=(duration_ms)
-      if duration_ms.nil?
-        fail ArgumentError, 'duration_ms cannot be nil'
-      end
-
-      @duration_ms = duration_ms
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] groups_processed Value to be assigned
-    def groups_processed=(groups_processed)
-      if groups_processed.nil?
-        fail ArgumentError, 'groups_processed cannot be nil'
-      end
-
-      @groups_processed = groups_processed
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] groups_failed Value to be assigned
-    def groups_failed=(groups_failed)
-      if groups_failed.nil?
-        fail ArgumentError, 'groups_failed cannot be nil'
-      end
-
-      @groups_failed = groups_failed
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] data_hash Value to be assigned
-    def data_hash=(data_hash)
-      if data_hash.nil?
-        fail ArgumentError, 'data_hash cannot be nil'
-      end
-
-      @data_hash = data_hash
     end
 
     # Custom attribute writer method with validation

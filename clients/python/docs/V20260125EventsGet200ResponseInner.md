@@ -17,9 +17,9 @@ Name | Type | Description | Notes
 **venues** | **List[object]** |  | 
 **photo** | **object** |  | [optional] 
 **group** | **object** |  | [optional] 
-**address** | **str** |  | 
-**google_maps_url** | **str** |  | 
-**photo_url** | **str** |  | 
+**address** | **str** |  | [optional] 
+**google_maps_url** | **str** |  | [optional] 
+**photo_url** | **str** |  | [optional] 
 **is_online** | **bool** |  | 
 
 ## Example

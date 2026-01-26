@@ -213,20 +213,14 @@ module TampaEventsAPI
 
       if attributes.key?(:'address')
         self.address = attributes[:'address']
-      else
-        self.address = nil
       end
 
       if attributes.key?(:'google_maps_url')
         self.google_maps_url = attributes[:'google_maps_url']
-      else
-        self.google_maps_url = nil
       end
 
       if attributes.key?(:'photo_url')
         self.photo_url = attributes[:'photo_url']
-      else
-        self.photo_url = nil
       end
 
       if attributes.key?(:'is_online')
@@ -269,18 +263,6 @@ module TampaEventsAPI
         invalid_properties.push('invalid value for "venues", venues cannot be nil.')
       end
 
-      if @address.nil?
-        invalid_properties.push('invalid value for "address", address cannot be nil.')
-      end
-
-      if @google_maps_url.nil?
-        invalid_properties.push('invalid value for "google_maps_url", google_maps_url cannot be nil.')
-      end
-
-      if @photo_url.nil?
-        invalid_properties.push('invalid value for "photo_url", photo_url cannot be nil.')
-      end
-
       if @is_online.nil?
         invalid_properties.push('invalid value for "is_online", is_online cannot be nil.')
       end
@@ -303,9 +285,6 @@ module TampaEventsAPI
       return false unless event_type_validator.valid?(@event_type)
       return false if @rsvp_count.nil?
       return false if @venues.nil?
-      return false if @address.nil?
-      return false if @google_maps_url.nil?
-      return false if @photo_url.nil?
       return false if @is_online.nil?
       true
     end
@@ -388,36 +367,6 @@ module TampaEventsAPI
       end
 
       @venues = venues
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] address Value to be assigned
-    def address=(address)
-      if address.nil?
-        fail ArgumentError, 'address cannot be nil'
-      end
-
-      @address = address
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] google_maps_url Value to be assigned
-    def google_maps_url=(google_maps_url)
-      if google_maps_url.nil?
-        fail ArgumentError, 'google_maps_url cannot be nil'
-      end
-
-      @google_maps_url = google_maps_url
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] photo_url Value to be assigned
-    def photo_url=(photo_url)
-      if photo_url.nil?
-        fail ArgumentError, 'photo_url cannot be nil'
-      end
-
-      @photo_url = photo_url
     end
 
     # Custom attribute writer method with validation

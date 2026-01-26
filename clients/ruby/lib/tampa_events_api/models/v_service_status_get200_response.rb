@@ -99,8 +99,6 @@ module TampaEventsAPI
 
       if attributes.key?(:'aggregation')
         self.aggregation = attributes[:'aggregation']
-      else
-        self.aggregation = nil
       end
     end
 
@@ -121,10 +119,6 @@ module TampaEventsAPI
         invalid_properties.push('invalid value for "total_groups", total_groups cannot be nil.')
       end
 
-      if @aggregation.nil?
-        invalid_properties.push('invalid value for "aggregation", aggregation cannot be nil.')
-      end
-
       invalid_properties
     end
 
@@ -135,7 +129,6 @@ module TampaEventsAPI
       return false if @platforms.nil?
       return false if @groups.nil?
       return false if @total_groups.nil?
-      return false if @aggregation.nil?
       true
     end
 
@@ -167,16 +160,6 @@ module TampaEventsAPI
       end
 
       @total_groups = total_groups
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] aggregation Value to be assigned
-    def aggregation=(aggregation)
-      if aggregation.nil?
-        fail ArgumentError, 'aggregation cannot be nil'
-      end
-
-      @aggregation = aggregation
     end
 
     # Checks equality by comparing each attribute.
