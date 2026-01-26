@@ -1,0 +1,202 @@
+name: "Publish API Clients"
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "clients/**"
+      - "schemas/openapi.json"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-clients
+  cancel-in-progress: false
+
+jobs:
+  publish-typescript:
+    name: "Publish TypeScript Client"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: current
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@tampadevs"
+
+      - name: Generate version
+        id: version
+        run: |
+          # CalVer: 0.YYYYMMDD.HHMM
+          VERSION="0.$(date -u +'%Y%m%d.%H%M')"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Update package.json version
+        working-directory: clients/typescript
+        run: |
+          # Update version in package.json
+          jq --arg v "${{ steps.version.outputs.version }}" '.version = $v' package.json > package.tmp.json
+          mv package.tmp.json package.json
+
+          # Update package name to use GitHub org scope
+          jq '.name = "@tampadevs/events-api-client"' package.json > package.tmp.json
+          mv package.tmp.json package.json
+
+          # Add repository info
+          jq '.repository = {"type": "git", "url": "https://github.com/TampaDevs/events.api.tampa.dev.git", "directory": "clients/typescript"}' package.json > package.tmp.json
+          mv package.tmp.json package.json
+
+          cat package.json
+
+      - name: Install dependencies
+        working-directory: clients/typescript
+        run: npm install
+
+      - name: Build
+        working-directory: clients/typescript
+        run: npm run build --if-present
+
+      - name: Publish to GitHub Packages
+        working-directory: clients/typescript
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-python:
+    name: "Publish Python Client"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate version
+        id: version
+        run: |
+          # CalVer: 0.YYYYMMDD.HHMM
+          VERSION="0.$(date -u +'%Y%m%d.%H%M')"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Update version in setup.py
+        working-directory: clients/python
+        run: |
+          sed -i "s/VERSION = .*/VERSION = \"${{ steps.version.outputs.version }}\"/" setup.py
+          cat setup.py | head -20
+
+      - name: Install build dependencies
+        run: pip install build twine
+
+      - name: Build package
+        working-directory: clients/python
+        run: python -m build
+
+      - name: Publish to PyPI
+        working-directory: clients/python
+        run: |
+          if [ -n "$TWINE_PASSWORD" ]; then
+            twine upload dist/*
+          else
+            echo "::notice::PYPI_TOKEN secret not configured - skipping PyPI publish"
+          fi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+  publish-ruby:
+    name: "Publish Ruby Client"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Generate version
+        id: version
+        run: |
+          # CalVer: 0.YYYYMMDD.HHMM
+          VERSION="0.$(date -u +'%Y%m%d.%H%M')"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Update gemspec version
+        working-directory: clients/ruby
+        run: |
+          sed -i "s/s.version = .*/s.version = \"${{ steps.version.outputs.version }}\"/" tampa_events_api.gemspec
+          cat tampa_events_api.gemspec | head -20
+
+      - name: Build gem
+        working-directory: clients/ruby
+        run: gem build tampa_events_api.gemspec
+
+      - name: Configure GitHub Packages
+        run: |
+          mkdir -p ~/.gem
+          echo "---" > ~/.gem/credentials
+          echo ":github: Bearer ${{ secrets.GITHUB_TOKEN }}" >> ~/.gem/credentials
+          chmod 0600 ~/.gem/credentials
+
+      - name: Publish to GitHub Packages
+        working-directory: clients/ruby
+        run: gem push --key github --host https://rubygems.pkg.github.com/TampaDevs tampa_events_api-*.gem
+
+  tag-go-module:
+    name: "Tag Go Module"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version
+        id: version
+        run: |
+          # CalVer: v0.YYYYMMDD.HHMM
+          VERSION="v0.$(date -u +'%Y%m%d.%H%M')"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Go module version: $VERSION"
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "clients/go/${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Go module tag
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "clients/go/${{ steps.version.outputs.version }}"
+          git push origin "clients/go/${{ steps.version.outputs.version }}"
