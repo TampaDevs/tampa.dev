@@ -11,7 +11,7 @@ Method | HTTP request | Description
 
 ## Call20260125EventsGet
 
-> []Model20260125EventsGet200ResponseInner Call20260125EventsGet(ctx).Groups(groups).Noonline(noonline).WithinHours(withinHours).WithinDays(withinDays).Noempty(noempty).Execute()
+> []ApiApi20260125EventsGet200ResponseInner Call20260125EventsGet(ctx).Groups(groups).Noonline(noonline).WithinHours(withinHours).WithinDays(withinDays).Noempty(noempty).Execute()
 
 Get all events
 
@@ -43,7 +43,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error when calling `EventsAPI.Call20260125EventsGet``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `Call20260125EventsGet`: []Model20260125EventsGet200ResponseInner
+	// response from `Call20260125EventsGet`: []ApiApi20260125EventsGet200ResponseInner
 	fmt.Fprintf(os.Stdout, "Response from `EventsAPI.Call20260125EventsGet`: %v\n", resp)
 }
 ```
@@ -67,7 +67,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**[]Model20260125EventsGet200ResponseInner**](20260125EventsGet200ResponseInner.md)
+[**[]ApiApi20260125EventsGet200ResponseInner**](Api20260125EventsGet200ResponseInner.md)
 
 ### Authorization
 
@@ -85,7 +85,7 @@ No authorization required
 
 ## Call20260125EventsNextGet
 
-> []Model20260125EventsGet200ResponseInner Call20260125EventsNextGet(ctx).Groups(groups).Noonline(noonline).WithinHours(withinHours).WithinDays(withinDays).Noempty(noempty).Execute()
+> []ApiApi20260125EventsGet200ResponseInner Call20260125EventsNextGet(ctx).Groups(groups).Noonline(noonline).WithinHours(withinHours).WithinDays(withinDays).Noempty(noempty).Execute()
 
 Get next event per group
 
@@ -117,7 +117,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error when calling `EventsAPI.Call20260125EventsNextGet``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `Call20260125EventsNextGet`: []Model20260125EventsGet200ResponseInner
+	// response from `Call20260125EventsNextGet`: []ApiApi20260125EventsGet200ResponseInner
 	fmt.Fprintf(os.Stdout, "Response from `EventsAPI.Call20260125EventsNextGet`: %v\n", resp)
 }
 ```
@@ -141,7 +141,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**[]Model20260125EventsGet200ResponseInner**](20260125EventsGet200ResponseInner.md)
+[**[]ApiApi20260125EventsGet200ResponseInner**](Api20260125EventsGet200ResponseInner.md)
 
 ### Authorization
 

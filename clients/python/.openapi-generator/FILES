@@ -1,7 +1,6 @@
 .github/workflows/python.yml
 .gitignore
 .gitlab-ci.yml
-.openapi-generator-ignore
 .travis.yml
 README.md
 docs/EventsApi.md
@@ -38,13 +37,4 @@ tampa_events_api/py.typed
 tampa_events_api/rest.py
 test-requirements.txt
 test/__init__.py
-test/test_events_api.py
-test/test_feeds_api.py
-test/test_model20260125_events_get200_response_inner.py
-test/test_model20260125_schemas_get200_response.py
-test/test_model20260125_schemas_get200_response_schemas_inner.py
-test/test_model20260125_schemas_name_get404_response.py
-test/test_pages_api.py
-test/test_schemas_api.py
-test/test_widgets_api.py
 tox.ini

@@ -57,7 +57,7 @@ func (r ApiCall20260125EventsGetRequest) Noempty(noempty string) ApiCall20260125
 	return r
 }
 
-func (r ApiCall20260125EventsGetRequest) Execute() ([]Model20260125EventsGet200ResponseInner, *http.Response, error) {
+func (r ApiCall20260125EventsGetRequest) Execute() ([]ApiApi20260125EventsGet200ResponseInner, *http.Response, error) {
 	return r.ApiService.Call20260125EventsGetExecute(r)
 }
 
@@ -77,13 +77,13 @@ func (a *EventsAPIService) Call20260125EventsGet(ctx context.Context) ApiCall202
 }
 
 // Execute executes the request
-//  @return []Model20260125EventsGet200ResponseInner
-func (a *EventsAPIService) Call20260125EventsGetExecute(r ApiCall20260125EventsGetRequest) ([]Model20260125EventsGet200ResponseInner, *http.Response, error) {
+//  @return []ApiApi20260125EventsGet200ResponseInner
+func (a *EventsAPIService) Call20260125EventsGetExecute(r ApiCall20260125EventsGetRequest) ([]ApiApi20260125EventsGet200ResponseInner, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  []Model20260125EventsGet200ResponseInner
+		localVarReturnValue  []ApiApi20260125EventsGet200ResponseInner
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "EventsAPIService.Call20260125EventsGet")
@@ -211,7 +211,7 @@ func (r ApiCall20260125EventsNextGetRequest) Noempty(noempty string) ApiCall2026
 	return r
 }
 
-func (r ApiCall20260125EventsNextGetRequest) Execute() ([]Model20260125EventsGet200ResponseInner, *http.Response, error) {
+func (r ApiCall20260125EventsNextGetRequest) Execute() ([]ApiApi20260125EventsGet200ResponseInner, *http.Response, error) {
 	return r.ApiService.Call20260125EventsNextGetExecute(r)
 }
 
@@ -231,13 +231,13 @@ func (a *EventsAPIService) Call20260125EventsNextGet(ctx context.Context) ApiCal
 }
 
 // Execute executes the request
-//  @return []Model20260125EventsGet200ResponseInner
-func (a *EventsAPIService) Call20260125EventsNextGetExecute(r ApiCall20260125EventsNextGetRequest) ([]Model20260125EventsGet200ResponseInner, *http.Response, error) {
+//  @return []ApiApi20260125EventsGet200ResponseInner
+func (a *EventsAPIService) Call20260125EventsNextGetExecute(r ApiCall20260125EventsNextGetRequest) ([]ApiApi20260125EventsGet200ResponseInner, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  []Model20260125EventsGet200ResponseInner
+		localVarReturnValue  []ApiApi20260125EventsGet200ResponseInner
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "EventsAPIService.Call20260125EventsNextGet")

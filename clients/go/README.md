@@ -96,10 +96,10 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [20260125EventsGet200ResponseInner](docs/20260125EventsGet200ResponseInner.md)
- - [20260125SchemasGet200Response](docs/20260125SchemasGet200Response.md)
- - [20260125SchemasGet200ResponseSchemasInner](docs/20260125SchemasGet200ResponseSchemasInner.md)
- - [20260125SchemasNameGet404Response](docs/20260125SchemasNameGet404Response.md)
+ - [Api20260125EventsGet200ResponseInner](docs/Api20260125EventsGet200ResponseInner.md)
+ - [Api20260125SchemasGet200Response](docs/Api20260125SchemasGet200Response.md)
+ - [Api20260125SchemasGet200ResponseSchemasInner](docs/Api20260125SchemasGet200ResponseSchemasInner.md)
+ - [Api20260125SchemasNameGet404Response](docs/Api20260125SchemasNameGet404Response.md)
 
 
 ## Documentation For Authorization
