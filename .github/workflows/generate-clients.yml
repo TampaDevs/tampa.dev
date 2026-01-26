@@ -88,7 +88,7 @@ jobs:
             -i schemas/openapi.json \
             -g typescript-axios \
             -o clients/typescript \
-            --additional-properties=npmName=@tampadevs/events-api-client,supportsES6=true,npmVersion=1.0.0
+            --additional-properties=npmName=@tampadevs/events-api-client,supportsES6=true,npmVersion=1.0.0,modelNamePrefix=V
 
       - name: Fix TypeScript package metadata
         run: |
@@ -106,7 +106,7 @@ jobs:
             -i schemas/openapi.json \
             -g python \
             -o clients/python \
-            --additional-properties=packageName=tampa_events_api,projectName=tampa-events-api-client,packageVersion=1.0.0
+            --additional-properties=packageName=tampa_events_api,projectName=tampa-events-api-client,packageVersion=1.0.0,modelNamePrefix=V
 
       - name: Generate Go Client
         run: |
@@ -114,35 +114,14 @@ jobs:
             -i schemas/openapi.json \
             -g go \
             -o clients/go \
-            --additional-properties=packageName=tampaevents,packageVersion=1.0.0
+            --additional-properties=packageName=tampaevents,packageVersion=1.0.0,modelNamePrefix=V
 
-      - name: Fix Go client issues
+      - name: Fix Go client module path
         run: |
           cd clients/go
-
           # Fix module path placeholder
           sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/events.api.tampa.dev/clients/go|g' go.mod
-
-          # Fix type names that start with numbers (invalid Go identifiers)
-          # These come from date-versioned paths like /2026-01-25/events
-          # Prefix them with 'V' to make valid identifiers (e.g., 20260125... -> V20260125...)
-          find . -name "*.go" -exec sed -i -E 's/\b([0-9]{8}[A-Za-z])/V\1/g' {} \;
-
-          # Also fix underscore-prefixed internal types for consistency
-          # _20260125... -> _V20260125...
-          find . -name "*.go" -exec sed -i -E 's/_([0-9]{8})/_V\1/g' {} \;
-
-          # Fix imports with placeholder path
           find . -name "*.go" -exec sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/events.api.tampa.dev/clients/go|g' {} \;
-
-          # Rename model files that start with underscore+date pattern
-          for f in model__[0-9]*.go; do
-            if [ -f "$f" ]; then
-              # model__2026_01_25_foo.go -> model_v_2026_01_25_foo.go
-              newname=$(echo "$f" | sed 's/model__/model_v_/')
-              mv "$f" "$newname"
-            fi
-          done
 
       - name: Generate Ruby Client
         run: |
@@ -150,7 +129,7 @@ jobs:
             -i schemas/openapi.json \
             -g ruby \
             -o clients/ruby \
-            --additional-properties=gemName=tampa_events_api,gemVersion=1.0.0,moduleName=TampaEventsAPI
+            --additional-properties=gemName=tampa_events_api,gemVersion=1.0.0,moduleName=TampaEventsAPI,modelNamePrefix=V
 
       - name: Check for changes
         id: check_changes
