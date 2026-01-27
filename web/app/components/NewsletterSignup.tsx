@@ -48,8 +48,8 @@ export function NewsletterSignup() {
   return (
     <section id="newsletter" className="bg-coral scroll-mt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center md:text-left">
-          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center justify-center md:justify-start gap-3">
+        <div className="text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center justify-center gap-3">
             <svg
               className="w-7 h-7"
               fill="none"
@@ -129,7 +129,7 @@ export function NewsletterSignup() {
           </div>
         </form>
 
-        <p className="mt-8 text-sm text-white/70 text-center md:text-left">
+        <p className="mt-8 text-sm text-white/70 text-center">
           Visit{" "}
           <a
             href="https://www.tampadevs.com/"
