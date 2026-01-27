@@ -63,12 +63,19 @@ export function truncate(text: string, maxLength: number): string {
  * Strip HTML tags from text
  */
 export function stripHtml(html: string): string {
-  // Use a robust HTML sanitizer to remove all tags and script content.
-  // `allowedTags: []` and `allowedAttributes: {}` ensure only plain text remains.
   return sanitizeHtml(html, {
     allowedTags: [],
     allowedAttributes: {},
   });
+}
+
+/**
+ * Generate a slug from a string
+ */
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
 
