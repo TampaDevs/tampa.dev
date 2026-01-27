@@ -1,12 +1,15 @@
-# events.api.tampa.dev
+# Tampa.dev Events API & Website
 
-Public API to retrieve information about upcoming tech events in the Tampa Bay area.
+This repository contains both the **Events API** and the **tampa.dev** website for discovering tech events in the Tampa Bay area.
 
-## Add Your Meetup
+- **Website**: [tampa.dev](https://tampa.dev)
+- **API**: [events.api.tampa.dev](https://events.api.tampa.dev)
 
-Want your tech meetup included in the Tampa Bay events feed?
+## Add Your Group
 
-[![Add Your Meetup](https://img.shields.io/badge/Add_Your_Meetup-Click_Here-green?style=for-the-badge&logo=meetup)](https://github.com/TampaDevs/events.api.tampa.dev/issues/new/choose)
+Want your group included in the Tampa Bay events feed?
+
+[![Add Your Group](https://img.shields.io/badge/Add_Your_Group-Click_Here-green?style=for-the-badge&logo=meetup)](https://github.com/TampaDevs/events.api.tampa.dev/issues/new/choose)
 
 ---
 
@@ -174,7 +177,9 @@ Displays a carousel of upcoming events.
 
 ## Development
 
-To start the local development environment:
+### Events API
+
+To start the local API development environment:
 
 ```bash
 npm install
@@ -183,10 +188,26 @@ npm start
 
 Your local instance of the Events API will become available at http://localhost:8787.
 
-### Running Tests
-
 ```bash
 npm test
+```
+
+### Website (tampa.dev)
+
+The website is a React Router 7 app deployed to Cloudflare Workers.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Your local instance will be available at http://localhost:5173.
+
+```bash
+npm run typecheck  # Type check
+npm test           # Run tests
+npm run build      # Build for production
 ```
 
 ## Data Freshness
