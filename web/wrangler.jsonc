@@ -2,5 +2,9 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tampa-dev-web",
   "compatibility_date": "2025-04-04",
-  "main": "./workers/app.ts"
+  "main": "./workers/app.ts",
+  "routes": [
+    { "pattern": "tampa.dev/*", "zone_name": "tampa.dev" },
+    { "pattern": "www.tampa.dev/*", "zone_name": "tampa.dev" }
+  ]
 }
