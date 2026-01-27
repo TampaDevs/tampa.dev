@@ -77,7 +77,7 @@ export function NewsletterSignup() {
           id="newsletter-form"
           name="newsletter-form"
         >
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex flex-col md:flex-row gap-3 max-w-2xl mx-auto">
             <input
               type="text"
               name="firstname"
@@ -100,6 +100,8 @@ export function NewsletterSignup() {
               autoComplete="off"
               className="flex-1 px-4 py-3 rounded-lg backdrop-blur-sm bg-white/15 border border-white/25 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60 focus:bg-white/20 transition-all shadow-inner shadow-black/5"
             />
+          </div>
+          <div className="mt-4 text-center">
             <button
               type="submit"
               disabled={status === "submitting"}
