@@ -5,7 +5,7 @@ import { generateMetaTags } from "~/lib/seo";
 import { eventsToJsonLd } from "~/lib/structured-data";
 import { EventCard, StructuredData } from "~/components";
 import { groups, getMeetupUrlnames } from "~/data/groups";
-import { formatEventDate, isToday, isThisWeek } from "~/lib/utils";
+import { isToday, isThisWeek } from "~/lib/utils";
 import type { Event } from "~/lib/types";
 
 export const meta: Route.MetaFunction = () => {
