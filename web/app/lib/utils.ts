@@ -1,7 +1,6 @@
 /**
  * Utility functions
  */
-import sanitizeHtml from "sanitize-html";
 
 /**
  * Format a date for display
@@ -63,10 +62,7 @@ export function truncate(text: string, maxLength: number): string {
  * Strip HTML tags from text
  */
 export function stripHtml(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: [],
-    allowedAttributes: {},
-  });
+  return html.replace(/<[^>]*>/g, "");
 }
 
 /**
