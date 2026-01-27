@@ -62,7 +62,18 @@ export function truncate(text: string, maxLength: number): string {
  * Strip HTML tags from text
  */
 export function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, "");
+  // First, aggressively remove script blocks to avoid leaving partial <script
+  // sequences that could be interpreted as executable content.
+  let previous: string;
+  let sanitized = html;
+  const scriptTagRegex = /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi;
+  do {
+    previous = sanitized;
+    sanitized = sanitized.replace(scriptTagRegex, "");
+  } while (sanitized !== previous);
+
+  // Then strip remaining HTML-like tags (preserving plain text content).
+  return sanitized.replace(/<[^>]*>/g, "");
 }
 
 /**
