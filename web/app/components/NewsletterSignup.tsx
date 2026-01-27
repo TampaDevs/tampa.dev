@@ -48,8 +48,8 @@ export function NewsletterSignup() {
   return (
     <section id="newsletter" className="bg-coral scroll-mt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center justify-center gap-3">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
             <svg
               className="w-7 h-7"
               fill="none"
@@ -77,7 +77,7 @@ export function NewsletterSignup() {
           id="newsletter-form"
           name="newsletter-form"
         >
-          <div className="flex flex-col md:flex-row gap-3 max-w-2xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-3">
             <input
               type="text"
               name="firstname"
@@ -100,8 +100,6 @@ export function NewsletterSignup() {
               autoComplete="off"
               className="flex-1 px-4 py-3 rounded-lg backdrop-blur-sm bg-white/15 border border-white/25 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60 focus:bg-white/20 transition-all shadow-inner shadow-black/5"
             />
-          </div>
-          <div className="mt-4 text-center">
             <button
               type="submit"
               disabled={status === "submitting"}
@@ -131,7 +129,7 @@ export function NewsletterSignup() {
           </div>
         </form>
 
-        <p className="mt-8 text-sm text-white/70 text-center">
+        <p className="mt-8 text-sm text-white/70">
           Visit{" "}
           <a
             href="https://www.tampadevs.com/"
