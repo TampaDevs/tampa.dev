@@ -1,0 +1,6 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tampa-dev-web",
+  "compatibility_date": "2025-04-04",
+  "main": "./workers/app.ts"
+}

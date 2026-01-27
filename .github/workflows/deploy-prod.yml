@@ -10,6 +10,7 @@ on:
       - "LICENSE"
       - "ACKNOWLEDGEMENTS"
       - "**.md"
+      - "web/**"
 
 jobs:
   publish:
