@@ -39,6 +39,37 @@ export const groups: LocalGroup[] = [
     featured: true,
   },
   {
+    slug: "ark-innovation-center",
+    name: "ARK Innovation Center",
+    description:
+      "We connect young companies with capital and coaching. We help get companies off the ground and on maps. We are home to independent workers including solo entrepreneurs, lawyers, investors, accountants, graphic designers, engineers, and other related occupations geared towards tech startups.",
+    website: "https://tbinnovates.com/",
+    logo: "/images/groups/tbinno.jpg",
+    tags: ["startups", "coworking"],
+    featured: true,
+  },
+  {
+    slug: "data-analytics-ai-tampa-bay",
+    name: "Data Analytics & AI - Tampa Bay",
+    description:
+      "Analytics touches every part of the organization. From operations to marketing to delivery, everyone needs data to maximize their own impact. Our events focus on how you can manage data more effectively with fast, secure, and effective insights.",
+    website: "https://www.meetup.com/dataanalyticstampa/",
+    logo: "/images/groups/dataanalyticstampa.jpg",
+    meetupUrlname: "dataanalyticstampa",
+    tags: ["data", "analytics", "ai"],
+    featured: true,
+  },
+  {
+    slug: "embarc-collective",
+    name: "Embarc Collective",
+    description:
+      "Embarc Collective is the fastest-growing startup hub in Florida. Our mission is to help Tampa Bay's startup talent build bold, scalable, thriving companies.",
+    website: "https://www.embarccollective.com/",
+    logo: "/images/groups/embarc.jpg",
+    tags: ["startups", "entrepreneurship"],
+    featured: true,
+  },
+  {
     slug: "tampa-bay-aws",
     name: "Tampa Bay AWS User Group",
     description:
@@ -47,7 +78,6 @@ export const groups: LocalGroup[] = [
     logo: "/images/groups/tbaws.jpg",
     meetupUrlname: "tampa-bay-aws",
     tags: ["cloud", "aws"],
-    featured: true,
   },
   {
     slug: "tampa-bay-azure",
@@ -117,7 +147,6 @@ export const groups: LocalGroup[] = [
     logo: "/images/groups/tbpython.png",
     meetupUrlname: "tampa-bay-python",
     tags: ["python"],
-    featured: true,
   },
   {
     slug: "tampa-bay-techies",
@@ -218,35 +247,6 @@ export const groups: LocalGroup[] = [
     website: "https://cigarcitysec.com/",
     logo: "/images/groups/ccsec.png",
     tags: ["security", "infosec"],
-  },
-  {
-    slug: "embarc-collective",
-    name: "Embarc Collective",
-    description:
-      "Embarc Collective is the fastest-growing startup hub in Florida. Our mission is to help Tampa Bay's startup talent build bold, scalable, thriving companies.",
-    website: "https://www.embarccollective.com/",
-    logo: "/images/groups/embarc.jpg",
-    tags: ["startups", "entrepreneurship"],
-  },
-  {
-    slug: "ark-innovation-center",
-    name: "ARK Innovation Center",
-    description:
-      "We connect young companies with capital and coaching. We help get companies off the ground and on maps. We are home to independent workers including solo entrepreneurs, lawyers, investors, accountants, graphic designers, engineers, and other related occupations geared towards tech startups.",
-    website: "https://tbinnovates.com/",
-    logo: "/images/groups/tbinno.jpg",
-    tags: ["startups", "coworking"],
-    featured: true,
-  },
-  {
-    slug: "tampa-bay-data-science",
-    name: "Tampa Bay Data Science",
-    description:
-      "For professional data scientists and analysts in the Tampa Bay area interested in Analysis, Massive Parallel Computing, Natural Language Processing, Machine Learning, Data Mining, and the supporting technologies and practices.",
-    website: "https://datascience.tampa.dev/",
-    logo: "/images/groups/tbdatasci.jpg",
-    meetupUrlname: "tampa-bay-data-science-group",
-    tags: ["data-science", "machine-learning"],
   },
 ];
 
