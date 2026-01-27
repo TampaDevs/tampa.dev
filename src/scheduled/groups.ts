@@ -32,7 +32,7 @@ export const MEETUP_GROUPS: string[] = [
   'tampa-bay-data-engineering-group',
   'techsuccessnetwork',
   'vue-js-tampa-bay',
-  'Tampabay-UX-Group',
+  'tampabaydesigners',
   'Design-St-Pete',
   'Homebrew-Hillsborough',
   'tampa-machine-learning',

@@ -238,6 +238,26 @@ export const groups: LocalGroup[] = [
     meetupUrlname: "Women-Who-Code-Tampa",
     tags: ["diversity", "women-in-tech"],
   },
+  {
+    slug: "tampabayproductgroup",
+    name: "Tampa Bay Product Group",
+    description:
+      "Tampa Bay Product Group is a community for product managers, product owners, and anyone interested in product management to share knowledge, network, and grow together.",
+    website: "https://www.meetup.com/tampabayproductgroup/",
+    logo: "/images/groups/tbproduct.png",
+    meetupUrlname: "tampabayproductgroup",
+    tags: ["product", "product-management"],
+  },
+  {
+    slug: "tampabaydesigners",
+    name: "Tampa Bay Designers",
+    description:
+      "Tampa Bay Designers is a local, volunteer-based design community for local designers and those interested in design to connect, learn, and grow. Founded in 2019 by Brendan Ciccone, the group merged with Tampa Bay UX in 2025 and is now led by Amanda Starling, Andy Weir, Christina Adames, and Sarah Zatkovich.",
+    website: "https://www.meetup.com/tampabaydesigners/",
+    logo: "/images/groups/tbdesign.webp",
+    meetupUrlname: "tampabaydesigners",
+    tags: ["design", "ux"],
+  },
   // Non-Meetup groups (no event aggregation)
   {
     slug: "cigarcitysec",
