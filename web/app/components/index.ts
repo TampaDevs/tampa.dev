@@ -1,0 +1,20 @@
+// Layout components
+export { Header } from "./layout/Header";
+export { Footer } from "./layout/Footer";
+
+// Event components
+export { EventCard } from "./EventCard";
+export { EventCarousel } from "./EventCarousel";
+export { EventMap } from "./EventMap";
+
+// Group components
+export { GroupCard } from "./GroupCard";
+
+// SEO components
+export { StructuredData } from "./StructuredData";
+
+// Form components
+export { NewsletterSignup } from "./NewsletterSignup";
+
+// Calendar components
+export { AddToCalendar } from "./AddToCalendar";
