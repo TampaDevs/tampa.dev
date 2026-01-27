@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { fetchEvents } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
 import { groupToJsonLd, eventsToJsonLd } from "~/lib/structured-data";
-import { AddToCalendar, EventCard, StructuredData } from "~/components";
+import { AddToCalendar, EventCard, FavoriteButton, StructuredData } from "~/components";
 import { getGroupBySlug } from "~/data/groups";
 import { data } from "react-router";
 
@@ -88,14 +88,19 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
         {/* Group Header */}
         <div className="flex flex-col md:flex-row gap-8 mb-12">
           <div className="flex-shrink-0">
-            <img
-              src={group.logo}
-              alt={group.name}
-              className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover shadow-lg"
-              onError={(e) => {
-                e.currentTarget.src = "/images/placeholder-group.png";
-              }}
-            />
+            <div className="relative w-32 h-32 md:w-40 md:h-40">
+              <img
+                src={group.logo}
+                alt={group.name}
+                className="w-full h-full rounded-2xl object-cover shadow-lg"
+                onError={(e) => {
+                  e.currentTarget.src = "/images/placeholder-group.png";
+                }}
+              />
+              <div className="absolute bottom-1.5 right-1.5">
+                <FavoriteButton slug={group.slug} size="small" />
+              </div>
+            </div>
           </div>
 
           <div className="flex-1">

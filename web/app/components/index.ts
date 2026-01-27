@@ -9,6 +9,7 @@ export { EventMap } from "./EventMap";
 
 // Group components
 export { GroupCard } from "./GroupCard";
+export { FavoriteButton } from "./FavoriteButton";
 
 // SEO components
 export { StructuredData } from "./StructuredData";

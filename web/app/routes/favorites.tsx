@@ -1,10 +1,10 @@
 import type { Route } from "./+types/favorites";
 import { Link } from "react-router";
 import { generateMetaTags } from "~/lib/seo";
-import { groups } from "~/data/groups";
+import { groups, type LocalGroup } from "~/data/groups";
 import { GroupCard } from "~/components";
-import { useEffect, useState } from "react";
-import { getFavorites } from "~/lib/favorites";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { getFavorites, isFavorite } from "~/lib/favorites";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
@@ -15,8 +15,78 @@ export const meta: Route.MetaFunction = () => {
   });
 };
 
+interface FadingGroupCardProps {
+  group: LocalGroup;
+  onRemove: (slug: string) => void;
+}
+
+function FadingGroupCard({ group, onRemove }: FadingGroupCardProps) {
+  const [isUnfavorited, setIsUnfavorited] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Check favorite status periodically and on storage changes
+  useEffect(() => {
+    const checkFavoriteStatus = () => {
+      if (!isFavorite(group.slug)) {
+        setIsUnfavorited(true);
+      }
+    };
+
+    // Check immediately
+    checkFavoriteStatus();
+
+    // Listen for storage changes (from other tabs or same-tab changes)
+    const handleStorage = () => checkFavoriteStatus();
+    window.addEventListener("storage", handleStorage);
+
+    // Also poll occasionally to catch same-tab changes
+    const interval = setInterval(checkFavoriteStatus, 100);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, [group.slug]);
+
+  // Handle removal with delay after mouse leaves
+  useEffect(() => {
+    if (isUnfavorited && !isHovered) {
+      removeTimeoutRef.current = setTimeout(() => {
+        setIsVisible(false);
+        // After fade animation completes, remove from list
+        setTimeout(() => onRemove(group.slug), 300);
+      }, 1000);
+    }
+
+    return () => {
+      if (removeTimeoutRef.current) {
+        clearTimeout(removeTimeoutRef.current);
+      }
+    };
+  }, [isUnfavorited, isHovered, group.slug, onRemove]);
+
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`transition-all duration-300 ${
+        isUnfavorited && !isHovered ? "opacity-50" : "opacity-100"
+      }`}
+    >
+      <GroupCard group={group} />
+    </div>
+  );
+}
+
 export default function Favorites() {
   const [favoritesSlugs, setFavoritesSlugs] = useState<string[]>([]);
+  const [removedSlugs, setRemovedSlugs] = useState<Set<string>>(new Set());
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -24,7 +94,13 @@ export default function Favorites() {
     setIsLoaded(true);
   }, []);
 
-  const favoriteGroups = groups.filter((g) => favoritesSlugs.includes(g.slug));
+  const handleRemove = useCallback((slug: string) => {
+    setRemovedSlugs((prev) => new Set([...prev, slug]));
+  }, []);
+
+  const favoriteGroups = groups.filter(
+    (g) => favoritesSlugs.includes(g.slug) && !removedSlugs.has(g.slug)
+  );
 
   if (!isLoaded) {
     return (
@@ -62,7 +138,11 @@ export default function Favorites() {
       {favoriteGroups.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {favoriteGroups.map((group) => (
-            <GroupCard key={group.slug} group={group} />
+            <FadingGroupCard
+              key={group.slug}
+              group={group}
+              onRemove={handleRemove}
+            />
           ))}
         </div>
       ) : (

@@ -3,6 +3,8 @@ import { generateMetaTags } from "~/lib/seo";
 import { GroupCard, StructuredData } from "~/components";
 import { groups, getAllTags, getGroupsByTag } from "~/data/groups";
 import { useSearchParams } from "react-router";
+import { useState, useEffect, useMemo } from "react";
+import { getFavorites } from "~/lib/favorites";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
@@ -25,11 +27,45 @@ export async function loader() {
 export default function Groups({ loaderData }: Route.ComponentProps) {
   const { groups: allGroups, tags } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
+  const [favoriteSlugs, setFavoriteSlugs] = useState<string[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const activeTag = searchParams.get("tag");
+
+  useEffect(() => {
+    setFavoriteSlugs(getFavorites());
+    setIsLoaded(true);
+
+    // Listen for storage changes to update favorites in real-time
+    const handleStorage = () => setFavoriteSlugs(getFavorites());
+    window.addEventListener("storage", handleStorage);
+
+    // Poll for same-tab changes
+    const interval = setInterval(() => setFavoriteSlugs(getFavorites()), 500);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
 
   const filteredGroups = activeTag
     ? getGroupsByTag(activeTag)
     : allGroups;
+
+  // Sort groups: favorites first (alphabetically), then non-favorites (alphabetically)
+  const sortedGroups = useMemo(() => {
+    if (!isLoaded) return filteredGroups;
+
+    const favorites = filteredGroups
+      .filter((g) => favoriteSlugs.includes(g.slug))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const nonFavorites = filteredGroups
+      .filter((g) => !favoriteSlugs.includes(g.slug))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return [...favorites, ...nonFavorites];
+  }, [filteredGroups, favoriteSlugs, isLoaded]);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -97,12 +133,12 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
 
         {/* Groups Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredGroups.map((group) => (
+          {sortedGroups.map((group) => (
             <GroupCard key={group.slug} group={group} />
           ))}
         </div>
 
-        {filteredGroups.length === 0 && (
+        {sortedGroups.length === 0 && (
           <div className="text-center py-16">
             <p className="text-gray-600 dark:text-gray-400">
               No groups found for "{activeTag}". Try another filter.

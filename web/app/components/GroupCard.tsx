@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import type { LocalGroup } from "~/data/groups";
+import { FavoriteButton } from "./FavoriteButton";
 
 interface GroupCardProps {
   group: LocalGroup;
@@ -26,6 +27,9 @@ export function GroupCard({ group, eventCount }: GroupCardProps) {
             {eventCount} upcoming
           </div>
         )}
+        <div className="absolute bottom-1.5 right-1.5">
+          <FavoriteButton slug={group.slug} size="small" />
+        </div>
       </div>
 
       <div className="p-4">

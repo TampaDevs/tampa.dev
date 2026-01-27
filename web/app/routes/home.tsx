@@ -63,11 +63,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {/* Content */}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Tampa Bay's Tech Community Hub
+            <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
+              <span className="font-bold">Tampa Bay</span>
+              <span className="font-normal"> is a</span>
+              <br />
+              <span className="font-bold">Technology Hub</span>
             </h1>
             <p className="mt-6 text-xl text-gray-200">
-              Discover {totalGroups}+ tech groups and {totalEvents}+ upcoming events.
+              Discover <span className="font-semibold text-white">{totalGroups}+ tech groups</span> and{" "}
+              <span className="font-semibold text-white">{totalEvents}+ upcoming events</span>.
               Connect with developers, engineers, and technologists in Tampa Bay.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
