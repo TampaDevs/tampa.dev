@@ -1,6 +1,7 @@
 /**
  * Utility functions
  */
+import sanitizeHtml from "sanitize-html";
 
 /**
  * Format a date for display
@@ -62,18 +63,12 @@ export function truncate(text: string, maxLength: number): string {
  * Strip HTML tags from text
  */
 export function stripHtml(html: string): string {
-  // Strip all HTML-like tags. This intentionally does not try to parse
-  // HTML; it simply removes any <...> sequences, including <script> blocks.
-  return html.replace(/<[^>]*>/g, "");
-}
-
-/**
- * Generate a slug from a string
- */
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
+  // Use a robust HTML sanitizer to remove all tags and script content.
+  // `allowedTags: []` and `allowedAttributes: {}` ensure only plain text remains.
+  return sanitizeHtml(html, {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
     .replace(/^-|-$/g, "");
 }
 
