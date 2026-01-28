@@ -14,8 +14,8 @@ export { FavoriteButton } from "./FavoriteButton";
 // SEO components
 export { StructuredData } from "./StructuredData";
 
-// Form components
-export { NewsletterSignup } from "./NewsletterSignup";
+// Design system components
+export { NewsletterSignup, Logo, Button, Icon } from "@tampadevs/react";
 
 // Calendar components
 export { AddToCalendar } from "./AddToCalendar";
