@@ -7,7 +7,7 @@
     "@aws-sdk/s3-request-presigner": "^3.978.0",
     "@cloudflare/workers-oauth-provider": "^0.2.2",
     "@hono/swagger-ui": "^0.5.3",
-    "@hono/zod-openapi": "^0.19.10",
+    "@hono/zod-openapi": "^1.2.0",
     "aws4fetch": "^1.0.20",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.11.7",
