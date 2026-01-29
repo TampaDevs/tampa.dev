@@ -93,26 +93,26 @@ export function createAuthRoutes() {
 
         // Verify CSRF token
         if (stateData?.csrf !== storedStateData?.csrf) {
-          return c.redirect('/login?error=invalid_state');
+          return c.redirect('https://tampa.dev/login?error=invalid_state');
         }
       }
     } catch {
       // Legacy state format (plain string) - just compare directly
       // Note: If we're here, state and storedState exist (checked in try block)
       if (state !== storedState) {
-        return c.redirect('/login?error=invalid_state');
+        return c.redirect('https://tampa.dev/login?error=invalid_state');
       }
     }
 
     if (!code) {
-      return c.redirect('/login?error=no_code');
+      return c.redirect('https://tampa.dev/login?error=no_code');
     }
 
     const clientId = c.env.GITHUB_CLIENT_ID;
     const clientSecret = c.env.GITHUB_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      return c.redirect('/login?error=not_configured');
+      return c.redirect('https://tampa.dev/login?error=not_configured');
     }
 
     try {
@@ -137,7 +137,7 @@ export function createAuthRoutes() {
 
       if (!tokenData.access_token) {
         console.error('GitHub token exchange failed:', tokenData);
-        return c.redirect('/login?error=token_exchange_failed');
+        return c.redirect('https://tampa.dev/login?error=token_exchange_failed');
       }
 
       // Get user info from GitHub
@@ -177,7 +177,7 @@ export function createAuthRoutes() {
       }
 
       if (!email) {
-        return c.redirect('/login?error=no_email');
+        return c.redirect('https://tampa.dev/login?error=no_email');
       }
 
       const db = createDatabase(c.env.DB);
@@ -225,7 +225,7 @@ export function createAuthRoutes() {
       }
 
       if (!user) {
-        return c.redirect('/login?error=user_creation_failed');
+        return c.redirect('https://tampa.dev/login?error=user_creation_failed');
       }
 
       // Upsert identity
@@ -267,13 +267,14 @@ export function createAuthRoutes() {
         createdAt: now,
       });
 
-      // Set session cookie
+      // Set session cookie (domain allows sharing between tampa.dev subdomains)
       setCookie(c, SESSION_COOKIE, sessionToken, {
         httpOnly: true,
         secure: true,
         sameSite: 'Lax',
         maxAge: SESSION_DURATION_MS / 1000,
         path: '/',
+        domain: '.tampa.dev',
       });
 
       // Redirect to returnTo URL if provided, otherwise home page
@@ -281,7 +282,7 @@ export function createAuthRoutes() {
       return c.redirect(redirectUrl);
     } catch (error) {
       console.error('GitHub OAuth error:', error);
-      return c.redirect('/login?error=oauth_failed');
+      return c.redirect('https://tampa.dev/login?error=oauth_failed');
     }
   });
 
@@ -303,7 +304,7 @@ export function createAuthRoutes() {
 
     if (!session || new Date(session.expiresAt) < new Date()) {
       // Session expired or invalid
-      deleteCookie(c, SESSION_COOKIE, { path: '/' });
+      deleteCookie(c, SESSION_COOKIE, { path: '/', domain: '.tampa.dev' });
       return c.json({ user: null }, 200);
     }
 
@@ -312,7 +313,7 @@ export function createAuthRoutes() {
     });
 
     if (!user) {
-      deleteCookie(c, SESSION_COOKIE, { path: '/' });
+      deleteCookie(c, SESSION_COOKIE, { path: '/', domain: '.tampa.dev' });
       return c.json({ user: null }, 200);
     }
 
@@ -347,7 +348,7 @@ export function createAuthRoutes() {
       await db.delete(sessions).where(eq(sessions.id, sessionToken));
     }
 
-    deleteCookie(c, SESSION_COOKIE, { path: '/' });
+    deleteCookie(c, SESSION_COOKIE, { path: '/', domain: '.tampa.dev' });
 
     return c.json({ success: true });
   });
@@ -370,7 +371,7 @@ export function createAuthRoutes() {
       return c.json({ error: 'Dev auth only available in local development' }, 403);
     }
 
-    const body = await c.req.json<{ role?: string }>().catch(() => ({}));
+    const body = await c.req.json<{ role?: string }>().catch(() => ({} as { role?: string }));
     const requestedRole = body.role || 'admin';
 
     // Validate role

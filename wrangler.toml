@@ -37,6 +37,10 @@ name = "events-api-tampa-dev"
 
 # Routes for tampa.dev paths
 [[env.production.routes]]
+pattern = "tampa.dev/auth/*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
 pattern = "tampa.dev/ical*"
 zone_name = "tampa.dev"
 
