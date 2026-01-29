@@ -160,12 +160,16 @@ function htmlToMarkdown(html: string): string {
   text = text.replace(/<\/ol>/gi, '\n');
   text = text.replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n');
 
-  // Remove remaining HTML tags
-  text = text.replace(/<[^>]+>/g, '');
+  // Remove remaining HTML tags (loop to handle nested/crafted tags like <scr<script>ipt>)
+  let previousText: string;
+  do {
+    previousText = text;
+    text = text.replace(/<[^>]+>/g, '');
+  } while (text !== previousText);
 
   // Decode common HTML entities
+  // IMPORTANT: Decode &amp; LAST to prevent double-unescaping (e.g., &amp;lt; → &lt; → <)
   text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&amp;/g, '&');
   text = text.replace(/&lt;/g, '<');
   text = text.replace(/&gt;/g, '>');
   text = text.replace(/&quot;/g, '"');
@@ -176,6 +180,7 @@ function htmlToMarkdown(html: string): string {
   text = text.replace(/&ldquo;/g, '"');
   text = text.replace(/&mdash;/g, '—');
   text = text.replace(/&ndash;/g, '–');
+  text = text.replace(/&amp;/g, '&'); // Must be last to prevent double-unescaping
 
   // Clean up whitespace
   text = text.replace(/\n{3,}/g, '\n\n'); // Max 2 consecutive newlines

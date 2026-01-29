@@ -98,7 +98,8 @@ export function createAuthRoutes() {
       }
     } catch {
       // Legacy state format (plain string) - just compare directly
-      if (!state || state !== storedState) {
+      // Note: If we're here, state and storedState exist (checked in try block)
+      if (state !== storedState) {
         return c.redirect('/login?error=invalid_state');
       }
     }
