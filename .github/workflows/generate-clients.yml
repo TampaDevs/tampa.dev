@@ -70,6 +70,8 @@ jobs:
 
       - name: Install web app dependencies
         run: npm ci --prefix web
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate web app TypeScript types
         run: npm run generate:types:local --prefix web
