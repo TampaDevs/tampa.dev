@@ -5,13 +5,15 @@
  */
 
 import type { Env } from '../app.js';
-import { runAggregation } from './aggregator.js';
+import { createDatabase } from '../db/index.js';
+import { SyncService } from '../services/sync.js';
+import { providerRegistry } from '../providers/index.js';
 
 /**
  * Handle scheduled (cron) events
  *
  * This is called by Cloudflare Workers when a cron trigger fires.
- * It fetches events from all configured platforms and stores them in KV.
+ * It fetches events from all configured platforms and stores them in D1.
  */
 export async function handleScheduled(
   controller: ScheduledController,
@@ -21,19 +23,40 @@ export async function handleScheduled(
   console.log(`Scheduled event triggered at ${new Date(controller.scheduledTime).toISOString()}`);
   console.log(`Cron pattern: ${controller.cron}`);
 
-  const result = await runAggregation(env);
+  // Create database instance
+  const db = createDatabase(env.DB);
 
-  console.log('Aggregation complete:', {
+  // Create sync service
+  const syncService = new SyncService(db, providerRegistry, env);
+
+  // Initialize all configured providers
+  await providerRegistry.initializeAll(env);
+
+  const configuredAdapters = providerRegistry.getConfiguredAdapters(env);
+  console.log(`Configured adapters: ${configuredAdapters.map(a => a.name).join(', ') || 'none'}`);
+
+  // Run sync for all active groups
+  const result = await syncService.syncAllGroups({ concurrency: 5 });
+
+  console.log('Sync complete:', {
     success: result.success,
-    groupsProcessed: result.groupsProcessed,
-    groupsFailed: result.groupsFailed,
+    total: result.total,
+    succeeded: result.succeeded,
+    failed: result.failed,
     durationMs: result.durationMs,
-    errors: result.errors.length > 0 ? result.errors : undefined,
   });
 
-  // If aggregation had errors but some groups succeeded,
-  // we don't throw - partial success is acceptable
-  if (!result.success && result.groupsProcessed === 0) {
-    throw new Error(`Aggregation failed completely: ${result.errors.join(', ')}`);
+  // Log individual group results
+  for (const groupResult of result.results) {
+    if (groupResult.success) {
+      console.log(`  ✓ ${groupResult.groupUrlname}: ${groupResult.eventsCreated} created, ${groupResult.eventsUpdated} updated`);
+    } else {
+      console.log(`  ✗ ${groupResult.groupUrlname}: ${groupResult.error}`);
+    }
+  }
+
+  // If all groups failed, throw an error
+  if (!result.success && result.succeeded === 0) {
+    throw new Error(`Sync failed completely: no groups synced successfully`);
   }
 }

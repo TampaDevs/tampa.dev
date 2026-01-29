@@ -2,7 +2,6 @@ import type { Route } from "./+types/calendar";
 import { useNavigate } from "react-router";
 import { fetchEvents } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
-import { getMeetupUrlnames } from "~/data/groups";
 import { Calendar as CalendarView, type CalendarEvent } from "@tampadevs/react";
 
 export const meta: Route.MetaFunction = () => {
@@ -15,8 +14,8 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export async function loader() {
+  // Fetch all events without group filter (groups table and events may not be in sync)
   const events = await fetchEvents({
-    groups: getMeetupUrlnames(),
     withinDays: 60,
   });
 

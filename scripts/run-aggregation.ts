@@ -4,22 +4,20 @@
  *
  * Usage: npm run aggregate
  *
- * This script runs the event aggregation process locally for testing.
- * It reads secrets from environment variables or a .dev.vars file.
+ * This script tests provider connectivity and fetches events locally.
+ * For full D1 sync testing, use `wrangler dev` and call the admin API.
  *
- * Required environment variables:
+ * Required environment variables (in .dev.vars):
  *   MEETUP_CLIENT_KEY   - Meetup OAuth client key
  *   MEETUP_SIGNING_KEY  - Meetup OAuth private signing key (PEM format)
  *   MEETUP_MEMBER_ID    - Meetup member ID for the OAuth app
- *
- * The script will:
- *   1. Load credentials from environment or .dev.vars
- *   2. Run the aggregation against live Meetup API
- *   3. Save results to .aggregation-output.json for inspection
+ *   EVENTBRITE_PRIVATE_TOKEN - Eventbrite private API token (optional)
+ *   LUMA_API_KEY        - Luma API key (optional)
  *
  * Examples:
- *   npm run aggregate
- *   npm run aggregate -- --dry-run
+ *   npm run aggregate                    # Test all configured providers
+ *   npm run aggregate -- --dry-run       # Validate config only
+ *   npm run aggregate -- --provider meetup  # Test specific provider
  */
 
 import * as fs from 'fs';
@@ -36,6 +34,8 @@ const OUTPUT_FILE = path.join(ROOT_DIR, '.aggregation-output.json');
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
 const isVerbose = args.includes('--verbose') || args.includes('-v');
+const providerArg = args.find(a => a.startsWith('--provider='))?.split('=')[1]
+  || (args.includes('--provider') ? args[args.indexOf('--provider') + 1] : null);
 
 /**
  * Load environment variables from .dev.vars file
@@ -70,28 +70,6 @@ function loadDevVars(): Record<string, string> {
   return vars;
 }
 
-/**
- * Create a mock KV namespace that stores data in memory
- * and writes to a file on put()
- */
-function createMockKV(): KVNamespace {
-  const store: Record<string, string> = {};
-
-  return {
-    get: async (key: string) => store[key] || null,
-    put: async (key: string, value: string) => {
-      store[key] = value;
-      // Write to file for inspection
-      const data = JSON.parse(value);
-      fs.writeFileSync(OUTPUT_FILE, JSON.stringify(data, null, 2));
-      console.log(`\n✓ Saved aggregation output to ${OUTPUT_FILE}`);
-    },
-    delete: async () => {},
-    list: async () => ({ keys: [], list_complete: true, cacheStatus: null }),
-    getWithMetadata: async () => ({ value: null, metadata: null, cacheStatus: null }),
-  } as unknown as KVNamespace;
-}
-
 async function main() {
   console.log('╭──────────────────────────────────────────╮');
   console.log('│     Event Aggregation - Local Runner     │');
@@ -107,90 +85,143 @@ async function main() {
     MEETUP_CLIENT_KEY: process.env.MEETUP_CLIENT_KEY || devVars.MEETUP_CLIENT_KEY,
     MEETUP_SIGNING_KEY: process.env.MEETUP_SIGNING_KEY || devVars.MEETUP_SIGNING_KEY,
     MEETUP_MEMBER_ID: process.env.MEETUP_MEMBER_ID || devVars.MEETUP_MEMBER_ID,
-    kv: createMockKV(),
-    CF_VERSION_METADATA: { id: 'local', tag: 'dev', timestamp: new Date().toISOString() },
+    EVENTBRITE_PRIVATE_TOKEN: process.env.EVENTBRITE_PRIVATE_TOKEN || devVars.EVENTBRITE_PRIVATE_TOKEN,
+    LUMA_API_KEY: process.env.LUMA_API_KEY || devVars.LUMA_API_KEY,
   };
 
-  // Check required credentials
-  const requiredVars = ['MEETUP_CLIENT_KEY', 'MEETUP_SIGNING_KEY', 'MEETUP_MEMBER_ID'];
-  const missing = requiredVars.filter(v => !env[v as keyof typeof env]);
+  // Import provider registry
+  const { providerRegistry } = await import('../src/providers/index.js');
 
-  if (missing.length > 0) {
-    console.error('❌ Missing required credentials:\n');
-    for (const v of missing) {
-      console.error(`   • ${v}`);
-    }
-    console.error('\n💡 Create a .dev.vars file with your credentials:');
+  // Check configured providers
+  const configuredProviders = providerRegistry.getConfiguredAdapters(env as any);
+
+  console.log('Provider Status:');
+  for (const adapter of providerRegistry.getAllAdapters()) {
+    const isConfigured = adapter.isConfigured(env as any);
+    const status = isConfigured ? '✓ configured' : '✗ not configured';
+    console.log(`  • ${adapter.name}: ${status}`);
+  }
+  console.log('');
+
+  if (configuredProviders.length === 0) {
+    console.error('❌ No providers configured. Check your .dev.vars file.\n');
+    console.error('💡 Create a .dev.vars file with your credentials:');
     console.error('   cp .dev.vars.example .dev.vars');
     console.error('   # Then edit .dev.vars with your actual values\n');
     process.exit(1);
   }
 
-  console.log('✓ All required credentials found\n');
-
-  // Import and run aggregation
-  const { runAggregation } = await import('../src/scheduled/aggregator.js');
-  const { platformRegistry } = await import('../src/scheduled/platforms/base.js');
-  const { getAllGroups } = await import('../src/scheduled/groups.js');
-
-  // Show configuration
-  const platforms = platformRegistry.getAll();
-  const groups = getAllGroups();
-  const configuredPlatforms = platformRegistry.getConfigured(env as any);
-
-  console.log('Configuration:');
-  console.log(`  • Platforms: ${platforms.map(p => p.name).join(', ')}`);
-  console.log(`  • Configured: ${configuredPlatforms.map(p => p.name).join(', ') || 'none'}`);
-  console.log(`  • Groups: ${groups.length}`);
-  console.log('');
-
   if (isDryRun) {
     console.log('✓ Dry run complete - configuration is valid\n');
-    if (isVerbose) {
-      console.log('Groups to fetch:');
-      groups.forEach(g => console.log(`  • ${g.urlname} (${g.platform})`));
-    }
+    console.log('To run a full sync with D1, use:');
+    console.log('  npm start  # start local dev server');
+    console.log('  curl -X POST http://localhost:8787/api/admin/sync/all\n');
     return;
   }
 
-  // Run aggregation
-  console.log('Starting aggregation...\n');
+  // Filter providers if specified
+  let providersToTest = configuredProviders;
+  if (providerArg) {
+    providersToTest = configuredProviders.filter(p => p.platform === providerArg);
+    if (providersToTest.length === 0) {
+      console.error(`❌ Provider "${providerArg}" is not configured or doesn't exist.\n`);
+      process.exit(1);
+    }
+  }
+
+  // Initialize and test each provider
+  console.log('Testing providers...\n');
   const startTime = Date.now();
 
-  try {
-    const result = await runAggregation(env as any);
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+  const results: Record<string, any> = {};
+  let totalEvents = 0;
+  let errors: string[] = [];
 
-    console.log('\n╭──────────────────────────────────────────╮');
-    console.log('│              Aggregation Results         │');
-    console.log('╰──────────────────────────────────────────╯\n');
+  for (const adapter of providersToTest) {
+    console.log(`\n─── ${adapter.name} ───`);
 
-    console.log(`  Status:      ${result.success ? '✓ Success' : '✗ Failed'}`);
-    console.log(`  Processed:   ${result.groupsProcessed} groups`);
-    console.log(`  Failed:      ${result.groupsFailed} groups`);
-    console.log(`  Duration:    ${duration}s`);
+    try {
+      // Initialize
+      await adapter.initialize(env as any);
+      console.log(`  ✓ Initialized`);
 
-    if (result.errors.length > 0) {
-      console.log('\n  Errors:');
-      result.errors.forEach(e => console.log(`    • ${e}`));
+      // Get a sample group to test
+      // For now, use hardcoded test groups
+      const testGroups: Record<string, string> = {
+        meetup: 'tampadevs',
+        eventbrite: '120311328021', // Spark Labs by Ark
+        luma: 'tampa-devs', // example
+      };
+
+      const testGroup = testGroups[adapter.platform];
+      if (testGroup) {
+        console.log(`  Fetching: ${testGroup}`);
+        const result = await adapter.fetchEvents(testGroup, { maxEvents: 10 });
+
+        if (result.success && result.events) {
+          console.log(`  ✓ Fetched ${result.events.length} events`);
+          results[adapter.platform] = {
+            group: result.group,
+            events: result.events,
+          };
+          totalEvents += result.events.length;
+
+          if (isVerbose && result.events.length > 0) {
+            console.log('  Events:');
+            for (const event of result.events.slice(0, 3)) {
+              console.log(`    • ${event.title} (${event.startTime})`);
+            }
+            if (result.events.length > 3) {
+              console.log(`    ... and ${result.events.length - 3} more`);
+            }
+          }
+        } else {
+          console.log(`  ✗ Failed: ${result.error}`);
+          errors.push(`${adapter.name}: ${result.error}`);
+        }
+      } else {
+        console.log(`  ⚠ No test group configured for ${adapter.platform}`);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.log(`  ✗ Error: ${errorMsg}`);
+      errors.push(`${adapter.name}: ${errorMsg}`);
+      if (isVerbose && error instanceof Error && error.stack) {
+        console.log(error.stack);
+      }
     }
-
-    console.log('');
-
-    if (result.success) {
-      console.log(`💡 View the output: cat ${OUTPUT_FILE} | head -100\n`);
-    }
-
-    process.exit(result.success ? 0 : 1);
-  } catch (error) {
-    console.error('\n❌ Aggregation failed with error:');
-    console.error(error instanceof Error ? error.message : String(error));
-    if (isVerbose && error instanceof Error && error.stack) {
-      console.error('\nStack trace:');
-      console.error(error.stack);
-    }
-    process.exit(1);
   }
+
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+  // Save results
+  if (totalEvents > 0) {
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(results, null, 2));
+    console.log(`\n✓ Saved results to ${OUTPUT_FILE}`);
+  }
+
+  // Summary
+  console.log('\n╭──────────────────────────────────────────╮');
+  console.log('│              Test Results                │');
+  console.log('╰──────────────────────────────────────────╯\n');
+
+  console.log(`  Providers tested: ${providersToTest.length}`);
+  console.log(`  Total events:     ${totalEvents}`);
+  console.log(`  Duration:         ${duration}s`);
+  console.log(`  Errors:           ${errors.length}`);
+
+  if (errors.length > 0) {
+    console.log('\n  Errors:');
+    for (const err of errors) {
+      console.log(`    • ${err}`);
+    }
+  }
+
+  console.log('\n💡 For full D1 sync, start the dev server and use the admin API:');
+  console.log('   npm start');
+  console.log('   curl -X POST http://localhost:8787/api/admin/sync/all\n');
+
+  process.exit(errors.length === providersToTest.length ? 1 : 0);
 }
 
 main();

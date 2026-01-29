@@ -210,6 +210,41 @@ npm test           # Run tests
 npm run build      # Build for production
 ```
 
+## Environment Variables
+
+Copy `.dev.vars.example` to `.dev.vars` and fill in the required values:
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
+### Required for Authentication
+
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` - GitHub OAuth app credentials
+- `SESSION_SECRET` - Random secret for session signing (generate with `openssl rand -base64 32`)
+
+### Required for File Uploads (R2)
+
+User avatars and OAuth app logos are stored in Cloudflare R2:
+
+1. Create an R2 bucket named `tampa-dev-uploads-public` in the Cloudflare dashboard
+2. Create an R2 API token with Object Read & Write permissions
+3. Set these environment variables:
+   - `R2_ACCOUNT_ID` - Your Cloudflare account ID
+   - `R2_ACCESS_KEY_ID` - R2 API token access key
+   - `R2_SECRET_ACCESS_KEY` - R2 API token secret key
+   - `UPLOADS_PUBLIC_URL` - (Optional) Custom domain for the R2 bucket
+
+### Meetup API (for event aggregation)
+
+- `MEETUP_CLIENT_KEY` - Meetup OAuth client key
+- `MEETUP_MEMBER_ID` - Your Meetup member ID
+- `MEETUP_SIGNING_KEY` - RSA private key for JWT signing
+
 ## Data Freshness
 
 Data is served from a cache in Workers KV. This cache data is updated every 30 minutes.
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for recent updates and new features.

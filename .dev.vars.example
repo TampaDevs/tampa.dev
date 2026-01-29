@@ -2,11 +2,53 @@
 # Copy this file to .dev.vars and fill in your values
 # These are loaded by wrangler dev and scripts/run-aggregation.ts
 
+# =============================================================================
 # Meetup API OAuth credentials
 # Get these from https://www.meetup.com/api/oauth/list/
+# =============================================================================
 MEETUP_CLIENT_KEY=your_client_key_here
 MEETUP_MEMBER_ID=your_member_id_here
 
 # The private signing key in PEM format (for RS256 JWT signing)
 # Note: For multiline values, keep everything on one line with literal \n
 MEETUP_SIGNING_KEY="-----BEGIN RSA PRIVATE KEY-----\nMIIE...\n-----END RSA PRIVATE KEY-----"
+
+# =============================================================================
+# GitHub OAuth (for user authentication)
+# Create an OAuth app at https://github.com/settings/developers
+# =============================================================================
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+
+# =============================================================================
+# Session Security
+# Generate a random secret: openssl rand -base64 32
+# =============================================================================
+SESSION_SECRET=your_random_session_secret_here
+
+# =============================================================================
+# Admin Bootstrap
+# Comma-separated list of GitHub usernames who should be admins
+# =============================================================================
+ADMIN_ALLOWLIST=your_github_username
+
+# =============================================================================
+# R2 Uploads (for avatars, app logos, media)
+#
+# 1. Create an R2 bucket in the Cloudflare dashboard
+# 2. Create an R2 API token: R2 > Manage R2 API Tokens > Create API Token
+#    - Permissions: Object Read & Write
+#    - Specify bucket: tampa-dev-uploads-public (or your bucket name)
+# 3. Your Account ID is in the URL: dash.cloudflare.com/<ACCOUNT_ID>/...
+# =============================================================================
+R2_ACCOUNT_ID=your_cloudflare_account_id
+R2_ACCESS_KEY_ID=your_r2_api_token_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_api_token_secret_access_key
+
+# R2 bucket name (defaults to tampa-dev-uploads-public)
+UPLOADS_PUBLIC_BUCKET_NAME=tampa-dev-uploads-public
+
+# Public URL for uploaded files (optional)
+# If using a custom domain on R2, set it here (e.g., https://uploads.tampa.dev)
+# If not set, files are served through the worker at /api/uploads/file/*
+UPLOADS_PUBLIC_URL=https://your-r2-public-domain.com

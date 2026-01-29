@@ -1,5 +1,14 @@
 /**
  * Types matching the Events API response structure
+ *
+ * NOTE: API response types are now auto-generated from the OpenAPI spec.
+ * See api-types.generated.ts for the canonical types.
+ *
+ * These manually-maintained types remain for:
+ * - Backwards compatibility during migration
+ * - UI-specific types like LocalGroupCompat (transformations of API types)
+ *
+ * Run `npm run generate:types` to update generated types after API changes.
  */
 
 export interface Photo {
@@ -55,4 +64,40 @@ export interface Event {
 
 export interface EventsResponse {
   events: Event[];
+}
+
+/**
+ * LocalGroup-compatible interface for components
+ * This is used by GroupCard, EventCard, etc.
+ */
+export interface LocalGroupCompat {
+  slug: string;
+  name: string;
+  description: string;
+  website: string;
+  logo: string;
+  meetupUrlname?: string;
+  socialLinks?: {
+    slack?: string;
+    discord?: string;
+    linkedin?: string;
+    twitter?: string;
+    github?: string;
+    meetup?: string;
+  };
+  tags: string[];
+  featured?: boolean;
+}
+
+/**
+ * Find a group by its meetup urlname from a list of groups
+ */
+export function findGroupByUrlname(
+  groups: LocalGroupCompat[],
+  urlname: string
+): LocalGroupCompat | undefined {
+  const normalizedUrlname = urlname.toLowerCase();
+  return groups.find(
+    (g) => g.meetupUrlname?.toLowerCase() === normalizedUrlname
+  );
 }

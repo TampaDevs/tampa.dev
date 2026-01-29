@@ -1,7 +1,6 @@
 import type { Route } from "./+types/map";
 import { fetchEvents } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
-import { getMeetupUrlnames } from "~/data/groups";
 import { EventMap } from "~/components";
 
 export const meta: Route.MetaFunction = () => {
@@ -14,8 +13,8 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export async function loader() {
+  // Fetch all events without group filter (groups table and events may not be in sync)
   const events = await fetchEvents({
-    groups: getMeetupUrlnames(),
     withinDays: 30,
     noOnline: true, // Only show in-person events on map
   });

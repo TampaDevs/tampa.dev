@@ -3,11 +3,23 @@ main = "src/index.ts"
 send_metrics = true
 
 compatibility_date = "2024-09-23"
-compatibility_flags = [ "nodejs_compat" ]
+compatibility_flags = [ "nodejs_compat", "global_fetch_strictly_public" ]
 
 kv_namespaces = [
-  { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" }
+  { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" },
+  { binding = "OAUTH_KV", id = "791983cf109c43eaa21ff4f3406de811" }
 ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "events-db"
+database_id = "bea48eca-291f-4901-83d4-4413524506a3"
+migrations_dir = "drizzle/migrations"
+
+# R2 bucket for user uploads (avatars, app logos, media)
+[[r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "tampa-dev-uploads-public"
 
 [version_metadata]
 binding = "CF_VERSION_METADATA"
@@ -23,8 +35,19 @@ name = "events-api-pr"
 [env.production]
 name = "events-api-tampa-dev"
 kv_namespaces = [
-  { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" }
+  { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" },
+  { binding = "OAUTH_KV", id = "791983cf109c43eaa21ff4f3406de811" }
 ]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "events-db"
+database_id = "bea48eca-291f-4901-83d4-4413524506a3"
+migrations_dir = "drizzle/migrations"
+
+[[env.production.r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "tampa-dev-uploads-public"
 
 [env.production.version_metadata]
 binding = "CF_VERSION_METADATA"

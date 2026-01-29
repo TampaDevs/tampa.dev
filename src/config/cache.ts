@@ -6,16 +6,9 @@
  */
 
 /**
- * Edge cache TTL for aggregation metadata (data hash, last run time, etc.)
- * This determines how long before we check KV for new data after aggregation.
- * Safe to set high since aggregation runs every 30 minutes via cron.
- */
-export const METADATA_EDGE_CACHE_TTL = 15 * 60; // 15 minutes
-
-/**
  * Response cache max-age
  * How long browsers/CDNs should cache responses.
- * Set very high since cache key includes data hash - new data = new cache key.
+ * Set very high since cache key includes sync version - new sync = new cache key.
  */
 export const RESPONSE_CACHE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year
 

@@ -1,11 +1,10 @@
 import type { Route } from "./+types/events.$id";
 import { Link, data } from "react-router";
 import { marked } from "marked";
-import { fetchEventById } from "~/lib/api.server";
+import { fetchEventById, fetchGroups, toLocalGroup, findGroupByUrlname } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
 import { eventToJsonLd } from "~/lib/structured-data";
 import { AddToCalendar, StructuredData } from "~/components";
-import { getGroupByMeetupUrlname } from "~/data/groups";
 import { formatEventDate, formatEventTime, addUtmParams, getRsvpLabel, getSourceDisplayName } from "~/lib/utils";
 
 // Configure marked for lenient rendering
@@ -37,14 +36,18 @@ export const meta: Route.MetaFunction = ({ data }) => {
 };
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const event = await fetchEventById(params.id!);
+  const [event, apiGroups] = await Promise.all([
+    fetchEventById(params.id!),
+    fetchGroups(),
+  ]);
 
   if (!event) {
     throw data(null, { status: 404 });
   }
 
   // Try to find the local group config for additional info
-  const localGroup = getGroupByMeetupUrlname(event.group.urlname);
+  const groups = apiGroups.map(toLocalGroup);
+  const localGroup = findGroupByUrlname(groups, event.group.urlname);
 
   // Parse markdown description
   // Preprocess to handle common markdown issues from Meetup descriptions

@@ -4,8 +4,7 @@
  * https://schema.org/Organization
  */
 
-import type { Event } from "./types";
-import type { LocalGroup } from "~/data/groups";
+import type { Event, LocalGroupCompat } from "./types";
 
 /**
  * Calculate end time from ISO 8601 duration
@@ -103,7 +102,7 @@ export function eventsToJsonLd(events: Event[]): object {
 /**
  * Generate JSON-LD for an organization/group
  */
-export function groupToJsonLd(group: LocalGroup): object {
+export function groupToJsonLd(group: LocalGroupCompat): object {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",

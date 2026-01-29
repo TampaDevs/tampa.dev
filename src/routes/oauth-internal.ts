@@ -1,0 +1,209 @@
+/**
+ * OAuth Internal Routes
+ *
+ * These routes are called by the web app (tampa.dev) via service binding
+ * to complete OAuth authorization flows. They should NOT be called directly
+ * by external clients.
+ */
+
+import { Hono } from 'hono';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+import { eq, and } from 'drizzle-orm';
+import { createDatabase } from '../db/index.js';
+import { users, userIdentities, sessions } from '../db/schema.js';
+import type { Env } from '../../types/worker.js';
+
+// Schema for completing authorization
+const completeAuthSchema = z.object({
+  // The original OAuth request (from parseAuthRequest)
+  oauthRequest: z.object({
+    responseType: z.string(),
+    clientId: z.string(),
+    redirectUri: z.string(),
+    scope: z.array(z.string()).optional(),
+    state: z.string().optional(),
+    codeChallenge: z.string().optional(),
+    codeChallengeMethod: z.string().optional(),
+  }),
+  // The authenticated user's ID
+  userId: z.string(),
+  // Approved scopes
+  approvedScopes: z.array(z.string()),
+});
+
+// Schema for parsing auth request
+const parseAuthRequestSchema = z.object({
+  url: z.string().url(),
+});
+
+export function createOAuthInternalRoutes() {
+  const app = new Hono<{ Bindings: Env }>();
+
+  /**
+   * Parse an OAuth authorization request
+   * POST /oauth/internal/parse-request
+   *
+   * Called by web app to parse OAuth params from the authorization URL
+   */
+  app.post('/parse-request', zValidator('json', parseAuthRequestSchema), async (c) => {
+    const { url } = c.req.valid('json');
+
+    try {
+      // Create a mock request to parse
+      const request = new Request(url);
+      const oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(request);
+
+      // Look up client info
+      const clientInfo = await c.env.OAUTH_PROVIDER.lookupClient(oauthReqInfo.clientId);
+
+      return c.json({
+        success: true,
+        oauthRequest: oauthReqInfo,
+        client: clientInfo,
+      });
+    } catch (error) {
+      console.error('Failed to parse OAuth request:', error);
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to parse request',
+      }, 400);
+    }
+  });
+
+  /**
+   * Complete an OAuth authorization
+   * POST /oauth/internal/complete
+   *
+   * Called by web app after user approves the authorization
+   */
+  app.post('/complete', zValidator('json', completeAuthSchema), async (c) => {
+    const { oauthRequest, userId, approvedScopes } = c.req.valid('json');
+
+    const db = createDatabase(c.env.DB);
+
+    // Verify user exists
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user) {
+      return c.json({ success: false, error: 'User not found' }, 404);
+    }
+
+    // Get user's GitHub identity for additional profile info
+    const githubIdentity = await db.query.userIdentities.findFirst({
+      where: and(
+        eq(userIdentities.userId, userId),
+        eq(userIdentities.provider, 'github')
+      ),
+    });
+
+    try {
+      // Complete the authorization via OAuthProvider
+      const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
+        request: oauthRequest,
+        userId: user.id,
+        metadata: {
+          email: user.email,
+          name: user.name,
+          approvedAt: new Date().toISOString(),
+        },
+        scope: approvedScopes,
+        // Props passed to API handlers when this token is used
+        props: {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+          githubUsername: githubIdentity?.providerUsername,
+          scopes: approvedScopes,
+        },
+      });
+
+      return c.json({
+        success: true,
+        redirectTo,
+      });
+    } catch (error) {
+      console.error('Failed to complete authorization:', error);
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to complete authorization',
+      }, 500);
+    }
+  });
+
+  /**
+   * Look up a client by ID
+   * GET /oauth/internal/client/:clientId
+   */
+  app.get('/client/:clientId', async (c) => {
+    const clientId = c.req.param('clientId');
+
+    try {
+      const clientInfo = await c.env.OAUTH_PROVIDER.lookupClient(clientId);
+
+      if (!clientInfo) {
+        return c.json({ success: false, error: 'Client not found' }, 404);
+      }
+
+      return c.json({
+        success: true,
+        client: clientInfo,
+      });
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to look up client',
+      }, 500);
+    }
+  });
+
+  /**
+   * List user's OAuth grants (for account settings)
+   * GET /oauth/internal/grants/:userId
+   */
+  app.get('/grants/:userId', async (c) => {
+    const userId = c.req.param('userId');
+
+    try {
+      const grants = await c.env.OAUTH_PROVIDER.listUserGrants(userId);
+
+      return c.json({
+        success: true,
+        grants: grants.items,
+        cursor: grants.cursor,
+      });
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to list grants',
+      }, 500);
+    }
+  });
+
+  /**
+   * Revoke an OAuth grant
+   * DELETE /oauth/internal/grants/:userId/:grantId
+   */
+  app.delete('/grants/:userId/:grantId', async (c) => {
+    const userId = c.req.param('userId');
+    const grantId = c.req.param('grantId');
+
+    try {
+      await c.env.OAUTH_PROVIDER.revokeGrant(grantId, userId);
+
+      return c.json({ success: true });
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to revoke grant',
+      }, 500);
+    }
+  });
+
+  return app;
+}
+
+export const oauthInternalRoutes = createOAuthInternalRoutes();

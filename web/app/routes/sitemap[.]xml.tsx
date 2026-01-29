@@ -1,11 +1,14 @@
-import { fetchEvents } from "~/lib/api.server";
-import { groups, getMeetupUrlnames } from "~/data/groups";
+import { fetchEvents, fetchGroups, toLocalGroup, getGroupUrlnames } from "~/lib/api.server";
 
 const SITE_URL = "https://tampa.dev";
 
 export async function loader() {
+  const apiGroups = await fetchGroups();
+  const groups = apiGroups.map(toLocalGroup);
+  const urlnames = getGroupUrlnames(groups);
+
   const events = await fetchEvents({
-    groups: getMeetupUrlnames(),
+    groups: urlnames,
     withinDays: 60,
   });
 

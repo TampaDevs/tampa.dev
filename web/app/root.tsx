@@ -5,11 +5,39 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
+  useLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import { Header, Footer } from "./components";
+import { fetchCurrentUser, type AuthUser } from "./lib/admin-api.server";
 import "./app.css";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const cookieHeader = request.headers.get("Cookie") || undefined;
+  const user = await fetchCurrentUser(cookieHeader);
+  return { user };
+}
+
+/**
+ * Prevent unnecessary revalidation of the root loader.
+ * Only revalidate on explicit navigation or after logout.
+ */
+export function shouldRevalidate({
+  formAction,
+  defaultShouldRevalidate,
+}: {
+  formAction?: string;
+  defaultShouldRevalidate: boolean;
+}) {
+  // Always revalidate after auth actions
+  if (formAction?.startsWith("/auth/")) {
+    return true;
+  }
+  // Otherwise, use default behavior for navigation
+  return defaultShouldRevalidate;
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/favicon.png" },
@@ -50,9 +78,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const location = useLocation();
+  const loaderData = useLoaderData<typeof loader>();
+  const user = loaderData?.user;
+  const isAdmin = location.pathname.startsWith("/admin");
+  const isAuthPage = location.pathname === "/login";
+  const isDevPage = location.pathname.startsWith("/_dev");
+
+  // Admin routes, auth pages, and dev pages have their own layout
+  if (isAdmin || isAuthPage || isDevPage) {
+    return <Outlet />;
+  }
+
   return (
     <>
-      <Header />
+      <Header user={user} />
       <main className="flex-1">
         <Outlet />
       </main>

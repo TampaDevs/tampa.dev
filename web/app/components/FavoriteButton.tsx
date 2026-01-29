@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { isFavorite, toggleFavorite } from "~/lib/favorites";
+import { isFavorite, toggleFavoriteAsync } from "~/lib/favorites";
 
 interface FavoriteButtonProps {
   slug: string;
@@ -9,17 +9,34 @@ interface FavoriteButtonProps {
 export function FavoriteButton({ slug, size = "medium" }: FavoriteButtonProps) {
   const [favorited, setFavorited] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setFavorited(isFavorite(slug));
     setIsLoaded(true);
   }, [slug]);
 
-  function handleClick(e: React.MouseEvent) {
+  async function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const result = toggleFavorite(slug);
-    setFavorited(result.isFavorite);
+
+    if (isUpdating) return;
+
+    // Optimistic update
+    const newState = !favorited;
+    setFavorited(newState);
+    setIsUpdating(true);
+
+    try {
+      // This updates localStorage and syncs with API if authenticated
+      await toggleFavoriteAsync(slug);
+    } catch (error) {
+      // Revert on error
+      setFavorited(!newState);
+      console.error("Failed to toggle favorite:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   const sizeClasses = {

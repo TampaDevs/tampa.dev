@@ -4,7 +4,7 @@ import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
 import { EventQuerySchema } from './events.js';
 import { EventsPage } from '../components/index.js';
-import { getCachedResponse, cacheResponse, getDataHash, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
+import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
  * GET /html - HTML page with upcoming events
@@ -59,15 +59,15 @@ const upcomingEventsRoute = createRoute({
  */
 export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   const htmlHandler = async (c: any) => {
-    const dataHash = await getDataHash(c.env.kv);
+    const syncVersion = await getSyncVersion(c.env.DB);
 
     // Check for conditional request (If-None-Match)
-    if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
-      return createNotModifiedResponse(dataHash);
+    if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
+      return createNotModifiedResponse(syncVersion);
     }
 
     // Check cache first
-    const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
+    const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
     if (cached) {
       return cached;
     }
@@ -78,7 +78,7 @@ export function registerPageRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, html, dataHash || undefined, waitUntil);
+    return cacheResponse(c.req.raw, html, syncVersion || undefined, waitUntil);
   };
 
   app.openapi(htmlPageRoute, htmlHandler);

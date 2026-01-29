@@ -1,10 +1,9 @@
 import type { Route } from "./+types/home";
 import { Link } from "react-router";
-import { fetchEvents } from "~/lib/api.server";
+import { fetchEvents, fetchGroups, toLocalGroup } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
 import { eventsToJsonLd, websiteJsonLd } from "~/lib/structured-data";
 import { AddToCalendar, EventCard, EventCarousel, GroupCard, NewsletterSignup, StructuredData } from "~/components";
-import { groups, getFeaturedGroups } from "~/data/groups";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
@@ -16,12 +15,18 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export async function loader() {
-  const events = await fetchEvents({ withinDays: 30 });
+  const [events, apiGroups] = await Promise.all([
+    fetchEvents({ withinDays: 30 }),
+    fetchGroups(),
+  ]);
+
+  // Convert API groups to LocalGroup format
+  const allGroups = apiGroups.map(toLocalGroup);
 
   // Get featured groups, filling with regular groups if not enough
-  let featuredGroups = getFeaturedGroups();
+  let featuredGroups = allGroups.filter(g => g.featured);
   if (featuredGroups.length < 4) {
-    const nonFeatured = groups.filter(g => !g.featured);
+    const nonFeatured = allGroups.filter(g => !g.featured);
     featuredGroups = [...featuredGroups, ...nonFeatured].slice(0, 4);
   }
 
@@ -30,7 +35,8 @@ export async function loader() {
     featuredEvent: events[0] ?? null,
     upcomingEvents: events.slice(1, 7),
     featuredGroups,
-    totalGroups: groups.length,
+    allGroups,
+    totalGroups: allGroups.length,
     totalEvents: events.length,
   };
 }
@@ -41,6 +47,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     featuredEvent,
     upcomingEvents,
     featuredGroups,
+    allGroups,
     totalGroups,
     totalEvents,
   } = loaderData;
@@ -108,7 +115,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       {/* Featured Event */}
       {featuredEvent && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
-          <EventCard event={featuredEvent} variant="featured" />
+          <EventCard event={featuredEvent} variant="featured" groups={allGroups} />
         </section>
       )}
 
@@ -126,7 +133,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               View all events →
             </Link>
           </div>
-          <EventCarousel events={upcomingEvents} />
+          <EventCarousel events={upcomingEvents} groups={allGroups} />
         </section>
       )}
 

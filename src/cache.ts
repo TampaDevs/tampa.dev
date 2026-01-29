@@ -1,66 +1,85 @@
 /**
  * Cloudflare Cache API wrapper for response caching
  *
- * Uses data hash for cache invalidation - responses are cached indefinitely
- * until the underlying event data changes (detected via hash).
+ * Uses D1 sync timestamps for cache invalidation - responses are cached indefinitely
+ * until a new sync completes (detected via latest sync timestamp).
  */
 
 import {
   CACHE_NAME,
-  METADATA_EDGE_CACHE_TTL,
   RESPONSE_CACHE_MAX_AGE,
   STALE_WHILE_REVALIDATE,
 } from './config/cache.js';
+import { createDatabase } from './db/index.js';
+import { syncLogs } from './db/schema.js';
+import { desc, eq } from 'drizzle-orm';
 
 /**
- * Aggregation metadata stored in KV
+ * Sync metadata from D1
  */
-export interface AggregationMetadata {
-  lastRunAt: string;
-  durationMs: number;
-  groupsProcessed: number;
-  groupsFailed: number;
-  dataHash: string;
-  errors: string[];
+export interface SyncMetadata {
+  lastSyncAt: string;
+  status: string;
+  eventsCreated: number;
+  eventsUpdated: number;
 }
 
 /**
- * Get the current data hash from KV metadata
- * Uses edge caching to avoid KV reads on every request
+ * Get the latest sync timestamp from D1 for cache invalidation
+ * Returns a hash-like string derived from the latest sync completion time
  */
-export async function getDataHash(kv: KVNamespace): Promise<string | null> {
+export async function getSyncVersion(db: D1Database): Promise<string | null> {
   try {
-    const metadataJson = await kv.get('aggregation_metadata', { cacheTtl: METADATA_EDGE_CACHE_TTL });
-    if (metadataJson) {
-      const metadata: AggregationMetadata = JSON.parse(metadataJson);
-      return metadata.dataHash;
+    const drizzleDb = createDatabase(db);
+
+    // Get the most recent successful sync
+    const latestSync = await drizzleDb.query.syncLogs.findFirst({
+      where: eq(syncLogs.status, 'success'),
+      orderBy: [desc(syncLogs.completedAt)],
+    });
+
+    if (latestSync?.completedAt) {
+      // Convert timestamp to a short hash for cache key
+      // Using base36 encoding of timestamp for compactness
+      const timestamp = new Date(latestSync.completedAt).getTime();
+      return timestamp.toString(36);
     }
   } catch {
-    // Metadata not available
+    // Database not available
   }
   return null;
 }
 
 /**
- * Get the full aggregation metadata from KV
- * Uses edge caching to avoid KV reads on every request
+ * Get sync metadata from D1
  */
-export async function getAggregationMetadata(kv: KVNamespace): Promise<AggregationMetadata | null> {
+export async function getSyncMetadata(db: D1Database): Promise<SyncMetadata | null> {
   try {
-    const metadataJson = await kv.get('aggregation_metadata', { cacheTtl: METADATA_EDGE_CACHE_TTL });
-    if (metadataJson) {
-      return JSON.parse(metadataJson);
+    const drizzleDb = createDatabase(db);
+
+    const latestSync = await drizzleDb.query.syncLogs.findFirst({
+      where: eq(syncLogs.status, 'success'),
+      orderBy: [desc(syncLogs.completedAt)],
+    });
+
+    if (latestSync) {
+      return {
+        lastSyncAt: latestSync.completedAt || latestSync.startedAt,
+        status: latestSync.status,
+        eventsCreated: latestSync.eventsCreated || 0,
+        eventsUpdated: latestSync.eventsUpdated || 0,
+      };
     }
   } catch {
-    // Metadata not available
+    // Database not available
   }
   return null;
 }
 
 /**
- * Generate a hash of the event data (kept for backwards compatibility with tests)
+ * Generate a hash from a string (utility function)
  */
-export function generateDataHash(data: string): string {
+export function generateHash(data: string): string {
   let hash = 0;
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i);
@@ -70,29 +89,34 @@ export function generateDataHash(data: string): string {
   return Math.abs(hash).toString(36);
 }
 
+// Alias for backwards compatibility with tests
+export const generateDataHash = generateHash;
+
 /**
  * Build a versioned cache key URL
- * Uses data hash for cache invalidation - when data changes, hash changes,
- * creating a new cache key and effectively invalidating old cached responses.
+ * Uses sync version for cache invalidation - when a new sync completes,
+ * version changes, creating a new cache key and effectively invalidating old responses.
  */
-function buildCacheKeyUrl(request: Request, dataHash?: string): string {
+function buildCacheKeyUrl(request: Request, syncVersion?: string): string {
   const url = new URL(request.url);
-  if (dataHash) {
-    url.searchParams.set('_h', dataHash);
+  if (syncVersion) {
+    url.searchParams.set('_v', syncVersion);
   }
   return url.toString();
 }
 
 /**
  * Try to get a cached response for the given request
+ * @param request - The original request
+ * @param syncVersion - Sync version for cache key (from getSyncVersion)
  */
 export async function getCachedResponse(
   request: Request,
-  dataHash?: string
+  syncVersion?: string
 ): Promise<Response | null> {
   try {
     const cache = await caches.open(CACHE_NAME);
-    const cacheKeyUrl = buildCacheKeyUrl(request, dataHash);
+    const cacheKeyUrl = buildCacheKeyUrl(request, syncVersion);
 
     const cachedResponse = await cache.match(cacheKeyUrl);
 
@@ -117,13 +141,13 @@ export async function getCachedResponse(
  * Cache a response for the given request
  * @param request - The original request
  * @param response - The response to cache
- * @param dataHash - Data hash for cache key (enables indefinite caching)
+ * @param syncVersion - Sync version for cache key (enables indefinite caching)
  * @param waitUntil - Optional waitUntil function from execution context
  */
 export async function cacheResponse(
   request: Request,
   response: Response,
-  dataHash?: string,
+  syncVersion?: string,
   waitUntil?: (promise: Promise<unknown>) => void
 ): Promise<Response> {
   // Clone the response first so we can return it
@@ -133,16 +157,16 @@ export async function cacheResponse(
   const headers = new Headers(response.headers);
 
   // Use long cache with stale-while-revalidate
-  // The data hash in the URL ensures we get fresh data when content changes
+  // The sync version in the URL ensures we get fresh data when a new sync completes
   headers.set(
     'Cache-Control',
     `public, max-age=${RESPONSE_CACHE_MAX_AGE}, stale-while-revalidate=${STALE_WHILE_REVALIDATE}`
   );
   headers.set('X-Cache', 'MISS');
 
-  // Add ETag based on data hash for conditional requests
-  if (dataHash) {
-    headers.set('ETag', `"${dataHash}"`);
+  // Add ETag based on sync version for conditional requests
+  if (syncVersion) {
+    headers.set('ETag', `"${syncVersion}"`);
   }
 
   const responseForClient = new Response(responseToReturn.body, {
@@ -155,7 +179,7 @@ export async function cacheResponse(
   const cacheOperation = (async () => {
     try {
       const cache = await caches.open(CACHE_NAME);
-      const cacheKeyUrl = buildCacheKeyUrl(request, dataHash);
+      const cacheKeyUrl = buildCacheKeyUrl(request, syncVersion);
       await cache.put(cacheKeyUrl, responseForClient.clone());
     } catch {
       // Cache API not available or failed - continue without caching
@@ -171,25 +195,29 @@ export async function cacheResponse(
 
 /**
  * Check if the request has a matching ETag (for 304 responses)
+ * @param request - The request to check
+ * @param syncVersion - The current sync version
  */
-export function checkConditionalRequest(request: Request, dataHash: string): boolean {
+export function checkConditionalRequest(request: Request, syncVersion: string): boolean {
   const ifNoneMatch = request.headers.get('If-None-Match');
   if (ifNoneMatch) {
-    // Handle both quoted and unquoted ETags
-    const etag = ifNoneMatch.replace(/^"|"$/g, '').replace(/^W\//, '');
-    return etag === dataHash;
+    // Handle weak ETags (W/"...") and quoted ETags ("...")
+    // First remove the weak prefix, then remove quotes
+    const etag = ifNoneMatch.replace(/^W\//, '').replace(/^"|"$/g, '');
+    return etag === syncVersion;
   }
   return false;
 }
 
 /**
  * Create a 304 Not Modified response
+ * @param syncVersion - The current sync version for ETag
  */
-export function createNotModifiedResponse(dataHash: string): Response {
+export function createNotModifiedResponse(syncVersion: string): Response {
   return new Response(null, {
     status: 304,
     headers: {
-      'ETag': `"${dataHash}"`,
+      'ETag': `"${syncVersion}"`,
       'Cache-Control': `public, max-age=${RESPONSE_CACHE_MAX_AGE}, stale-while-revalidate=${STALE_WHILE_REVALIDATE}`,
       'X-Cache': 'NOT_MODIFIED',
     },
