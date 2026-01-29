@@ -277,8 +277,8 @@ export function createAuthRoutes() {
         domain: '.tampa.dev',
       });
 
-      // Redirect to returnTo URL if provided, otherwise home page
-      const redirectUrl = returnTo || '/';
+      // Redirect to returnTo URL if provided, otherwise tampa.dev home
+      const redirectUrl = returnTo || 'https://tampa.dev/';
       return c.redirect(redirectUrl);
     } catch (error) {
       console.error('GitHub OAuth error:', error);

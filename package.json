@@ -44,7 +44,10 @@
     "db:generate": "drizzle-kit generate --config=drizzle.config.local.ts",
     "db:migrate:local": "wrangler d1 migrations apply events-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply events-db --remote",
-    "db:seed": "tsx scripts/seed-groups.ts",
+    "db:seed:local": "tsx scripts/seed-groups.ts",
+    "db:seed:remote": "tsx scripts/seed-groups.ts --remote",
+    "db:setup:local": "npm run db:migrate:local && npm run db:seed:local",
+    "db:setup:remote": "npm run db:migrate:remote && npm run db:seed:remote",
     "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
   }
 }

@@ -158,9 +158,9 @@ function transformStatus(meetupStatus: string): 'active' | 'cancelled' | 'draft'
  * Get photo URL from Meetup photo object
  */
 function getPhotoUrl(photo?: MeetupPhoto | null): string | undefined {
-  if (!photo?.baseUrl) return undefined;
-  // Meetup photo URLs need dimensions appended
-  return `${photo.baseUrl}676x380.webp`;
+  if (!photo?.baseUrl || !photo?.id) return undefined;
+  // Meetup photo URLs: baseUrl + id + dimensions
+  return `${photo.baseUrl}${photo.id}/676x380.webp`;
 }
 
 /**
