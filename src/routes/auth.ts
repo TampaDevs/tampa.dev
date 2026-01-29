@@ -350,7 +350,7 @@ export function createAuthRoutes() {
 
     deleteCookie(c, SESSION_COOKIE, { path: '/', domain: '.tampa.dev' });
 
-    return c.json({ success: true });
+    return c.redirect('https://tampa.dev/');
   });
 
   /**
