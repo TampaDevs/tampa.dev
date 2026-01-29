@@ -86,16 +86,16 @@ export class Venue {
       return null;
     }
 
-    // Prefer coordinates for accuracy
-    if (this.hasCoordinates) {
-      return `https://www.google.com/maps/search/?api=1&query=${this.lat},${this.lon}`;
-    }
-
-    // Fall back to address search
+    // Prefer address for better UX (shows venue name in Maps)
     const address = this.formattedAddress;
     if (address) {
       const query = encodeURIComponent(address);
       return `https://www.google.com/maps/search/?api=1&query=${query}`;
+    }
+
+    // Fall back to coordinates
+    if (this.hasCoordinates) {
+      return `https://www.google.com/maps/search/?api=1&query=${this.lat},${this.lon}`;
     }
 
     return null;

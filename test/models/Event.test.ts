@@ -130,7 +130,8 @@ describe('Event Model', () => {
     it('should return Google Maps URL for physical events', () => {
       const event = new Event(mockEventData);
       expect(event.googleMapsUrl).to.include('google.com/maps');
-      expect(event.googleMapsUrl).to.include('27.9506');
+      // Prefers address over coordinates for better UX
+      expect(event.googleMapsUrl).to.include('123%20Main%20St');
     });
 
     it('should return null for online event addresses', () => {

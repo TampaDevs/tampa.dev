@@ -64,8 +64,12 @@ export function EventCard({ event, variant = "default", groups }: EventCardProps
             ) : event.venues[0] ? (
               <span className="truncate">{event.venues[0].name}</span>
             ) : null}
-            <span>·</span>
-            <span>{event.rsvpCount} going</span>
+            {event.rsvpCount > 0 && (
+              <>
+                <span>·</span>
+                <span>{event.rsvpCount} going</span>
+              </>
+            )}
           </div>
         </div>
       </article>
@@ -139,22 +143,24 @@ export function EventCard({ event, variant = "default", groups }: EventCardProps
                 <span className="text-sm">{event.venues[0].name}</span>
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              <span className="text-sm">{event.rsvpCount} going</span>
-            </div>
+            {event.rsvpCount > 0 && (
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <span className="text-sm">{event.rsvpCount} going</span>
+              </div>
+            )}
           </div>
 
           <Link
@@ -282,22 +288,24 @@ export function EventCard({ event, variant = "default", groups }: EventCardProps
               <span className="text-green-600 dark:text-green-400">Online Event</span>
             )}
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span>{event.rsvpCount}</span>
-          </div>
+          {event.rsvpCount > 0 && (
+            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span>{event.rsvpCount}</span>
+            </div>
+          )}
         </div>
       </div>
     </article>

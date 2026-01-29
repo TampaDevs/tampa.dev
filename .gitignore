@@ -6,8 +6,9 @@ certs/
 node_modules
 assets/*
 !assets/.gitkeep
-.wrangler/tmp/
+.wrangler/
 .claude/
+.provider-test-output.json
 
 # Generated clients - ignore build artifacts but keep source
 openapitools.json
