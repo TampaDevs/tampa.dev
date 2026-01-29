@@ -34,10 +34,51 @@ name = "events-api-pr"
 
 [env.production]
 name = "events-api-tampa-dev"
-kv_namespaces = [
-  { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" },
-  { binding = "OAUTH_KV", id = "791983cf109c43eaa21ff4f3406de811" }
-]
+
+# Routes for tampa.dev paths
+[[env.production.routes]]
+pattern = "tampa.dev/ical*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/webcal*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/upcoming-events*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/feed*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/events.json*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "events.api.tampa.dev/*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "events.api.tampa.dev"
+zone_name = "tampa.dev"
+custom_domain = true
+
+# Environment variables
+[env.production.vars]
+ADMIN_ALLOWLIST = "chtzvt"
+GITHUB_REDIRECT_URI = "https://events.api.tampa.dev/auth/github/callback"
+UPLOADS_PUBLIC_BUCKET_NAME = "tampa-dev-uploads-public"
+UPLOADS_PUBLIC_URL = "https://td-uploads-public.tampa.dev"
+
+[[env.production.kv_namespaces]]
+binding = "kv"
+id = "791983cf109c43eaa21ff4f3406de811"
+
+[[env.production.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "791983cf109c43eaa21ff4f3406de811"
 
 [[env.production.d1_databases]]
 binding = "DB"
