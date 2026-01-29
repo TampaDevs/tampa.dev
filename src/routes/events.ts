@@ -2,7 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
 import { EventController } from '../controllers/EventController.js';
-import { getCachedResponse, cacheResponse, getDataHash, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
+import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
  * Query parameters schema for event filtering
@@ -143,18 +143,23 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for all events
   const allEventsHandler = async (c: any) => {
     try {
-      // Get data hash for cache key (enables indefinite caching until data changes)
-      const dataHash = await getDataHash(c.env.kv);
+      const url = new URL(c.req.url);
+      const noCache = url.searchParams.get('nocache') === '1';
+
+      // Get sync version for cache key (enables indefinite caching until new sync completes)
+      const syncVersion = noCache ? null : await getSyncVersion(c.env.DB);
 
       // Check for conditional request (If-None-Match)
-      if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
-        return createNotModifiedResponse(dataHash);
+      if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
+        return createNotModifiedResponse(syncVersion);
       }
 
-      // Check cache first
-      const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
-      if (cached) {
-        return cached;
+      // Check cache first (skip if nocache=1)
+      if (!noCache) {
+        const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
+        if (cached) {
+          return cached;
+        }
       }
 
       // Generate fresh response
@@ -170,8 +175,9 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
       // Cache and return (pass waitUntil to ensure cache operation completes)
       const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-      return cacheResponse(c.req.raw, response, dataHash || undefined, waitUntil);
+      return cacheResponse(c.req.raw, response, syncVersion || undefined, waitUntil);
     } catch (error) {
+      console.error('[Events] Error loading events:', error);
       return c.text('No event data available', 503);
     }
   };
@@ -179,16 +185,16 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Handler for next events
   const nextEventsHandler = async (c: any) => {
     try {
-      // Get data hash for cache key (enables indefinite caching until data changes)
-      const dataHash = await getDataHash(c.env.kv);
+      // Get sync version for cache key (enables indefinite caching until new sync completes)
+      const syncVersion = await getSyncVersion(c.env.DB);
 
       // Check for conditional request (If-None-Match)
-      if (dataHash && checkConditionalRequest(c.req.raw, dataHash)) {
-        return createNotModifiedResponse(dataHash);
+      if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
+        return createNotModifiedResponse(syncVersion);
       }
 
       // Check cache first
-      const cached = await getCachedResponse(c.req.raw, dataHash || undefined);
+      const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
       if (cached) {
         return cached;
       }
@@ -206,8 +212,9 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
       // Cache and return (pass waitUntil to ensure cache operation completes)
       const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-      return cacheResponse(c.req.raw, response, dataHash || undefined, waitUntil);
+      return cacheResponse(c.req.raw, response, syncVersion || undefined, waitUntil);
     } catch (error) {
+      console.error('[Events] Error loading next events:', error);
       return c.text('No event data available', 503);
     }
   };

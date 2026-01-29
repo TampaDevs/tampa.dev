@@ -1,13 +1,14 @@
 import { useRef } from "react";
-import type { Event } from "~/lib/types";
+import type { Event, LocalGroupCompat } from "~/lib/types";
 import { EventCard } from "./EventCard";
 
 interface EventCarouselProps {
   events: Event[];
   title?: string;
+  groups?: LocalGroupCompat[];
 }
 
-export function EventCarousel({ events, title }: EventCarouselProps) {
+export function EventCarousel({ events, title, groups }: EventCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -73,7 +74,7 @@ export function EventCarousel({ events, title }: EventCarouselProps) {
               key={event.id}
               className="flex-shrink-0 w-full max-w-md snap-start"
             >
-              <EventCard event={event} />
+              <EventCard event={event} groups={groups} />
             </div>
           ))}
         </div>

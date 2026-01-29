@@ -1,9 +1,9 @@
 import { Link } from "react-router";
-import type { LocalGroup } from "~/data/groups";
+import type { LocalGroupCompat } from "~/lib/api.server";
 import { FavoriteButton } from "./FavoriteButton";
 
 interface GroupCardProps {
-  group: LocalGroup;
+  group: LocalGroupCompat;
   eventCount?: number;
 }
 

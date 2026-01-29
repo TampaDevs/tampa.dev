@@ -1,4 +1,4 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
 
 export default [
   index("routes/home.tsx"),
@@ -10,4 +10,37 @@ export default [
   route("calendar", "routes/calendar.tsx"),
   route("favorites", "routes/favorites.tsx"),
   route("sitemap.xml", "routes/sitemap[.]xml.tsx"),
+
+  // Public login
+  route("login", "routes/login.tsx"),
+
+  // Auth routes
+  route("auth/logout", "routes/auth.logout.tsx"),
+
+  // User profile
+  route("profile", "routes/profile.tsx"),
+
+  // Developer portal (self-service OAuth app registration)
+  route("developer", "routes/developer.tsx"),
+
+  // OAuth authorization (consent screen for "Sign in with Tampa.dev")
+  route("oauth/authorize", "routes/oauth.authorize.tsx"),
+
+  // Admin login (outside layout)
+  route("admin/login", "routes/admin.login.tsx"),
+
+  // Admin routes (with layout)
+  layout("routes/admin.tsx", [
+    route("admin", "routes/admin._index.tsx", { index: true }),
+    route("admin/groups", "routes/admin.groups._index.tsx"),
+    route("admin/groups/new", "routes/admin.groups.new.tsx"),
+    route("admin/groups/:id", "routes/admin.groups.$id.tsx"),
+    route("admin/sync", "routes/admin.sync.tsx"),
+    route("admin/users", "routes/admin.users.tsx"),
+    route("admin/oauth", "routes/admin.oauth.tsx"),
+  ]),
+
+  // Development-only routes (blocked in production by loaders)
+  route("_dev/preview", "routes/_dev.preview.tsx"),
+  route("_dev/auth", "routes/_dev.auth.tsx"),
 ] satisfies RouteConfig;

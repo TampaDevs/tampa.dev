@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { Event } from "~/lib/types";
+import type { Event, LocalGroupCompat } from "~/lib/types";
 import {
   formatEventDate,
   formatEventTime,
@@ -7,15 +7,16 @@ import {
   truncate,
   stripHtml,
 } from "~/lib/utils";
-import { getGroupByMeetupUrlname } from "~/data/groups";
+import { findGroupByUrlname } from "~/lib/types";
 
 interface EventCardProps {
   event: Event;
   variant?: "default" | "compact" | "featured";
+  groups?: LocalGroupCompat[];
 }
 
-export function EventCard({ event, variant = "default" }: EventCardProps) {
-  const localGroup = getGroupByMeetupUrlname(event.group.urlname);
+export function EventCard({ event, variant = "default", groups }: EventCardProps) {
+  const localGroup = groups ? findGroupByUrlname(groups, event.group.urlname) : undefined;
   const relativeTime = getRelativeTime(event.dateTime);
   const description = event.description
     ? truncate(stripHtml(event.description), 120)

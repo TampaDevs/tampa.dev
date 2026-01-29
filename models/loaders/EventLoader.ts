@@ -1,5 +1,6 @@
 import { Event } from '../Event.js';
 import { MeetupTransformer } from '../providers/MeetupTransformer.js';
+import { DatabaseTransformer, type DbEventWithRelations } from '../providers/DatabaseTransformer.js';
 
 /**
  * Filter options for loading events
@@ -46,6 +47,13 @@ export class EventLoader {
   }
 
   /**
+   * Load events from D1 database records
+   */
+  static fromDatabaseRecords(records: DbEventWithRelations[]): Event[] {
+    return DatabaseTransformer.transformAll(records);
+  }
+
+  /**
    * Filter events based on provided options
    */
   static filter(events: Event[], options: EventFilterOptions = {}): Event[] {
@@ -55,10 +63,10 @@ export class EventLoader {
     const endedBufferHours = options.endedBufferHours ?? 2;
     filtered = filtered.filter(event => !event.hasEnded(endedBufferHours));
 
-    // Filter by group urlnames
+    // Filter by group urlnames (case-insensitive)
     if (options.groups && options.groups.length > 0) {
-      const groupSet = new Set(options.groups);
-      filtered = filtered.filter(event => groupSet.has(event.group.urlname));
+      const groupSet = new Set(options.groups.map(g => g.toLowerCase()));
+      filtered = filtered.filter(event => groupSet.has(event.group.urlname.toLowerCase()));
     }
 
     // Exclude online events

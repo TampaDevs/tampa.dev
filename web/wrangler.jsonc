@@ -1,10 +1,29 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tampa-dev-web",
-  "compatibility_date": "2025-04-04",
-  "main": "./workers/app.ts",
-  "routes": [
-    { "pattern": "tampa.dev/*", "zone_name": "tampa.dev" },
-    { "pattern": "www.tampa.dev/*", "zone_name": "tampa.dev" }
-  ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "tampa-dev-web",
+	"compatibility_date": "2025-04-04",
+	"main": "./workers/app.ts",
+	"routes": [
+		{
+			"pattern": "tampa.dev/*",
+			"zone_name": "tampa.dev"
+		},
+		{
+			"pattern": "www.tampa.dev/*",
+			"zone_name": "tampa.dev"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "events_db",
+			"database_name": "events-db",
+			"database_id": "bea48eca-291f-4901-83d4-4413524506a3"
+		}
+	],
+	"services": [
+		{
+			"binding": "EVENTS_API",
+			"service": "events-api-tampa-dev"
+		}
+	]
 }

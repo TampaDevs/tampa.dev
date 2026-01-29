@@ -72,6 +72,14 @@ export function Footer() {
                 </a>
               </li>
               <li>
+                <Link
+                  to="/developer"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  Developer Portal
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://github.com/tampadevs/events.api.tampa.dev/issues/new"
                   target="_blank"

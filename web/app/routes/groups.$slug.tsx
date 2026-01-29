@@ -1,10 +1,9 @@
 import type { Route } from "./+types/groups.$slug";
 import { Link } from "react-router";
-import { fetchEvents } from "~/lib/api.server";
+import { fetchEvents, fetchGroupBySlug, toLocalGroup } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
 import { groupToJsonLd, eventsToJsonLd } from "~/lib/structured-data";
 import { AddToCalendar, EventCard, FavoriteButton, StructuredData } from "~/components";
-import { getGroupBySlug } from "~/data/groups";
 import { data } from "react-router";
 
 const API_BASE = "https://events.api.tampa.dev/2026-01-25";
@@ -36,20 +35,21 @@ export const meta: Route.MetaFunction = ({ data }) => {
 };
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const group = getGroupBySlug(params.slug!);
+  const apiGroup = await fetchGroupBySlug(params.slug!);
 
-  if (!group) {
+  if (!apiGroup) {
     throw data(null, { status: 404 });
   }
 
+  const group = toLocalGroup(apiGroup);
+
   let events: Awaited<ReturnType<typeof fetchEvents>> = [];
 
-  if (group.meetupUrlname) {
-    events = await fetchEvents({
-      groups: [group.meetupUrlname],
-      withinDays: 60,
-    });
-  }
+  // Fetch events using the group's urlname (which is slug for the API)
+  events = await fetchEvents({
+    groups: [apiGroup.urlname],
+    withinDays: 60,
+  });
 
   return {
     group,
@@ -234,7 +234,7 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
           {events.length > 0 ? (
             <div className="space-y-4">
               {events.map((event) => (
-                <EventCard key={event.id} event={event} variant="compact" />
+                <EventCard key={event.id} event={event} variant="compact" groups={[group]} />
               ))}
             </div>
           ) : (

@@ -1,7 +1,7 @@
 import type { Route } from "./+types/groups._index";
 import { generateMetaTags } from "~/lib/seo";
 import { GroupCard, StructuredData } from "~/components";
-import { groups, getAllTags, getGroupsByTag } from "~/data/groups";
+import { fetchGroups, toLocalGroup, extractTags } from "~/lib/api.server";
 import { useSearchParams } from "react-router";
 import { useState, useEffect, useMemo } from "react";
 import { getFavorites } from "~/lib/favorites";
@@ -10,13 +10,15 @@ export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
     title: "Tech Groups & Communities",
     description:
-      "Explore 22+ tech groups and communities in Tampa Bay. From cloud computing to AI, find your tribe of developers and technologists.",
+      "Explore tech groups and communities in Tampa Bay. From cloud computing to AI, find your tribe of developers and technologists.",
     url: "/groups",
   });
 };
 
 export async function loader() {
-  const tags = getAllTags();
+  const apiGroups = await fetchGroups();
+  const tags = extractTags(apiGroups);
+  const groups = apiGroups.map(toLocalGroup);
 
   return {
     groups,
@@ -49,7 +51,7 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
   }, []);
 
   const filteredGroups = activeTag
-    ? getGroupsByTag(activeTag)
+    ? allGroups.filter((g) => g.tags.includes(activeTag))
     : allGroups;
 
   // Sort groups: favorites first (alphabetically), then non-favorites (alphabetically)

@@ -34,5 +34,13 @@ export {
   type MeetupPhoto,
 } from './providers/MeetupTransformer.js';
 
+export {
+  DatabaseTransformer,
+  type DbEvent,
+  type DbGroup,
+  type DbVenue,
+  type DbEventWithRelations,
+} from './providers/DatabaseTransformer.js';
+
 // Factory/loader utilities
 export { EventLoader } from './loaders/EventLoader.js';

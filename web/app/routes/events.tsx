@@ -1,10 +1,9 @@
 import type { Route } from "./+types/events";
 import { useSearchParams } from "react-router";
-import { fetchEvents } from "~/lib/api.server";
+import { fetchEvents, fetchGroups, toLocalGroup, type LocalGroupCompat } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
 import { eventsToJsonLd } from "~/lib/structured-data";
 import { EventCard, StructuredData } from "~/components";
-import { groups, getMeetupUrlnames } from "~/data/groups";
 import { isToday, isThisWeek } from "~/lib/utils";
 import type { Event } from "~/lib/types";
 
@@ -23,8 +22,11 @@ export async function loader({ request }: Route.LoaderArgs) {
   const typeFilter = url.searchParams.get("type");
   const groupFilter = url.searchParams.get("groups");
 
+  const apiGroups = await fetchGroups();
+  const groups = apiGroups.map(toLocalGroup);
+
+  // Fetch all events without group filter (groups table and events may not be in sync)
   let events = await fetchEvents({
-    groups: getMeetupUrlnames(),
     withinDays: 60,
   });
 
@@ -38,12 +40,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   // Apply group filter
   if (groupFilter) {
     const groupSlugs = groupFilter.split(",");
-    const urlnames = groups
+    const filterUrlnames = groups
       .filter((g) => groupSlugs.includes(g.slug))
       .map((g) => g.meetupUrlname?.toLowerCase())
       .filter(Boolean);
     events = events.filter((e) =>
-      urlnames.includes(e.group.urlname.toLowerCase())
+      filterUrlnames.includes(e.group.urlname.toLowerCase())
     );
   }
 
@@ -57,6 +59,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     today,
     thisWeek,
     later,
+    groups,
     filters: {
       date: dateFilter,
       type: typeFilter,
@@ -68,9 +71,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 function EventSection({
   title,
   events,
+  groups,
 }: {
   title: string;
   events: Event[];
+  groups: LocalGroupCompat[];
 }) {
   if (events.length === 0) return null;
 
@@ -81,7 +86,7 @@ function EventSection({
       </h2>
       <div className="space-y-4">
         {events.map((event) => (
-          <EventCard key={event.id} event={event} variant="compact" />
+          <EventCard key={event.id} event={event} variant="compact" groups={groups} />
         ))}
       </div>
     </div>
@@ -89,7 +94,7 @@ function EventSection({
 }
 
 export default function Events({ loaderData }: Route.ComponentProps) {
-  const { events, today, thisWeek, later, filters } = loaderData;
+  const { events, today, thisWeek, later, groups, filters } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
 
   const updateFilter = (key: string, value: string | null) => {
@@ -197,9 +202,9 @@ export default function Events({ loaderData }: Route.ComponentProps) {
           </div>
         ) : (
           <>
-            <EventSection title="Today" events={today} />
-            <EventSection title="This Week" events={thisWeek} />
-            <EventSection title="Coming Up" events={later} />
+            <EventSection title="Today" events={today} groups={groups} />
+            <EventSection title="This Week" events={thisWeek} groups={groups} />
+            <EventSection title="Coming Up" events={later} groups={groups} />
           </>
         )}
       </div>

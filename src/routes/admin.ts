@@ -1,64 +1,18 @@
-import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
-import { getAggregationMetadata } from '../cache.js';
+import { getSyncMetadata } from '../cache.js';
 
 /**
- * GET /service/status - Service status and configuration info
- */
-const serviceStatusRoute = createRoute({
-  method: 'get',
-  path: '/service/status',
-  summary: 'Service status',
-  description:
-    'Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.',
-  tags: ['Service'],
-  responses: {
-    200: {
-      description: 'Service status',
-      content: {
-        'application/json': {
-          schema: z.object({
-            platforms: z.array(
-              z.object({
-                name: z.string(),
-                configured: z.boolean(),
-              })
-            ),
-            groups: z.array(
-              z.object({
-                urlname: z.string(),
-                platform: z.string(),
-              })
-            ),
-            totalGroups: z.number(),
-            aggregation: z
-              .object({
-                lastRunAt: z.string().nullish(),
-                durationMs: z.number().nullish(),
-                groupsProcessed: z.number().nullish(),
-                groupsFailed: z.number().nullish(),
-                dataHash: z.string().nullish(),
-                errors: z.array(z.string()),
-              })
-              .nullish(),
-          }),
-        },
-      },
-    },
-  },
-});
-
-/**
- * Register service routes with the app
+ * Register admin/service routes with the app
+ * These routes are NOT included in the OpenAPI documentation (internal use only)
  */
 export function registerAdminRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Import platform registry here to ensure it's initialized
   const { platformRegistry } = require('../scheduled/platforms/base.js');
   const { getAllGroups } = require('../scheduled/groups.js');
 
-  // GET /service/status - Service status
-  app.openapi(serviceStatusRoute, async (c) => {
+  // GET /service/status - Service status (not in OpenAPI docs)
+  app.get('/service/status', async (c) => {
     const platforms = platformRegistry.getAll().map((p: any) => ({
       name: p.name,
       configured: p.isConfigured(c.env),
@@ -71,25 +25,14 @@ export function registerAdminRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
     const totalGroups = groups.length;
 
-    // Get aggregation metadata from KV
-    const metadata = await getAggregationMetadata(c.env.kv);
-
-    const aggregation = metadata
-      ? {
-          lastRunAt: metadata.lastRunAt,
-          durationMs: metadata.durationMs,
-          groupsProcessed: metadata.groupsProcessed,
-          groupsFailed: metadata.groupsFailed,
-          dataHash: metadata.dataHash,
-          errors: metadata.errors,
-        }
-      : null;
+    // Get sync metadata from D1
+    const syncMetadata = await getSyncMetadata(c.env.DB);
 
     return c.json({
       platforms,
       groups,
       totalGroups,
-      aggregation,
+      sync: syncMetadata,
     });
   });
 }

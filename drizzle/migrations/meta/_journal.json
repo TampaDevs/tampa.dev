@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1769652428394,
+      "tag": "0000_greedy_ender_wiggin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1769652500000,
+      "tag": "0001_add_group_site_config",
+      "breakpoints": true
+    }
+  ]
+}
