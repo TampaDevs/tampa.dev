@@ -14,6 +14,7 @@ import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { deleteCookie } from 'hono/cookie';
 import { ACHIEVEMENTS } from '../lib/achievements.js';
+import { EventBus } from '../lib/event-bus.js';
 
 // ============== Validation Schemas ==============
 
@@ -384,6 +385,16 @@ export function createProfileRoutes() {
     const created = await db.query.userPortfolioItems.findFirst({
       where: eq(userPortfolioItems.id, id),
     });
+
+    // Emit event for achievement tracking
+    if (c.env.EVENTS_QUEUE) {
+      const eventBus = new EventBus(c.env.EVENTS_QUEUE);
+      eventBus.publish({
+        type: 'user.portfolio_item_created',
+        payload: { userId: user.id, portfolioItemId: id },
+        metadata: { userId: user.id, source: 'profile' },
+      }).catch(() => {}); // fire-and-forget
+    }
 
     return c.json(created, 201);
   });

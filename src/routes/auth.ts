@@ -16,6 +16,7 @@ import { users, userIdentities, sessions, UserRole } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { getConfiguredProviders, getProvider } from '../lib/oauth-providers';
+import { EventBus } from '../lib/event-bus.js';
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -382,6 +383,16 @@ export function createAuthRoutes() {
           providerEmail: email,
           createdAt: now,
         });
+
+        // Emit event for achievement tracking
+        if (c.env.EVENTS_QUEUE) {
+          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
+          eventBus.publish({
+            type: 'user.identity_linked',
+            payload: { userId: user.id, provider: 'github' },
+            metadata: { userId: user.id, source: 'auth' },
+          }).catch(() => {});
+        }
       }
 
       // Create session (skip if link mode — already has session)
@@ -842,6 +853,16 @@ export function createAuthRoutes() {
           providerEmail: email,
           createdAt: now,
         });
+
+        // Emit event for achievement tracking
+        if (c.env.EVENTS_QUEUE) {
+          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
+          eventBus.publish({
+            type: 'user.identity_linked',
+            payload: { userId: user.id, provider: 'apple' },
+            metadata: { userId: user.id, source: 'auth' },
+          }).catch(() => {});
+        }
       }
 
       // Create session (skip if link mode)
@@ -1090,6 +1111,16 @@ export function createAuthRoutes() {
           providerEmail: providerUser.email,
           createdAt: now,
         });
+
+        // Emit event for achievement tracking
+        if (c.env.EVENTS_QUEUE) {
+          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
+          eventBus.publish({
+            type: 'user.identity_linked',
+            payload: { userId: user.id, provider: providerKey },
+            metadata: { userId: user.id, source: 'auth' },
+          }).catch(() => {});
+        }
       }
 
       // Create session (skip if link mode — already has session)

@@ -17,20 +17,6 @@ export interface AchievementDef {
 
 export const ACHIEVEMENTS: AchievementDef[] = [
   {
-    key: 'events_attended_5',
-    name: 'Regular',
-    description: 'RSVP to 5 events',
-    targetValue: 5,
-    badgeSlug: 'regular',
-  },
-  {
-    key: 'events_attended_25',
-    name: 'Devoted',
-    description: 'RSVP to 25 events',
-    targetValue: 25,
-    badgeSlug: 'devoted',
-  },
-  {
     key: 'groups_favorited_3',
     name: 'Explorer',
     description: 'Favorite 3 groups',
