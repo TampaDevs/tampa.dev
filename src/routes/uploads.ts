@@ -9,10 +9,10 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { createDatabase } from '../db';
-import { users, sessions } from '../db/schema';
-import type { Env } from '../../types/worker';
-import { getSessionCookieName } from '../lib/session';
+import { createDatabase } from '../db/index.js';
+import { users, sessions } from '../db/schema.js';
+import type { Env } from '../../types/worker.js';
+import { getSessionCookieName } from '../lib/session.js';
 import { generatePresignedUploadUrl } from '../lib/r2-presign.js';
 
 // ============== Constants ==============
@@ -177,7 +177,7 @@ export function createUploadRoutes() {
    *
    * Returns a presigned URL for direct upload to R2.
    */
-  app.post('/request', zValidator('json', requestUploadSchema), async (c) => {
+  app.post('/request', zValidator('json', requestUploadSchema as z.ZodType<z.infer<typeof requestUploadSchema>>), async (c) => {
     const user = await getCurrentUser(c);
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401);
@@ -311,7 +311,7 @@ export function createUploadRoutes() {
     const formData = await c.req.formData();
     const file = formData.get('file');
 
-    if (!file || !(file instanceof File)) {
+    if (!file || typeof file === 'string') {
       return c.json({ error: 'No file provided' }, 400);
     }
 

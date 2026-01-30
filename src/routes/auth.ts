@@ -234,7 +234,7 @@ export function createAuthRoutes() {
       };
 
       if (!tokenData.access_token) {
-        console.error('GitHub token exchange failed:', tokenData);
+        console.error('GitHub token exchange failed:', tokenData.error || 'missing access_token');
         return c.redirect(`${origin}/login?error=token_exchange_failed`);
       }
 
@@ -409,7 +409,7 @@ export function createAuthRoutes() {
       const redirectUrl = isLinkMode ? `${origin}/profile` : (returnTo || `${origin}/`);
       return c.redirect(redirectUrl);
     } catch (error) {
-      console.error('GitHub OAuth error:', error);
+      console.error('GitHub OAuth error:', error instanceof Error ? error.message : 'unknown error');
       return c.redirect(`${origin}/login?error=oauth_failed`);
     }
   });
@@ -734,7 +734,7 @@ export function createAuthRoutes() {
       };
 
       if (!tokenData.id_token) {
-        console.error('Apple token exchange failed:', tokenData);
+        console.error('Apple token exchange failed:', tokenData.error || 'missing id_token');
         return c.redirect(`${origin}/login?error=token_exchange_failed`);
       }
 
@@ -869,7 +869,7 @@ export function createAuthRoutes() {
       const redirectUrl = isLinkMode ? `${origin}/profile` : (stateData?.returnTo || `${origin}/`);
       return c.redirect(redirectUrl);
     } catch (error) {
-      console.error('Apple Sign-In error:', error);
+      console.error('Apple Sign-In error:', error instanceof Error ? error.message : 'unknown error');
       return c.redirect(`${origin}/login?error=oauth_failed`);
     }
   });
@@ -1115,9 +1115,9 @@ export function createAuthRoutes() {
       }
 
       const redirectUrl = isLinkMode ? `${origin}/profile` : (stateData?.returnTo || `${origin}/`);
-      console.error('OAuth error during provider callback', { provider: providerKey, error });
+      return c.redirect(redirectUrl);
     } catch (error) {
-      console.error(`${providerConfig.name} OAuth error:`, error);
+      console.error(`${providerConfig.name} OAuth error:`, error instanceof Error ? error.message : 'unknown error');
       return c.redirect(`${origin}/login?error=oauth_failed`);
     }
   });
