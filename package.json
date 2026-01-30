@@ -48,6 +48,10 @@
     "db:seed:remote": "tsx scripts/seed-groups.ts --remote",
     "db:setup:local": "npm run db:migrate:local && npm run db:seed:local",
     "db:setup:remote": "npm run db:migrate:remote && npm run db:seed:remote",
-    "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts",
+    "deploy:staging": "wrangler deploy --env staging",
+    "db:migrate:staging": "wrangler d1 migrations apply events-db-staging --remote --env staging",
+    "db:seed:staging": "tsx scripts/seed-groups.ts --remote --env staging",
+    "db:setup:staging": "npm run db:migrate:staging && npm run db:seed:staging"
   }
 }

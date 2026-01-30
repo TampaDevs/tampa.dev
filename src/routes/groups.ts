@@ -10,7 +10,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { groups } from '../db/schema';
+import { groups, groupMembers, users } from '../db/schema';
 import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
@@ -248,7 +248,24 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
     const json = parseGroupJsonFields(group);
 
-    const response = new Response(JSON.stringify(json), {
+    // Fetch owners for this group
+    const ownerMembers = await db.query.groupMembers.findMany({
+      where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.role, 'owner')),
+    });
+    const owners = await Promise.all(
+      ownerMembers.map(async (m) => {
+        const user = await db.query.users.findFirst({ where: eq(users.id, m.userId) });
+        return user ? { id: user.id, name: user.name, username: user.username, avatarUrl: user.avatarUrl } : null;
+      })
+    );
+
+    const jsonWithOwners = {
+      ...json,
+      owners: owners.filter(Boolean),
+      ownerCount: ownerMembers.length,
+    };
+
+    const response = new Response(JSON.stringify(jsonWithOwners), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',

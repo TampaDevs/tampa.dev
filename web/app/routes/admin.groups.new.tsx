@@ -194,7 +194,7 @@ export default function AdminGroupNew({ actionData }: Route.ComponentProps) {
       {/* Form */}
       <Form method="post" className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Basic Information
           </h2>
@@ -239,7 +239,7 @@ export default function AdminGroupNew({ actionData }: Route.ComponentProps) {
         </div>
 
         {/* Platform Info */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Platform Information
           </h2>
@@ -271,7 +271,7 @@ export default function AdminGroupNew({ actionData }: Route.ComponentProps) {
         </div>
 
         {/* Status & Visibility */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Status & Visibility
           </h2>
@@ -298,7 +298,7 @@ export default function AdminGroupNew({ actionData }: Route.ComponentProps) {
         </div>
 
         {/* Social Links */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Social Links (Optional)
           </h2>
@@ -343,16 +343,16 @@ export default function AdminGroupNew({ actionData }: Route.ComponentProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-4">
           <Link
             to="/admin/groups"
-            className="px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 text-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
           >
             Cancel
           </Link>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2 bg-coral text-white rounded-lg font-medium hover:bg-coral-dark transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-6 py-2 bg-coral text-white rounded-lg font-medium hover:bg-coral-dark transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path

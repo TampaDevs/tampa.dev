@@ -9,6 +9,7 @@ export interface Env {
   DB: D1Database;
   OAUTH_KV: KVNamespace;
   UPLOADS_BUCKET: R2Bucket;
+  EVENTS_QUEUE: Queue;
 
   // OAuth Provider helpers (injected by OAuthProvider wrapper)
   OAUTH_PROVIDER: OAuthHelpers;
@@ -31,6 +32,38 @@ export interface Env {
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_REDIRECT_URI?: string;
 
+  // Google OAuth (upstream auth)
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REDIRECT_URI?: string;
+
+  // LinkedIn OAuth (upstream auth)
+  LINKEDIN_CLIENT_ID?: string;
+  LINKEDIN_CLIENT_SECRET?: string;
+  LINKEDIN_REDIRECT_URI?: string;
+
+  // Slack OAuth (upstream auth)
+  SLACK_CLIENT_ID?: string;
+  SLACK_CLIENT_SECRET?: string;
+  SLACK_REDIRECT_URI?: string;
+
+  // Meetup OAuth (upstream auth for sign-in)
+  MEETUP_OAUTH_CLIENT_ID?: string;
+  MEETUP_OAUTH_CLIENT_SECRET?: string;
+  MEETUP_REDIRECT_URI?: string;
+
+  // Eventbrite OAuth (upstream auth for sign-in)
+  EVENTBRITE_OAUTH_CLIENT_ID?: string;
+  EVENTBRITE_OAUTH_CLIENT_SECRET?: string;
+  EVENTBRITE_REDIRECT_URI?: string;
+
+  // Apple Sign-In (upstream auth)
+  APPLE_CLIENT_ID?: string;       // Service ID
+  APPLE_TEAM_ID?: string;
+  APPLE_KEY_ID?: string;
+  APPLE_PRIVATE_KEY?: string;     // PEM key for JWT signing
+  APPLE_REDIRECT_URI?: string;
+
   // Session
   SESSION_SECRET?: string;
 
@@ -39,6 +72,9 @@ export interface Env {
 
   // Tampa Devs OAuth Provider config
   OAUTH_AUTHORIZE_URL?: string; // e.g., https://tampa.dev/oauth/authorize
+
+  // Environment identifier (e.g., "staging")
+  ENVIRONMENT?: string;
 
   // R2 uploads
   UPLOADS_PUBLIC_URL?: string; // e.g., https://uploads.tampa.dev or R2 public bucket URL

@@ -102,6 +102,35 @@ export class Venue {
   }
 
   /**
+   * Get Apple Maps URL for this venue
+   * Returns null for online events or venues without enough location data
+   */
+  get appleMapsUrl(): string | null {
+    if (this.isOnline) {
+      return null;
+    }
+
+    const address = this.formattedAddress;
+
+    // Prefer coordinates for precision
+    if (this.hasCoordinates) {
+      const params = new URLSearchParams();
+      params.set('ll', `${this.lat},${this.lon}`);
+      if (address) {
+        params.set('q', address);
+      }
+      return `https://maps.apple.com/?${params}`;
+    }
+
+    // Fall back to address query
+    if (address) {
+      return `https://maps.apple.com/?q=${encodeURIComponent(address)}`;
+    }
+
+    return null;
+  }
+
+  /**
    * Get formatted address as HTML-safe string
    */
   get formattedAddressHTML(): string {

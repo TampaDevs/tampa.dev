@@ -82,6 +82,34 @@ const adminNavLinks = [
     ),
   },
   {
+    to: "/admin/badges",
+    label: "Badges",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+        />
+      </svg>
+    ),
+  },
+  {
+    to: "/admin/flags",
+    label: "Flags",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+        />
+      </svg>
+    ),
+  },
+  {
     to: "/admin/sync",
     label: "Sync",
     icon: (
@@ -231,7 +259,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 md:ml-64 pb-20 md:pb-0">
+        <main className="flex-1 min-w-0 md:ml-64 pb-20 md:pb-0">
           <div className="p-4 sm:p-6 lg:p-8">
             <Outlet context={{ user }} />
           </div>

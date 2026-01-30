@@ -19,9 +19,16 @@ export default [
 
   // User profile
   route("profile", "routes/profile.tsx"),
+  route("p/:username", "routes/p.$username.tsx"),
 
   // Developer portal (self-service OAuth app registration)
   route("developer", "routes/developer.tsx"),
+
+  // Developer documentation (MDX mini-docsite)
+  layout("routes/developer.docs.tsx", [
+    route("developer/docs", "routes/developer.docs._index.tsx", { index: true }),
+    route("developer/docs/:slug", "routes/developer.docs.$slug.tsx"),
+  ]),
 
   // OAuth authorization (consent screen for "Sign in with Tampa.dev")
   route("oauth/authorize", "routes/oauth.authorize.tsx"),
@@ -37,7 +44,10 @@ export default [
     route("admin/groups/:id", "routes/admin.groups.$id.tsx"),
     route("admin/sync", "routes/admin.sync.tsx"),
     route("admin/users", "routes/admin.users.tsx"),
+    route("admin/users/:id", "routes/admin.users.$id.tsx"),
     route("admin/oauth", "routes/admin.oauth.tsx"),
+    route("admin/badges", "routes/admin.badges.tsx"),
+    route("admin/flags", "routes/admin.flags.tsx"),
   ]),
 
   // Development-only routes (blocked in production by loaders)

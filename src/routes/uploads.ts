@@ -9,9 +9,10 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { createDatabase } from '../db';
-import { users, sessions } from '../db/schema';
-import type { Env } from '../../types/worker';
+import { createDatabase } from '../db/index.js';
+import { users, sessions } from '../db/schema.js';
+import type { Env } from '../../types/worker.js';
+import { getSessionCookieName } from '../lib/session.js';
 import { generatePresignedUploadUrl } from '../lib/r2-presign.js';
 
 // ============== Constants ==============
@@ -70,7 +71,8 @@ async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
   const cookieHeader = c.req.raw.headers.get('Cookie');
   if (!cookieHeader) return null;
 
-  const sessionMatch = cookieHeader.match(/session=([^;]+)/);
+  const cookieName = getSessionCookieName(c.env);
+  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
   const sessionToken = sessionMatch?.[1];
   if (!sessionToken) return null;
 
@@ -175,7 +177,7 @@ export function createUploadRoutes() {
    *
    * Returns a presigned URL for direct upload to R2.
    */
-  app.post('/request', zValidator('json', requestUploadSchema), async (c) => {
+  app.post('/request', zValidator('json', requestUploadSchema as z.ZodType<z.infer<typeof requestUploadSchema>>), async (c) => {
     const user = await getCurrentUser(c);
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401);
@@ -309,7 +311,7 @@ export function createUploadRoutes() {
     const formData = await c.req.formData();
     const file = formData.get('file');
 
-    if (!file || !(file instanceof File)) {
+    if (!file || typeof file === 'string') {
       return c.json({ error: 'No file provided' }, 400);
     }
 
@@ -362,7 +364,7 @@ export function createUploadRoutes() {
       return c.json({ error: 'Uploads not configured' }, 500);
     }
 
-    const key = c.req.path.replace('/api/uploads/file/', '');
+    const key = c.req.path.replace('/uploads/file/', '');
     if (!key) {
       return c.json({ error: 'Invalid file path' }, 400);
     }
@@ -402,7 +404,7 @@ export function createUploadRoutes() {
       return c.json({ error: 'Uploads not configured' }, 500);
     }
 
-    const key = c.req.path.replace('/api/uploads/file/', '');
+    const key = c.req.path.replace('/uploads/file/', '');
     if (!key) {
       return c.json({ error: 'Invalid file path' }, 400);
     }

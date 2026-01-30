@@ -1,0 +1,75 @@
+---
+title: Webhooks
+description: Real-time event notifications via HTTP POST
+order: 4
+---
+
+# Webhooks
+
+Webhooks let you receive real-time HTTP POST notifications when events occur on the platform.
+Register webhooks in the [Developer Portal](/developer).
+
+## Event Types
+
+| Event Type | Description |
+|------------|-------------|
+| `event.created` | A new community event was created |
+| `event.updated` | An event was updated |
+| `event.deleted` | An event was removed |
+| `sync.completed` | A platform sync completed |
+| `user.favorite_added` | A user favorited a group |
+| `user.identity_linked` | A user linked an identity provider |
+| `user.badge_awarded` | A badge was awarded to a user |
+| `test.ping` | Test webhook delivery |
+
+## Payload Format
+
+Every webhook delivery sends a JSON payload:
+
+```json
+{
+  "id": "delivery-uuid",
+  "type": "event.created",
+  "timestamp": "2026-01-29T12:00:00Z",
+  "data": {
+    "eventId": "...",
+    "title": "Tampa Devs Monthly Meetup",
+    "startTime": "2026-02-15T18:30:00-05:00"
+  }
+}
+```
+
+## Headers
+
+| Header | Description |
+|--------|-------------|
+| `X-Webhook-Signature` | HMAC-SHA256 signature: `sha256=hex_digest` |
+| `X-Event-Type` | The event type (e.g. `event.created`) |
+| `X-Delivery-ID` | Unique delivery identifier |
+| `Content-Type` | `application/json` |
+| `User-Agent` | `TampaDevs-Webhooks/1.0` |
+
+## Signature Verification
+
+Verify the `X-Webhook-Signature` header by computing HMAC-SHA256 of the raw request body using your webhook secret:
+
+```javascript
+const crypto = require('crypto');
+
+function verifySignature(body, secret, signature) {
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+```
+
+Always verify signatures before processing webhook payloads to ensure they originated from Tampa.dev.
+
+## Retry Policy
+
+If your endpoint returns a non-2xx status code or fails to respond, delivery is retried up to 3 times with exponential backoff. You can view delivery history in the Developer Portal.

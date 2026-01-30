@@ -22,6 +22,7 @@ import {
 } from '../db/schema';
 import type { ProviderRegistry } from '../providers/registry';
 import type { Env } from '../../types/worker';
+import type { EventBus } from '../lib/event-bus';
 import type {
   CanonicalEvent,
   CanonicalGroup,
@@ -63,11 +64,18 @@ export interface SyncOptions {
 // ============== Sync Service ==============
 
 export class SyncService {
+  private eventBus?: EventBus;
+
   constructor(
     private db: Database,
     private registry: ProviderRegistry,
     private env: Env
   ) {}
+
+  /** Attach an EventBus to publish domain events during sync */
+  setEventBus(eventBus: EventBus): void {
+    this.eventBus = eventBus;
+  }
 
   /**
    * Sync a single group by its database ID
@@ -179,7 +187,7 @@ export class SyncService {
       }
     }
 
-    return {
+    const syncAllResult: SyncAllResult = {
       success: failed === 0,
       total: groupsToSync.length,
       succeeded,
@@ -187,6 +195,26 @@ export class SyncService {
       results,
       durationMs: Date.now() - startTime,
     };
+
+    // Publish sync.completed event
+    if (this.eventBus) {
+      try {
+        await this.eventBus.publish({
+          type: 'sync.completed',
+          payload: {
+            total: syncAllResult.total,
+            succeeded: syncAllResult.succeeded,
+            failed: syncAllResult.failed,
+            durationMs: syncAllResult.durationMs,
+          },
+          metadata: { source: 'sync-service' },
+        });
+      } catch (err) {
+        console.error('Failed to publish sync.completed event:', err);
+      }
+    }
+
+    return syncAllResult;
   }
 
   /**
@@ -262,6 +290,25 @@ export class SyncService {
           updatedAt: new Date().toISOString(),
         })
         .where(eq(groups.id, group.id));
+
+      // Publish domain events for newly created events
+      if (this.eventBus && eventResults.created > 0) {
+        try {
+          await this.eventBus.publish({
+            type: 'events.synced',
+            payload: {
+              groupId: group.id,
+              groupUrlname: group.urlname,
+              eventsCreated: eventResults.created,
+              eventsUpdated: eventResults.updated,
+              eventsDeleted: deletedCount,
+            },
+            metadata: { source: 'sync-service' },
+          });
+        } catch (err) {
+          console.error('Failed to publish events.synced event:', err);
+        }
+      }
 
       return {
         success: true,
@@ -495,22 +542,35 @@ export class SyncService {
   }
 
   /**
-   * Get recent sync logs
+   * Get recent sync logs, enriched with group name/urlname
    */
-  async getSyncLogs(options: { limit?: number; groupId?: string } = {}): Promise<typeof syncLogs.$inferSelect[]> {
+  async getSyncLogs(options: { limit?: number; groupId?: string } = {}) {
     const limit = options.limit || 50;
 
-    if (options.groupId) {
-      return this.db.query.syncLogs.findMany({
-        where: eq(syncLogs.groupId, options.groupId),
-        orderBy: (logs, { desc }) => [desc(logs.startedAt)],
-        limit,
-      });
-    }
+    const logs = options.groupId
+      ? await this.db.query.syncLogs.findMany({
+          where: eq(syncLogs.groupId, options.groupId),
+          orderBy: (logs, { desc }) => [desc(logs.startedAt)],
+          limit,
+        })
+      : await this.db.query.syncLogs.findMany({
+          orderBy: (logs, { desc }) => [desc(logs.startedAt)],
+          limit,
+        });
 
-    return this.db.query.syncLogs.findMany({
-      orderBy: (logs, { desc }) => [desc(logs.startedAt)],
-      limit,
-    });
+    // Enrich with group name/urlname
+    const groupIds = [...new Set(logs.filter(l => l.groupId).map(l => l.groupId!))];
+    const groupResults = groupIds.length > 0
+      ? await this.db.query.groups.findMany({
+          where: inArray(groups.id, groupIds),
+        })
+      : [];
+    const groupMap = new Map(groupResults.map(g => [g.id, g]));
+
+    return logs.map(log => ({
+      ...log,
+      groupName: log.groupId ? groupMap.get(log.groupId)?.name ?? null : null,
+      groupUrlname: log.groupId ? groupMap.get(log.groupId)?.urlname ?? null : null,
+    }));
   }
 }

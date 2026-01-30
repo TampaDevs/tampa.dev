@@ -246,28 +246,61 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                   {event.address}
                 </div>
               )}
-              {event.googleMapsUrl && (
-                <a
-                  href={event.googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-coral hover:text-coral-dark dark:text-coral-light dark:hover:text-coral"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                    />
-                  </svg>
-                  View on Google Maps
-                </a>
+              {(event.googleMapsUrl || event.appleMapsUrl) && (
+                <div className="flex flex-wrap gap-4">
+                  {event.googleMapsUrl && (
+                    <a
+                      href={event.googleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-coral hover:text-coral-dark dark:text-coral-light dark:hover:text-coral"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                        />
+                      </svg>
+                      Google Maps
+                    </a>
+                  )}
+                  {event.appleMapsUrl && (
+                    <a
+                      href={event.appleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-coral hover:text-coral-dark dark:text-coral-light dark:hover:text-coral"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      Apple Maps
+                    </a>
+                  )}
+                </div>
               )}
             </section>
           )}
@@ -302,9 +335,11 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                 <div className="font-semibold text-gray-900 dark:text-white">
                   {event.group.name}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {event.group.memberCount.toLocaleString()} members
-                </div>
+                {event.group.memberCount > 0 && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {event.group.memberCount.toLocaleString()} members
+                  </div>
+                )}
               </div>
               {localGroup ? (
                 <Link

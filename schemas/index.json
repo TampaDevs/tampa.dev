@@ -1,0 +1,41 @@
+{
+  "version": "2026-01-25",
+  "generated": "2026-01-30T04:13:02.380Z",
+  "schemas": [
+    {
+      "name": "event",
+      "title": "Event Schema",
+      "description": "Schema for event data - core fields common across event providers",
+      "file": "models/event.schema.json",
+      "url": "https://api.tampa.dev/2026-01-25/schemas/event"
+    },
+    {
+      "name": "group",
+      "title": "Group Schema",
+      "description": "Schema for group/organization data",
+      "file": "models/group.schema.json",
+      "url": "https://api.tampa.dev/2026-01-25/schemas/group"
+    },
+    {
+      "name": "venue",
+      "title": "Venue Schema",
+      "description": "Schema for venue/location data",
+      "file": "models/venue.schema.json",
+      "url": "https://api.tampa.dev/2026-01-25/schemas/venue"
+    },
+    {
+      "name": "photo",
+      "title": "Photo Schema",
+      "description": "Schema for photo data",
+      "file": "models/photo.schema.json",
+      "url": "https://api.tampa.dev/2026-01-25/schemas/photo"
+    },
+    {
+      "name": "meetup",
+      "title": "Meetup API Data Schema",
+      "description": "Schema for Meetup API response data (provider-specific)",
+      "file": "models/meetup.schema.json",
+      "url": "https://api.tampa.dev/2026-01-25/schemas/meetup"
+    }
+  ]
+}

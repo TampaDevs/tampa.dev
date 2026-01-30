@@ -30,13 +30,15 @@ const ROOT_DIR = path.join(__dirname, '..');
 const args = process.argv.slice(2);
 const isRemote = args.includes('--remote');
 const isDryRun = args.includes('--dry-run');
+const envIndex = args.indexOf('--env');
+const envName = envIndex !== -1 ? args[envIndex + 1] : undefined;
 
 // Import existing groups configuration from web app
 import { groups as staticGroups, type LocalGroup } from '../web/app/data/groups.js';
 
 // Eventbrite groups that need platformId mapping
 const EVENTBRITE_PLATFORM_IDS: Record<string, string> = {
-  'ark-innovation-center': '120311328021',
+  'spark-labs': '120311328021',
 };
 
 interface GroupSeed {
@@ -187,7 +189,7 @@ async function main() {
   console.log('│      Group Seed Script (Web → D1)        │');
   console.log('╰──────────────────────────────────────────╯\n');
 
-  const target = isRemote ? 'PRODUCTION' : 'LOCAL';
+  const target = envName ? envName.toUpperCase() : (isRemote ? 'PRODUCTION' : 'LOCAL');
   console.log(`Target: ${target} D1 database`);
 
   if (isDryRun) {
@@ -236,8 +238,10 @@ async function main() {
   console.log(`Executing seed via wrangler d1 execute...\n`);
 
   try {
+    const dbName = envName === 'staging' ? 'events-db-staging' : 'events-db';
+    const envFlag = envName ? ` --env ${envName}` : '';
     execSync(
-      `npx wrangler d1 execute events-db ${remoteFlag} --file=${sqlFile}`,
+      `npx wrangler d1 execute ${dbName} ${remoteFlag}${envFlag} --file=${sqlFile}`,
       { stdio: 'inherit', cwd: ROOT_DIR }
     );
     console.log('\n✓ Seed complete!');
@@ -253,7 +257,9 @@ async function main() {
 
   // Verify
   console.log('\nTo verify, run:');
-  console.log(`  npx wrangler d1 execute events-db ${remoteFlag} --command="SELECT urlname, name, display_on_site, is_featured FROM groups WHERE display_on_site = 1 ORDER BY name;"`);
+  const verifyDb = envName === 'staging' ? 'events-db-staging' : 'events-db';
+  const verifyEnv = envName ? ` --env ${envName}` : '';
+  console.log(`  npx wrangler d1 execute ${verifyDb} ${remoteFlag}${verifyEnv} --command="SELECT urlname, name, display_on_site, is_featured FROM groups WHERE display_on_site = 1 ORDER BY name;"`);
 }
 
 main().catch(error => {

@@ -88,7 +88,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   // Call API to parse the request and get client info
-  const apiUrl = import.meta.env.EVENTS_API_URL || "https://events.api.tampa.dev";
+  const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
 
   try {
     const parseResponse = await fetch(`${apiUrl}/oauth/internal/parse-request`, {
@@ -159,7 +159,7 @@ export async function action({ request }: Route.ActionArgs) {
     const oauthRequest = JSON.parse(oauthRequestJson);
     const approvedScopes = JSON.parse(approvedScopesJson);
 
-    const apiUrl = import.meta.env.EVENTS_API_URL || "https://events.api.tampa.dev";
+    const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
 
     try {
       const completeResponse = await fetch(`${apiUrl}/oauth/internal/complete`, {

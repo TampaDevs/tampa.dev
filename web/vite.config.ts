@@ -1,6 +1,10 @@
 import { reactRouter } from "@react-router/dev/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
+import mdx from "@mdx-js/rollup";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { defineConfig, type Plugin } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import fs from "fs";
@@ -41,19 +45,32 @@ function devCsrfBypass(): Plugin {
   };
 }
 
+const noMinify = !!process.env.NO_MINIFY;
+
 export default defineConfig({
   plugins: [
     devCsrfBypass(),
+    mdx({
+      jsxImportSource: "react",
+      remarkPlugins: [remarkGfm, remarkFrontmatter, remarkMdxFrontmatter],
+    }),
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
     reactRouter(),
     tsconfigPaths(),
   ],
+  build: {
+    minify: noMinify ? false : "esbuild",
+  },
   define: {
     // Inject EVENTS_API_URL at build/dev time for SSR
     "import.meta.env.EVENTS_API_URL": JSON.stringify(
       process.env.EVENTS_API_URL || ""
     ),
+    // Force React development mode for full error messages in debug builds
+    ...(noMinify
+      ? { "process.env.NODE_ENV": JSON.stringify("development") }
+      : {}),
   },
   server: {
     // Proxy /api requests to the local API server

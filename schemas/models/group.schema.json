@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/group",
+  "$id": "https://api.tampa.dev/2026-01-25/schemas/group",
   "title": "Group Schema",
   "description": "Schema for group/organization data",
   "$ref": "#/definitions/Group",
@@ -34,11 +34,14 @@
             "baseUrl": {
               "type": "string",
               "format": "uri"
+            },
+            "directUrl": {
+              "type": "string",
+              "format": "uri"
             }
           },
           "required": [
-            "id",
-            "baseUrl"
+            "id"
           ],
           "additionalProperties": false
         },

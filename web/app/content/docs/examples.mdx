@@ -1,0 +1,65 @@
+---
+title: Examples
+description: Common API usage examples with cURL
+order: 7
+---
+
+# Examples
+
+## Get Upcoming Events
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/events?status=upcoming"
+```
+
+## Get User Profile
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/profile"
+```
+
+## List Groups
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/groups?featured=1"
+```
+
+## Add a Favorite Group
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/favorites/group-uuid-here"
+```
+
+## Create a Portfolio Item
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My Project", "url": "https://example.com", "description": "A cool project"}' \
+  "https://api.tampa.dev/v1/portfolio"
+```
+
+## Register a Webhook
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://myapp.com/webhooks", "eventTypes": ["event.created"]}' \
+  "https://api.tampa.dev/developer/webhooks"
+```
+
+## Using OAuth Access Token
+
+After completing the OAuth flow, use the access token the same way:
+
+```bash
+curl -H "Authorization: Bearer eyJhbGciOiJSUz..." \
+  "https://api.tampa.dev/v1/profile"
+```

@@ -2,6 +2,10 @@
  * Utility functions
  */
 
+// Pin timezone to Eastern Time (Tampa Bay) so server (UTC) and client
+// produce identical output, avoiding React hydration mismatches.
+const TZ = "America/New_York";
+
 /**
  * Format a date for display
  */
@@ -11,6 +15,7 @@ export function formatEventDate(dateString: string): string {
     weekday: "short",
     month: "short",
     day: "numeric",
+    timeZone: TZ,
   });
 }
 
@@ -23,6 +28,18 @@ export function formatEventTime(dateString: string): string {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: TZ,
+  });
+}
+
+/**
+ * Format just the day of month (timezone-aware)
+ */
+export function formatEventDay(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    day: "numeric",
+    timeZone: TZ,
   });
 }
 
@@ -92,16 +109,12 @@ export function addUtmParams(
 }
 
 /**
- * Check if an event is happening today
+ * Check if an event is happening today (in Eastern Time)
  */
 export function isToday(dateString: string): boolean {
-  const date = new Date(dateString);
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { timeZone: TZ });
+  return fmt(new Date(dateString)) === fmt(new Date());
 }
 
 /**
@@ -115,7 +128,7 @@ export function isThisWeek(dateString: string): boolean {
 }
 
 /**
- * Group events by date
+ * Group events by date (in Eastern Time)
  */
 export function groupEventsByDate<T extends { dateTime: string }>(
   events: T[]
@@ -123,7 +136,9 @@ export function groupEventsByDate<T extends { dateTime: string }>(
   const grouped = new Map<string, T[]>();
 
   for (const event of events) {
-    const dateKey = new Date(event.dateTime).toDateString();
+    const dateKey = new Date(event.dateTime).toLocaleDateString("en-US", {
+      timeZone: TZ,
+    });
     const existing = grouped.get(dateKey) ?? [];
     existing.push(event);
     grouped.set(dateKey, existing);

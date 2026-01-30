@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/meetup",
+  "$id": "https://api.tampa.dev/2026-01-25/schemas/meetup",
   "title": "Meetup API Data Schema",
   "description": "Schema for Meetup API response data (provider-specific)",
   "$ref": "#/definitions/MeetupData",

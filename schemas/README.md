@@ -2,7 +2,7 @@
 
 Auto-generated JSON schemas for the Events API.
 
-**Generated:** 2026-01-25T22:31:12.521Z
+**Generated:** 2026-01-30T04:13:02.382Z
 
 ## Directory Structure
 
@@ -52,8 +52,8 @@ Schema for Meetup API response data (provider-specific)
 The complete API specification is available at:
 
 - **File:** [openapi.json](./openapi.json)
-- **Interactive Docs:** https://events.api.tampa.dev/docs
-- **API URL:** https://events.api.tampa.dev/openapi.json
+- **Interactive Docs:** https://api.tampa.dev/docs
+- **API URL:** https://api.tampa.dev/openapi.json
 
 ## Usage
 

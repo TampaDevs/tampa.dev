@@ -11,7 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import openapiTS, { astToString } from "openapi-typescript";
 
-const PRODUCTION_URL = "https://events.api.tampa.dev/openapi.json";
+const PRODUCTION_URL = "https://api.tampa.dev/openapi.json";
 const LOCAL_URL = "http://localhost:8787/openapi.json";
 
 async function generateTypes() {

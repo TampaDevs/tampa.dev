@@ -58,8 +58,12 @@ export function addOpenAPIRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     },
     servers: [
       {
-        url: 'https://events.api.tampa.dev',
+        url: 'https://api.tampa.dev',
         description: 'Production',
+      },
+      {
+        url: 'https://events.api.tampa.dev',
+        description: 'Production (legacy)',
       },
       {
         url: 'http://localhost:8787',

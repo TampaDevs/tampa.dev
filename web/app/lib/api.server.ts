@@ -11,8 +11,8 @@ import { findGroupByUrlname } from "./types";
 export type { LocalGroupCompat };
 export { findGroupByUrlname };
 
-const API_HOST = import.meta.env.EVENTS_API_URL || "https://events.api.tampa.dev";
-const API_BASE = `${API_HOST}/2026-01-25`;
+export const API_HOST = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
+export const API_BASE = `${API_HOST}/2026-01-25`;
 
 // ============== Groups API ==============
 

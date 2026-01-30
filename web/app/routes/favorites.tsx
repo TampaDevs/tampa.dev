@@ -183,7 +183,7 @@ export default function Favorites({ loaderData }: Route.ComponentProps) {
         </div>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
           {favoriteGroups.length > 0
-            ? `${favoriteGroups.length} groups you're following`
+            ? `${favoriteGroups.length} ${favoriteGroups.length === 1 ? "group" : "groups"} you're following`
             : "Groups you favorite will appear here"}
         </p>
       </div>

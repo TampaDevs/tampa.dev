@@ -4,8 +4,8 @@
  * For local development, set EVENTS_API_URL=http://localhost:8787
  */
 
-const API_HOST = import.meta.env.EVENTS_API_URL || "https://events.api.tampa.dev";
-const ADMIN_API_BASE = `${API_HOST}/api/admin`;
+const API_HOST = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
+const ADMIN_API_BASE = `${API_HOST}/admin`;
 
 // ============== Types ==============
 
@@ -50,6 +50,8 @@ export interface GroupsListResponse {
 export interface SyncLog {
   id: string;
   groupId: string | null;
+  groupName: string | null;
+  groupUrlname: string | null;
   platform: string;
   status: "running" | "completed" | "failed";
   eventsCreated: number;
@@ -187,6 +189,7 @@ export interface UpdateGroupData {
   description?: string;
   link?: string;
   website?: string | null;
+  photoUrl?: string | null;
   isActive?: boolean;
   displayOnSite?: boolean;
   isFeatured?: boolean;
@@ -308,18 +311,48 @@ export async function fetchSyncLogs(
 
 const AUTH_API_BASE = `${API_HOST}/auth`;
 
+export interface AuthIdentity {
+  provider: string;
+  username: string | null;
+  email?: string | null;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
+  username: string | null;
   avatarUrl: string | null;
   role: string;
+  showAchievements?: boolean;
   githubUsername?: string;
+  identities?: AuthIdentity[];
+}
+
+export interface AuthProvider {
+  name: string;
+  provider: string;
+  authUrl: string;
+}
+
+/**
+ * Fetch available auth providers from the API
+ */
+export async function fetchAuthProviders(): Promise<AuthProvider[]> {
+  try {
+    const response = await fetch(`${AUTH_API_BASE}/providers`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return [];
+    const data = (await response.json()) as { providers: AuthProvider[] };
+    return data.providers || [];
+  } catch {
+    return [];
+  }
 }
 
 /**
  * Fetch the current authenticated user
- * Note: This requires the cookie header to be forwarded
  */
 export async function fetchCurrentUser(
   cookieHeader?: string
@@ -342,7 +375,9 @@ export async function fetchCurrentUser(
 /**
  * Log out the current user
  */
-export async function logout(cookieHeader?: string): Promise<void> {
+export async function logout(
+  cookieHeader?: string
+): Promise<void> {
   await fetch(`${AUTH_API_BASE}/logout`, {
     method: "POST",
     headers: {
@@ -358,6 +393,7 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string | null;
+  username: string | null;
   avatarUrl: string | null;
   role: "user" | "admin" | "superadmin";
   createdAt: string;
@@ -488,6 +524,273 @@ export async function deleteUser(
   }
 }
 
+// ============== Badges API ==============
+
+export interface Badge {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  sortOrder: number;
+  createdAt: string;
+  userCount?: number;
+}
+
+export interface BadgesListResponse {
+  badges: Badge[];
+}
+
+export async function fetchBadges(
+  cookieHeader?: string
+): Promise<Badge[]> {
+  const response = await fetch(`${ADMIN_API_BASE}/badges`, {
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as BadgesListResponse;
+  return data.badges;
+}
+
+export interface CreateBadgeData {
+  name: string;
+  slug: string;
+  description?: string;
+  icon: string;
+  color?: string;
+  sortOrder?: number;
+}
+
+export async function createBadge(
+  data: CreateBadgeData,
+  cookieHeader?: string
+): Promise<Badge> {
+  const response = await fetch(`${ADMIN_API_BASE}/badges`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to create badge: ${response.status}`);
+  }
+
+  return (await response.json()) as Badge;
+}
+
+export async function updateBadge(
+  id: string,
+  data: Partial<CreateBadgeData>,
+  cookieHeader?: string
+): Promise<Badge> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/badges/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to update badge: ${response.status}`);
+  }
+
+  return (await response.json()) as Badge;
+}
+
+export async function deleteBadge(
+  id: string,
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/badges/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to delete badge: ${response.status}`);
+  }
+}
+
+export async function awardBadge(
+  userId: string,
+  badgeId: string,
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/users/${encodeURIComponent(userId)}/badges/${encodeURIComponent(badgeId)}`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to award badge: ${response.status}`);
+  }
+}
+
+export async function revokeBadge(
+  userId: string,
+  badgeId: string,
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/users/${encodeURIComponent(userId)}/badges/${encodeURIComponent(badgeId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to revoke badge: ${response.status}`);
+  }
+}
+
+// ============== Group Members API ==============
+
+export interface GroupMember {
+  id: string;
+  role: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    username: string | null;
+    avatarUrl: string | null;
+  } | null;
+}
+
+export async function fetchGroupMembers(
+  groupId: string,
+  cookieHeader?: string
+): Promise<GroupMember[]> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/members`,
+    {
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { members: GroupMember[] };
+  return data.members;
+}
+
+export async function addGroupMember(
+  groupId: string,
+  userId: string,
+  role: string = "member",
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/members`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify({ userId, role }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to add member: ${response.status}`);
+  }
+}
+
+export async function updateGroupMember(
+  groupId: string,
+  memberId: string,
+  role: string,
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(memberId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify({ role }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to update member: ${response.status}`);
+  }
+}
+
+export async function removeGroupMember(
+  groupId: string,
+  memberId: string,
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(memberId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to remove member: ${response.status}`);
+  }
+}
+
 // ============== OAuth API ==============
 
 export interface OAuthClient {
@@ -595,4 +898,152 @@ export async function fetchOAuthStats(
   }
 
   return (await response.json()) as OAuthStats;
+}
+
+// ============== Feature Flags API ==============
+
+export interface FeatureFlag {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  enabledByDefault: boolean;
+  createdAt: string;
+  userOverrideCount?: number;
+  groupOverrideCount?: number;
+}
+
+export interface FeatureFlagDetail extends FeatureFlag {
+  userOverrides: Array<{
+    id: string;
+    userId: string;
+    flagId: string;
+    enabled: boolean;
+    userName: string;
+    userEmail?: string;
+  }>;
+  groupOverrides: Array<{
+    id: string;
+    groupId: string;
+    flagId: string;
+    enabled: boolean;
+    groupName: string;
+    groupUrlname?: string;
+  }>;
+}
+
+export async function fetchFlags(
+  cookieHeader?: string
+): Promise<FeatureFlag[]> {
+  const response = await fetch(`${ADMIN_API_BASE}/flags`, {
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { flags: FeatureFlag[] };
+  return data.flags;
+}
+
+export async function fetchFlagDetail(
+  id: string,
+  cookieHeader?: string
+): Promise<FeatureFlagDetail | null> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/flags/${encodeURIComponent(id)}`,
+    {
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as FeatureFlagDetail;
+}
+
+export interface CreateFlagData {
+  name: string;
+  slug: string;
+  description?: string;
+  enabledByDefault?: boolean;
+}
+
+export async function createFlag(
+  data: CreateFlagData,
+  cookieHeader?: string
+): Promise<FeatureFlag> {
+  const response = await fetch(`${ADMIN_API_BASE}/flags`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to create flag: ${response.status}`);
+  }
+
+  return (await response.json()) as FeatureFlag;
+}
+
+export async function updateFlag(
+  id: string,
+  data: Partial<CreateFlagData>,
+  cookieHeader?: string
+): Promise<FeatureFlag> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/flags/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to update flag: ${response.status}`);
+  }
+
+  return (await response.json()) as FeatureFlag;
+}
+
+export async function deleteFlag(
+  id: string,
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/flags/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to delete flag: ${response.status}`);
+  }
 }

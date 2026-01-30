@@ -5,15 +5,20 @@
  */
 
 import { Form, Link, useNavigate, redirect, data } from "react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Route } from "./+types/admin.groups.$id";
 import {
   fetchAdminGroup,
   updateGroup,
   deleteGroup,
   triggerGroupSync,
+  fetchGroupMembers,
+  addGroupMember,
+  updateGroupMember,
+  removeGroupMember,
   type AdminGroup,
   type UpdateGroupData,
+  type GroupMember,
 } from "~/lib/admin-api.server";
 
 export const meta: Route.MetaFunction = ({ data }) => {
@@ -25,23 +30,29 @@ export const meta: Route.MetaFunction = ({ data }) => {
 
 export async function loader({
   params,
-}: Route.LoaderArgs): Promise<{ group: AdminGroup | null; error?: string }> {
+  request,
+}: Route.LoaderArgs): Promise<{ group: AdminGroup | null; members: GroupMember[]; error?: string }> {
+  const cookieHeader = request.headers.get("Cookie") || undefined;
   try {
-    const group = await fetchAdminGroup(params.id);
+    const [group, members] = await Promise.all([
+      fetchAdminGroup(params.id),
+      fetchGroupMembers(params.id, cookieHeader).catch(() => [] as GroupMember[]),
+    ]);
     if (!group) {
       throw data({ error: "Group not found" }, { status: 404 });
     }
-    return { group };
+    return { group, members };
   } catch (error) {
     if (error instanceof Response) throw error;
     console.error("Failed to fetch group:", error);
-    return { group: null, error: "Failed to load group" };
+    return { group: null, members: [], error: "Failed to load group" };
   }
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
+  const cookieHeader = request.headers.get("Cookie") || undefined;
 
   try {
     if (intent === "delete") {
@@ -52,6 +63,32 @@ export async function action({ request, params }: Route.ActionArgs) {
     if (intent === "sync") {
       const result = await triggerGroupSync(params.id);
       return { success: true, syncResult: result };
+    }
+
+    if (intent === "updatePhoto") {
+      const photoUrl = formData.get("photoUrl") as string;
+      await updateGroup(params.id, { photoUrl } as UpdateGroupData);
+      return { success: true };
+    }
+
+    if (intent === "addMember") {
+      const userId = formData.get("userId") as string;
+      const role = formData.get("role") as string || "member";
+      await addGroupMember(params.id, userId, role, cookieHeader);
+      return { success: true, memberAction: "added" };
+    }
+
+    if (intent === "updateMemberRole") {
+      const memberId = formData.get("memberId") as string;
+      const role = formData.get("role") as string;
+      await updateGroupMember(params.id, memberId, role, cookieHeader);
+      return { success: true, memberAction: "updated" };
+    }
+
+    if (intent === "removeMember") {
+      const memberId = formData.get("memberId") as string;
+      await removeGroupMember(params.id, memberId, cookieHeader);
+      return { success: true, memberAction: "removed" };
     }
 
     // Update group
@@ -177,8 +214,401 @@ function Toggle({
   );
 }
 
+function GroupImageUpload({
+  groupId,
+  currentPhotoUrl,
+  groupName,
+}: {
+  groupId: string;
+  currentPhotoUrl: string | null;
+  groupName: string;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Please select a JPEG, PNG, GIF, or WebP image");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Image must be less than 2MB");
+      return;
+    }
+
+    setError(null);
+    setIsUploading(true);
+
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreviewUrl(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      // Request presigned URL
+      const requestResponse = await fetch("/api/uploads/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          category: "group",
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+        }),
+      });
+
+      if (!requestResponse.ok) {
+        const data = await requestResponse.json() as { error?: string };
+        throw new Error(data.error || "Failed to request upload");
+      }
+
+      const { uploadUrl, finalUrl, contentType } = await requestResponse.json() as {
+        uploadUrl: string;
+        finalUrl: string;
+        contentType: string;
+      };
+
+      // Upload to R2
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload to storage");
+      }
+
+      // Update group photo via form submission
+      const formData = new FormData();
+      formData.set("intent", "updatePhoto");
+      formData.set("photoUrl", finalUrl);
+      await fetch(window.location.href, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      // Reload to show updated photo
+      window.location.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+      setPreviewUrl(null);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const displayUrl = previewUrl || currentPhotoUrl;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        Group Image
+      </h2>
+      <div className="flex items-center gap-6">
+        <div className="relative group">
+          {displayUrl ? (
+            <img
+              src={displayUrl}
+              alt={groupName}
+              className="w-24 h-24 rounded-xl object-cover"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <span className="text-2xl font-bold text-gray-400">
+                {groupName.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+          >
+            {isUploading ? (
+              <svg className="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+        </div>
+        <div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Hover over the image and click to upload a custom photo.
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            JPEG, PNG, GIF, or WebP. Max 2MB.
+          </p>
+          {error && (
+            <p className="text-xs text-red-500 mt-1">{error}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GroupMembersSection({
+  groupId,
+  members,
+}: {
+  groupId: string;
+  members: GroupMember[];
+}) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string | null; email: string; username: string | null; avatarUrl: string | null }>>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [addRole, setAddRole] = useState("member");
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/admin/users?search=${encodeURIComponent(query)}&limit=5`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = (await response.json()) as { users: Array<{ id: string; name: string | null; email: string; username: string | null; avatarUrl: string | null }> };
+        // Filter out users already in members list
+        const existingUserIds = new Set(members.map((m) => m.user?.id).filter(Boolean));
+        setSearchResults(data.users.filter((u) => !existingUserIds.has(u.id)));
+      }
+    } catch {
+      // ignore search errors
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const roles = ["owner", "admin", "member"] as const;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Members ({members.length})
+        </h2>
+        <button
+          type="button"
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 bg-coral text-white text-sm rounded-lg font-medium hover:bg-coral-dark transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Add Member
+        </button>
+      </div>
+
+      {/* Add Member Form */}
+      {showAddForm && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Add Member</h3>
+          <div className="space-y-3">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search users by name or email..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+              />
+              {isSearching && (
+                <div className="absolute right-3 top-2.5">
+                  <svg className="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                </div>
+              )}
+              {searchResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-auto">
+                  {searchResults.map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedUserId(user.id);
+                        setSearchQuery(user.name || user.email);
+                        setSearchResults([]);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                        selectedUserId === user.id ? "bg-coral/10" : ""
+                      }`}
+                    >
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-500">
+                          {(user.name || user.email).charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name || "No name"}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <select
+                value={addRole}
+                onChange={(e) => setAddRole(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+              >
+                {roles.map((r) => (
+                  <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                ))}
+              </select>
+              <Form method="post" className="flex-1">
+                <input type="hidden" name="intent" value="addMember" />
+                <input type="hidden" name="userId" value={selectedUserId} />
+                <input type="hidden" name="role" value={addRole} />
+                <button
+                  type="submit"
+                  disabled={!selectedUserId}
+                  className="px-4 py-2 bg-coral text-white rounded-lg font-medium hover:bg-coral-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
+              </Form>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setSearchQuery("");
+                  setSearchResults([]);
+                  setSelectedUserId("");
+                }}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Members List */}
+      {members.length === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400 text-sm">No members assigned to this group yet.</p>
+      ) : (
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          {members.map((member) => (
+            <div key={member.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <div className="flex items-center gap-3 min-w-0">
+                {member.user?.avatarUrl ? (
+                  <img src={member.user.avatarUrl} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                      {(member.user?.name || member.user?.email || "?").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {member.user?.name || "Unknown"}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {member.user?.email || member.user?.username || ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Form method="post" className="flex items-center">
+                  <input type="hidden" name="intent" value="updateMemberRole" />
+                  <input type="hidden" name="memberId" value={member.id} />
+                  <select
+                    name="role"
+                    defaultValue={member.role}
+                    onChange={(e) => {
+                      const form = e.target.closest("form");
+                      if (form) form.requestSubmit();
+                    }}
+                    className="text-sm px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+                  >
+                    {roles.map((r) => (
+                      <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                    ))}
+                  </select>
+                </Form>
+
+                {confirmRemove === member.id ? (
+                  <div className="flex items-center gap-1">
+                    <Form method="post">
+                      <input type="hidden" name="intent" value="removeMember" />
+                      <input type="hidden" name="memberId" value={member.id} />
+                      <button
+                        type="submit"
+                        className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Confirm
+                      </button>
+                    </Form>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmRemove(null)}
+                      className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmRemove(member.id)}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Remove member"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminGroupDetail({ loaderData, actionData }: Route.ComponentProps) {
-  const { group, error } = loaderData;
+  const { group, members, error } = loaderData;
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -276,7 +706,11 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
       {actionData?.success && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
           <p className="text-green-700 dark:text-green-400">
-            {actionData.syncResult ? "Sync completed successfully!" : "Group updated successfully!"}
+            {actionData.syncResult
+              ? "Sync completed successfully!"
+              : actionData.memberAction
+                ? `Member ${actionData.memberAction} successfully!`
+                : "Group updated successfully!"}
           </p>
         </div>
       )}
@@ -286,10 +720,16 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
         </div>
       )}
 
+      {/* Group Image */}
+      <GroupImageUpload groupId={group.id} currentPhotoUrl={group.photoUrl} groupName={group.name} />
+
+      {/* Members */}
+      <GroupMembersSection groupId={group.id} members={members} />
+
       {/* Edit Form */}
       <Form method="post" className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Basic Information
           </h2>
@@ -337,7 +777,7 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
         </div>
 
         {/* Platform Info */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Platform Information
           </h2>
@@ -374,7 +814,7 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
         </div>
 
         {/* Status & Visibility */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Status & Visibility
           </h2>
@@ -401,7 +841,7 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
         </div>
 
         {/* Social Links */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Social Links
           </h2>
@@ -452,11 +892,11 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -470,7 +910,7 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
           </button>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2 bg-coral text-white rounded-lg font-medium hover:bg-coral-dark transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-6 py-2 bg-coral text-white rounded-lg font-medium hover:bg-coral-dark transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path

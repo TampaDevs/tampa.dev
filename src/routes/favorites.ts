@@ -11,8 +11,7 @@ import { eq, and, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { users, sessions, groups, userFavorites } from '../db/schema';
 import type { Env } from '../../types/worker';
-
-const SESSION_COOKIE = 'session';
+import { getSessionCookieName } from '../lib/session';
 
 /**
  * Helper to get the current user from session
@@ -21,8 +20,8 @@ async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
   const cookieHeader = c.req.raw.headers.get('Cookie');
   if (!cookieHeader) return null;
 
-  // Parse session cookie manually (getCookie requires Hono context)
-  const sessionMatch = cookieHeader.match(/session=([^;]+)/);
+  const cookieName = getSessionCookieName(c.env);
+  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
   const sessionToken = sessionMatch?.[1];
 
   if (!sessionToken) return null;
@@ -65,6 +64,8 @@ export function createFavoritesRoutes() {
       .select({
         groupId: userFavorites.groupId,
         urlname: groups.urlname,
+        name: groups.name,
+        photoUrl: groups.photoUrl,
         createdAt: userFavorites.createdAt,
       })
       .from(userFavorites)
@@ -74,6 +75,8 @@ export function createFavoritesRoutes() {
     return c.json({
       favorites: favorites.map((f) => ({
         groupSlug: f.urlname,
+        groupName: f.name,
+        groupPhotoUrl: f.photoUrl,
         groupId: f.groupId,
         createdAt: f.createdAt,
       })),

@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import type { Event, LocalGroupCompat } from "~/lib/types";
 import {
   formatEventDate,
+  formatEventDay,
   formatEventTime,
   getRelativeTime,
   truncate,
@@ -30,7 +31,7 @@ export function EventCard({ event, variant = "default", groups }: EventCardProps
             {formatEventDate(event.dateTime).split(" ")[1]}
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {new Date(event.dateTime).getDate()}
+            {formatEventDay(event.dateTime)}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {formatEventTime(event.dateTime)}
@@ -221,7 +222,7 @@ export function EventCard({ event, variant = "default", groups }: EventCardProps
             {formatEventDate(event.dateTime).split(" ")[1]}
           </div>
           <div className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-            {new Date(event.dateTime).getDate()}
+            {formatEventDay(event.dateTime)}
           </div>
         </div>
         {/* Online badge */}

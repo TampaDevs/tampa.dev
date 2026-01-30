@@ -53,6 +53,16 @@ export function Footer() {
                   Calendar
                 </Link>
               </li>
+              <li>
+                <a
+                  href="https://tampadevs.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  About Tampa Devs
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -63,7 +73,7 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               <li>
                 <a
-                  href="https://events.api.tampa.dev"
+                  href="https://api.tampa.dev"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
@@ -91,22 +101,12 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://tampadevs.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
-                >
-                  About Tampa Devs
-                </a>
-              </li>
-              <li>
-                <a
                   href="https://github.com/tampadevs/events.api.tampa.dev"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
                 >
-                  Fork This Website
+                  Open Source
                 </a>
               </li>
             </ul>

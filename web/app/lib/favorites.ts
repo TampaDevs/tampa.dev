@@ -76,7 +76,7 @@ export function isFavorite(slug: string): boolean {
 
 const API_BASE = typeof window !== "undefined"
   ? "" // Same origin in browser
-  : (process.env.EVENTS_API_URL || "https://events.api.tampa.dev");
+  : (process.env.EVENTS_API_URL || "https://api.tampa.dev");
 
 /**
  * Sync localStorage favorites with the server
