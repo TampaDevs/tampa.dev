@@ -25,5 +25,40 @@
 			"binding": "EVENTS_API",
 			"service": "events-api-tampa-dev"
 		}
-	]
+	],
+	"env": {
+		"staging": {
+			"name": "tampa-dev-web-staging",
+			"workers_dev": true,
+			"no_bundle": true,
+			"find_additional_modules": true,
+			"vars": {
+				"EVENTS_API_URL": "https://api-staging.tampa.dev"
+			},
+			"routes": [
+				{
+					"pattern": "staging.tampa.dev/*",
+					"zone_name": "tampa.dev"
+				},
+				{
+					"pattern": "staging.tampa.dev",
+					"zone_name": "tampa.dev",
+					"custom_domain": true
+				}
+			],
+			"d1_databases": [
+				{
+					"binding": "events_db",
+					"database_name": "events-db-staging",
+					"database_id": "6948f136-c3dd-4342-be15-fef196f67709"
+				}
+			],
+			"services": [
+				{
+					"binding": "EVENTS_API",
+					"service": "events-api-staging"
+				}
+			]
+		}
+	}
 }

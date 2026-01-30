@@ -1,0 +1,68 @@
+---
+title: API Reference
+description: Complete API endpoint reference for Tampa.dev
+order: 3
+---
+
+# API Reference
+
+All API endpoints are accessible at `https://api.tampa.dev/v1/` with a valid Bearer token.
+
+## Profile
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/profile` | `read:user` | Get current user profile |
+| `PATCH` | `/v1/profile` | `user` | Update profile |
+| `GET` | `/v1/profile/email` | `user:email` | Get email address |
+
+## Events
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/events` | `read:events` | List upcoming events |
+| `GET` | `/v1/events/:id` | `read:events` | Get event details |
+
+## Groups
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/groups` | `read:groups` | List groups |
+| `GET` | `/v1/groups/:slug` | `read:groups` | Get group details |
+
+## Favorites
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/favorites` | `read:favorites` | List favorite groups |
+| `POST` | `/v1/favorites/:groupId` | `write:favorites` | Add favorite |
+| `DELETE` | `/v1/favorites/:groupId` | `write:favorites` | Remove favorite |
+
+## Portfolio
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/portfolio` | `read:portfolio` | List portfolio items |
+| `POST` | `/v1/portfolio` | `write:portfolio` | Create portfolio item |
+| `PATCH` | `/v1/portfolio/:id` | `write:portfolio` | Update portfolio item |
+| `DELETE` | `/v1/portfolio/:id` | `write:portfolio` | Delete portfolio item |
+
+## Response Format
+
+All endpoints return JSON. Successful responses include the data directly. Error responses follow this format:
+
+```json
+{
+  "error": "Description of what went wrong"
+}
+```
+
+HTTP status codes follow standard conventions:
+- `200` — Success
+- `201` — Created
+- `400` — Bad request (invalid input)
+- `401` — Unauthorized (missing or invalid token)
+- `403` — Forbidden (insufficient scope)
+- `404` — Not found
+- `409` — Conflict (e.g., duplicate username)
+- `429` — Rate limited

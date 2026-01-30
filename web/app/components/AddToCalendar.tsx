@@ -1,9 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { AddToCalendarButton } from "add-to-calendar-button-react";
 import type { Event } from "~/lib/types";
-
-const API_BASE = "https://events.api.tampa.dev/2026-01-25";
 
 interface AddToCalendarProps {
   /** For individual events */
@@ -18,6 +17,8 @@ interface AddToCalendarProps {
   variant?: "default" | "minimal";
   /** Button size - small for inline, large for CTAs */
   size?: "small" | "large";
+  /** API base URL (passed from server) */
+  apiBase?: string;
 }
 
 /**
@@ -33,7 +34,14 @@ export function AddToCalendar({
   label,
   variant = "default",
   size = "large",
+  apiBase = "https://api.tampa.dev/2026-01-25",
 }: AddToCalendarProps) {
+  // Only render after hydration — the web component mutates its own DOM
+  // attributes on init, which always causes a hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
   // Individual event
   if (event) {
     const startDate = new Date(event.dateTime);
@@ -70,8 +78,8 @@ export function AddToCalendar({
 
   // Calendar subscription (full or group-specific)
   const icsUrl = groupUrlname
-    ? `${API_BASE}/ics?groups=${groupUrlname}`
-    : `${API_BASE}/ics`;
+    ? `${apiBase}/ics?groups=${groupUrlname}`
+    : `${apiBase}/ics`;
 
   const calendarName = groupUrlname
     ? `${groupName || groupUrlname} Events`

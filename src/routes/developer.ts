@@ -7,10 +7,11 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions } from '../db/schema';
+import { users, sessions, webhooks, webhookDeliveries } from '../db/schema';
 import type { Env } from '../../types/worker';
+import { getSessionCookieName } from '../lib/session';
 
 // ============== Validation Schemas ==============
 
@@ -32,6 +33,17 @@ const updateAppSchema = z.object({
   logoUri: z.string().url().optional(),
   policyUri: z.string().url().optional(),
   tosUri: z.string().url().optional(),
+});
+
+const createWebhookSchema = z.object({
+  url: z.string().url(),
+  eventTypes: z.array(z.string().min(1)).min(1).default(['*']),
+});
+
+const updateWebhookSchema = z.object({
+  url: z.string().url().optional(),
+  eventTypes: z.array(z.string().min(1)).min(1).optional(),
+  isActive: z.boolean().optional(),
 });
 
 // ============== Types ==============
@@ -61,7 +73,8 @@ async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
   const cookieHeader = c.req.raw.headers.get('Cookie');
   if (!cookieHeader) return null;
 
-  const sessionMatch = cookieHeader.match(/session=([^;]+)/);
+  const cookieName = getSessionCookieName(c.env);
+  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
   const sessionToken = sessionMatch?.[1];
   if (!sessionToken) return null;
 
@@ -96,6 +109,15 @@ function generateClientSecret(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return 'tds_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Generate a secure webhook secret
+ */
+function generateWebhookSecret(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return 'whsec_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // ============== Routes ==============
@@ -403,6 +425,264 @@ export function createDeveloperRoutes() {
       deleted: true,
       deletedGrants,
       deletedTokens,
+    });
+  });
+
+  // ============== Webhook Routes ==============
+
+  /**
+   * GET /api/developer/webhooks - List user's webhooks
+   */
+  app.get('/webhooks', async (c) => {
+    const user = await getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const db = createDatabase(c.env.DB);
+    const userWebhooks = await db.query.webhooks.findMany({
+      where: eq(webhooks.userId, user.id),
+    });
+
+    return c.json({
+      webhooks: userWebhooks.map((wh) => ({
+        id: wh.id,
+        url: wh.url,
+        eventTypes: JSON.parse(wh.eventTypes),
+        isActive: wh.isActive,
+        createdAt: wh.createdAt,
+        updatedAt: wh.updatedAt,
+      })),
+    });
+  });
+
+  /**
+   * POST /api/developer/webhooks - Create a new webhook
+   */
+  app.post('/webhooks', zValidator('json', createWebhookSchema), async (c) => {
+    const user = await getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const data = c.req.valid('json');
+    const db = createDatabase(c.env.DB);
+
+    const id = crypto.randomUUID();
+    const secret = generateWebhookSecret();
+
+    await db.insert(webhooks).values({
+      id,
+      userId: user.id,
+      url: data.url,
+      secret,
+      eventTypes: JSON.stringify(data.eventTypes),
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return c.json({
+      id,
+      url: data.url,
+      secret, // Only shown on creation!
+      eventTypes: data.eventTypes,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    }, 201);
+  });
+
+  /**
+   * PATCH /api/developer/webhooks/:id - Update a webhook
+   */
+  app.patch('/webhooks/:id', zValidator('json', updateWebhookSchema), async (c) => {
+    const user = await getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const webhookId = c.req.param('id');
+    const db = createDatabase(c.env.DB);
+
+    const webhook = await db.query.webhooks.findFirst({
+      where: and(eq(webhooks.id, webhookId), eq(webhooks.userId, user.id)),
+    });
+
+    if (!webhook) {
+      return c.json({ error: 'Webhook not found' }, 404);
+    }
+
+    const updates = c.req.valid('json');
+    const updateValues: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (updates.url !== undefined) updateValues.url = updates.url;
+    if (updates.eventTypes !== undefined) updateValues.eventTypes = JSON.stringify(updates.eventTypes);
+    if (updates.isActive !== undefined) updateValues.isActive = updates.isActive;
+
+    await db.update(webhooks).set(updateValues).where(eq(webhooks.id, webhookId));
+
+    return c.json({
+      id: webhookId,
+      url: updates.url ?? webhook.url,
+      eventTypes: updates.eventTypes ?? JSON.parse(webhook.eventTypes),
+      isActive: updates.isActive ?? webhook.isActive,
+      updatedAt: updateValues.updatedAt,
+    });
+  });
+
+  /**
+   * DELETE /api/developer/webhooks/:id - Delete a webhook
+   */
+  app.delete('/webhooks/:id', async (c) => {
+    const user = await getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const webhookId = c.req.param('id');
+    const db = createDatabase(c.env.DB);
+
+    const webhook = await db.query.webhooks.findFirst({
+      where: and(eq(webhooks.id, webhookId), eq(webhooks.userId, user.id)),
+    });
+
+    if (!webhook) {
+      return c.json({ error: 'Webhook not found' }, 404);
+    }
+
+    await db.delete(webhooks).where(eq(webhooks.id, webhookId));
+    return c.json({ deleted: true });
+  });
+
+  /**
+   * GET /api/developer/webhooks/:id/deliveries - Get recent deliveries
+   */
+  app.get('/webhooks/:id/deliveries', async (c) => {
+    const user = await getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const webhookId = c.req.param('id');
+    const db = createDatabase(c.env.DB);
+
+    // Verify ownership
+    const webhook = await db.query.webhooks.findFirst({
+      where: and(eq(webhooks.id, webhookId), eq(webhooks.userId, user.id)),
+    });
+
+    if (!webhook) {
+      return c.json({ error: 'Webhook not found' }, 404);
+    }
+
+    const deliveries = await db.query.webhookDeliveries.findMany({
+      where: eq(webhookDeliveries.webhookId, webhookId),
+      orderBy: [desc(webhookDeliveries.deliveredAt)],
+      limit: 50,
+    });
+
+    return c.json({
+      deliveries: deliveries.map((d) => ({
+        id: d.id,
+        eventType: d.eventType,
+        statusCode: d.statusCode,
+        attempt: d.attempt,
+        deliveredAt: d.deliveredAt,
+        responseBody: d.responseBody,
+      })),
+    });
+  });
+
+  /**
+   * POST /api/developer/webhooks/:id/test - Send a test event
+   */
+  app.post('/webhooks/:id/test', async (c) => {
+    const user = await getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const webhookId = c.req.param('id');
+    const db = createDatabase(c.env.DB);
+
+    const webhook = await db.query.webhooks.findFirst({
+      where: and(eq(webhooks.id, webhookId), eq(webhooks.userId, user.id)),
+    });
+
+    if (!webhook) {
+      return c.json({ error: 'Webhook not found' }, 404);
+    }
+
+    // Build a test payload
+    const deliveryId = crypto.randomUUID();
+    const testPayload = JSON.stringify({
+      id: deliveryId,
+      type: 'test.ping',
+      timestamp: new Date().toISOString(),
+      data: {
+        message: 'This is a test webhook delivery from Tampa Devs.',
+      },
+    });
+
+    // Sign the payload
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(webhook.secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(testPayload));
+    const signature = Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    let statusCode: number | null = null;
+    let responseBody: string | null = null;
+
+    try {
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Signature': `sha256=${signature}`,
+          'X-Event-Type': 'test.ping',
+          'X-Delivery-ID': deliveryId,
+          'User-Agent': 'TampaDevs-Webhooks/1.0',
+        },
+        body: testPayload,
+      });
+
+      statusCode = response.status;
+      responseBody = await response.text().catch(() => null);
+      if (responseBody && responseBody.length > 4096) {
+        responseBody = responseBody.slice(0, 4096) + '... (truncated)';
+      }
+    } catch (err) {
+      statusCode = 0;
+      responseBody = err instanceof Error ? err.message : 'Network error';
+    }
+
+    // Log the delivery
+    await db.insert(webhookDeliveries).values({
+      id: deliveryId,
+      webhookId: webhook.id,
+      eventType: 'test.ping',
+      payload: testPayload,
+      statusCode,
+      responseBody,
+      attempt: 1,
+      deliveredAt: new Date().toISOString(),
+    });
+
+    return c.json({
+      deliveryId,
+      statusCode,
+      success: statusCode !== null && statusCode >= 200 && statusCode < 300,
+      responseBody,
     });
   });
 

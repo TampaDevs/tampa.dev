@@ -62,7 +62,7 @@ Available schemas:
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/event",
+  "$id": "https://api.tampa.dev/2026-01-25/schemas/event",
   "title": "Event Schema",
   "description": "Schema for event data - core fields common across event providers",
   "$ref": "#/definitions/Event",
@@ -153,7 +153,7 @@ Reference schemas in your OpenAPI/Swagger specs:
 components:
   schemas:
     Event:
-      $ref: 'https://events.api.tampa.dev/2026-01-25/schemas/event'
+      $ref: 'https://api.tampa.dev/2026-01-25/schemas/event'
 ```
 
 ### 2. Data Validation

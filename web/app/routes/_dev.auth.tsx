@@ -19,7 +19,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const role = url.searchParams.get("role") || "admin"; // admin, user, superadmin
 
   // Call the dev auth endpoint on the API
-  const apiUrl = import.meta.env.EVENTS_API_URL || "https://events.api.tampa.dev";
+  const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
 
   try {
     const response = await fetch(`${apiUrl}/auth/dev`, {

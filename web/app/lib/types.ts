@@ -58,6 +58,7 @@ export interface Event {
   // Computed fields from API
   address?: string;
   googleMapsUrl?: string;
+  appleMapsUrl?: string;
   photoUrl?: string;
   isOnline: boolean;
 }
@@ -90,7 +91,7 @@ export interface LocalGroupCompat {
 }
 
 /**
- * Find a group by its meetup urlname from a list of groups
+ * Find a group by its urlname from a list of groups
  */
 export function findGroupByUrlname(
   groups: LocalGroupCompat[],
@@ -98,6 +99,8 @@ export function findGroupByUrlname(
 ): LocalGroupCompat | undefined {
   const normalizedUrlname = urlname.toLowerCase();
   return groups.find(
-    (g) => g.meetupUrlname?.toLowerCase() === normalizedUrlname
+    (g) =>
+      g.slug.toLowerCase() === normalizedUrlname ||
+      g.meetupUrlname?.toLowerCase() === normalizedUrlname
   );
 }

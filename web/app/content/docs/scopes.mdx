@@ -1,0 +1,38 @@
+---
+title: Scopes
+description: OAuth scope definitions for the Tampa.dev API
+order: 2
+---
+
+# Scopes
+
+Scopes follow the GitHub model. The `user` scope implicitly includes `read:user` and `user:email`.
+
+| Scope | Description |
+|-------|-------------|
+| `user` | Read/write access to profile info (includes user:email and read:user) |
+| `read:user` | Read your public profile data |
+| `user:email` | Read your email address |
+| `read:events` | Read events and event details |
+| `read:groups` | Read groups and group details |
+| `read:favorites` | Read your favorite groups |
+| `write:favorites` | Manage your favorite groups |
+| `read:portfolio` | Read your portfolio items |
+| `write:portfolio` | Manage your portfolio items |
+| `admin` | Full admin access |
+
+## Scope Hierarchy
+
+The `user` scope is a parent scope that automatically grants:
+- `read:user` — read-only access to profile data
+- `user:email` — read access to email addresses
+
+When requesting scopes during authorization, only request what your application needs. Users will see the full list of requested permissions on the consent screen.
+
+## Requesting Scopes
+
+Include scopes as a space-separated string in the `scope` parameter of the authorization URL:
+
+```
+https://tampa.dev/oauth/authorize?scope=read:user read:events read:groups
+```

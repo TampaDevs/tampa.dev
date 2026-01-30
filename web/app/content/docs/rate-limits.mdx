@@ -1,0 +1,41 @@
+---
+title: Rate Limits
+description: API rate limiting policy and headers
+order: 6
+---
+
+# Rate Limits
+
+API requests are rate-limited to prevent abuse. Current limits:
+
+- **Authenticated requests**: 1,000 requests per hour
+- **Unauthenticated requests**: 60 requests per hour
+- **Webhook deliveries**: Best-effort, no rate limit on outbound
+
+## Rate Limit Headers
+
+Rate limit headers are included in every API response:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Requests allowed per hour |
+| `X-RateLimit-Remaining` | Remaining requests in current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+
+## Handling Rate Limits
+
+When you exceed the rate limit, the API returns a `429 Too Many Requests` response. Check the `X-RateLimit-Reset` header to determine when you can retry.
+
+```bash
+# Example response headers when rate limited
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1706547200
+Retry-After: 3600
+```
+
+Best practices:
+- Cache responses when possible to reduce API calls
+- Implement exponential backoff on 429 responses
+- Use webhooks instead of polling for real-time updates

@@ -6,8 +6,6 @@ import { groupToJsonLd, eventsToJsonLd } from "~/lib/structured-data";
 import { AddToCalendar, EventCard, FavoriteButton, StructuredData } from "~/components";
 import { data } from "react-router";
 
-const API_BASE = "https://events.api.tampa.dev/2026-01-25";
-
 export const meta: Route.MetaFunction = ({ data }) => {
   if (!data?.group) {
     return [{ title: "Group Not Found | Tampa Tech Events" }];
@@ -20,16 +18,14 @@ export const meta: Route.MetaFunction = ({ data }) => {
     url: `/groups/${data.group.slug}`,
   });
 
-  // Add RSS feed discovery link if group has events
-  if (data.group.meetupUrlname) {
-    tags.push({
-      tagName: "link",
-      rel: "alternate",
-      type: "application/rss+xml",
-      title: `${data.group.name} Events`,
-      href: `${API_BASE}/rss?groups=${data.group.meetupUrlname}`,
-    });
-  }
+  // Add RSS feed discovery link
+  tags.push({
+    tagName: "link",
+    rel: "alternate",
+    type: "application/rss+xml",
+    title: `${data.group.name} Events`,
+    href: `${data.apiBase}/rss?groups=${data.group.slug}`,
+  });
 
   return tags;
 };
@@ -51,14 +47,18 @@ export async function loader({ params }: Route.LoaderArgs) {
     withinDays: 60,
   });
 
+  const apiHost = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
+  const apiBase = `${apiHost}/2026-01-25`;
+
   return {
     group,
     events,
+    apiBase,
   };
 }
 
 export default function GroupDetail({ loaderData }: Route.ComponentProps) {
-  const { group, events } = loaderData;
+  const { group, events, apiBase } = loaderData;
 
   return (
     <>
@@ -108,29 +108,27 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {group.name}
               </h1>
-              {group.meetupUrlname && (
-                <a
-                  href={`${API_BASE}/rss?groups=${group.meetupUrlname}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-shrink-0 p-2 text-gray-400 hover:text-coral dark:text-gray-500 dark:hover:text-coral transition-colors"
-                  title={`RSS feed for ${group.name}`}
+              <a
+                href={`${apiBase}/rss?groups=${group.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0 p-2 text-gray-400 hover:text-coral dark:text-gray-500 dark:hover:text-coral transition-colors"
+                title={`RSS feed for ${group.name}`}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z"
-                    />
-                  </svg>
-                </a>
-              )}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z"
+                  />
+                </svg>
+              </a>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">
@@ -171,14 +169,13 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
                 </svg>
               </a>
 
-              {group.meetupUrlname && (
-                <AddToCalendar
-                  groupUrlname={group.meetupUrlname}
-                  groupName={group.name}
-                  label="Subscribe"
-                  size="small"
-                />
-              )}
+              <AddToCalendar
+                groupUrlname={group.slug}
+                groupName={group.name}
+                label="Subscribe"
+                size="small"
+                apiBase={apiBase}
+              />
 
               {group.socialLinks?.slack && (
                 <a
@@ -240,9 +237,7 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
           ) : (
             <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-xl">
               <p className="text-gray-500 dark:text-gray-400">
-                {group.meetupUrlname
-                  ? "No upcoming events scheduled. Check back soon!"
-                  : "This group doesn't list events through Meetup. Visit their website for event information."}
+                No upcoming events scheduled. Check back soon!
               </p>
               <a
                 href={group.website}

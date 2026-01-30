@@ -105,7 +105,7 @@ function StatusIndicator({ active, displayOnSite }: { active: boolean; displayOn
 function GroupRow({ group }: { group: AdminGroup }) {
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-4">
         <div className="flex items-center gap-3">
           {group.photoUrl ? (
             <img
@@ -131,16 +131,16 @@ function GroupRow({ group }: { group: AdminGroup }) {
           </div>
         </div>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
         <PlatformBadge platform={group.platform} />
       </td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-4">
         <StatusIndicator active={group.isActive} displayOnSite={group.displayOnSite} />
       </td>
-      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+      <td className="px-4 sm:px-6 py-4 text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
         {group.memberCount?.toLocaleString() || "-"}
       </td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-4">
         <div className="flex items-center gap-2">
           <Link
             to={`/admin/groups/${group.id}`}
@@ -321,19 +321,19 @@ export default function AdminGroupsList({ loaderData }: Route.ComponentProps) {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Group
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
                   Platform
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
                   Members
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -354,7 +354,7 @@ export default function AdminGroupsList({ loaderData }: Route.ComponentProps) {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Showing {pagination.offset + 1} to{" "}
               {Math.min(pagination.offset + pagination.limit, pagination.total)} of{" "}

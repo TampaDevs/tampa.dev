@@ -1,7 +1,7 @@
 /**
  * OAuth API Handler
  *
- * Handles API requests authenticated via OAuth tokens.
+ * Handles API requests authenticated via OAuth tokens or Personal Access Tokens (PATs).
  * Third-party apps use these endpoints after obtaining access tokens.
  *
  * The user's identity is available in this.ctx.props, which contains:
@@ -11,12 +11,16 @@
  * - avatarUrl: string | null
  * - githubUsername: string | null
  * - scopes: string[]
+ *
+ * PAT authentication is handled by OAuthProvider's resolveExternalToken callback
+ * in src/index.ts, so ctx.props is already populated for both OAuth and PAT tokens.
  */
 
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { eq, desc, gte, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
 import { users, groups, events } from '../db/schema.js';
+import { hasScope as checkScope } from '../lib/scopes.js';
 import type { Env } from '../../types/worker.js';
 
 interface OAuthProps {
@@ -38,7 +42,7 @@ export class OAuthApiHandler extends WorkerEntrypoint<Env> {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const path = url.pathname.replace('/api/v1', '');
+    const path = url.pathname.replace('/v1', '');
 
     // Route to appropriate handler
     if (path === '/me' || path === '/me/') {
@@ -69,30 +73,36 @@ export class OAuthApiHandler extends WorkerEntrypoint<Env> {
   }
 
   /**
-   * GET /api/v1/me - Get authenticated user's basic info
-   * Requires: profile scope
+   * GET /v1/me - Get authenticated user's basic info
+   * Requires: read:user scope (or legacy 'profile')
    */
   private async handleMe(): Promise<Response> {
-    if (!this.hasScope('profile')) {
-      return this.scopeError('profile');
+    if (!this.hasScope('read:user') && !this.hasLegacyScope('profile')) {
+      return this.scopeError('read:user');
     }
 
-    return Response.json({
+    const result: Record<string, unknown> = {
       id: this.ctx.props.userId,
-      email: this.ctx.props.email,
       name: this.ctx.props.name,
       avatarUrl: this.ctx.props.avatarUrl,
       githubUsername: this.ctx.props.githubUsername,
-    });
+    };
+
+    // Only include email if user:email scope is granted
+    if (this.hasScope('user:email') || this.hasLegacyScope('profile')) {
+      result.email = this.ctx.props.email;
+    }
+
+    return Response.json(result);
   }
 
   /**
    * GET /api/v1/profile - Get full user profile from database
-   * Requires: profile scope
+   * Requires: read:user scope (or legacy 'profile')
    */
   private async handleProfile(): Promise<Response> {
-    if (!this.hasScope('profile')) {
-      return this.scopeError('profile');
+    if (!this.hasScope('read:user') && !this.hasLegacyScope('profile')) {
+      return this.scopeError('read:user');
     }
 
     const db = createDatabase(this.env.DB);
@@ -104,23 +114,29 @@ export class OAuthApiHandler extends WorkerEntrypoint<Env> {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return Response.json({
+    const result: Record<string, unknown> = {
       id: user.id,
-      email: user.email,
       name: user.name,
       avatarUrl: user.avatarUrl,
       role: user.role,
       createdAt: user.createdAt,
-    });
+    };
+
+    // Only include email if user:email scope is granted
+    if (this.hasScope('user:email') || this.hasLegacyScope('profile')) {
+      result.email = user.email;
+    }
+
+    return Response.json(result);
   }
 
   /**
    * GET /api/v1/events - List upcoming events
-   * Requires: events:read scope
+   * Requires: read:events scope (or legacy 'events:read')
    */
   private async handleEvents(url: URL): Promise<Response> {
-    if (!this.hasScope('events:read')) {
-      return this.scopeError('events:read');
+    if (!this.hasScope('read:events') && !this.hasLegacyScope('events:read')) {
+      return this.scopeError('read:events');
     }
 
     const db = createDatabase(this.env.DB);
@@ -176,11 +192,11 @@ export class OAuthApiHandler extends WorkerEntrypoint<Env> {
 
   /**
    * GET /api/v1/groups - List groups
-   * Requires: groups:read scope
+   * Requires: read:groups scope (or legacy 'groups:read')
    */
   private async handleGroups(url: URL): Promise<Response> {
-    if (!this.hasScope('groups:read')) {
-      return this.scopeError('groups:read');
+    if (!this.hasScope('read:groups') && !this.hasLegacyScope('groups:read')) {
+      return this.scopeError('read:groups');
     }
 
     const db = createDatabase(this.env.DB);
@@ -217,11 +233,11 @@ export class OAuthApiHandler extends WorkerEntrypoint<Env> {
 
   /**
    * GET /api/v1/groups/:slug - Get a specific group
-   * Requires: groups:read scope
+   * Requires: read:groups scope (or legacy 'groups:read')
    */
   private async handleGroup(slug: string): Promise<Response> {
-    if (!this.hasScope('groups:read')) {
-      return this.scopeError('groups:read');
+    if (!this.hasScope('read:groups') && !this.hasLegacyScope('groups:read')) {
+      return this.scopeError('read:groups');
     }
 
     const db = createDatabase(this.env.DB);
@@ -234,7 +250,6 @@ export class OAuthApiHandler extends WorkerEntrypoint<Env> {
     }
 
     // Get upcoming events for this group
-    const now = new Date().toISOString();
     const groupEvents = await db.query.events.findMany({
       where: eq(events.groupId, group.id),
       orderBy: [events.startTime],
@@ -262,9 +277,16 @@ export class OAuthApiHandler extends WorkerEntrypoint<Env> {
   }
 
   /**
-   * Check if the token has a required scope
+   * Check if the token has a required scope (using new scope registry with hierarchy)
    */
   private hasScope(scope: string): boolean {
+    return checkScope(this.ctx.props.scopes, scope as any);
+  }
+
+  /**
+   * Check for legacy scope names (backwards compatibility with existing OAuth tokens)
+   */
+  private hasLegacyScope(scope: string): boolean {
     return this.ctx.props.scopes.includes(scope);
   }
 

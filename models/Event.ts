@@ -135,6 +135,13 @@ export class Event {
   }
 
   /**
+   * Get Apple Maps URL for this event's venue
+   */
+  get appleMapsUrl(): string | null {
+    return this.venue?.appleMapsUrl ?? null;
+  }
+
+  /**
    * Get formatted address as HTML-safe string
    */
   get addressHTML(): string {
@@ -223,6 +230,7 @@ export class Event {
       // Include computed properties for convenience
       address: this.address,
       googleMapsUrl: this.googleMapsUrl,
+      appleMapsUrl: this.appleMapsUrl,
       photoUrl: this.photoUrl,
       isOnline: this.isOnline,
     };

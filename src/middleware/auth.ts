@@ -10,8 +10,7 @@ import { eq } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { users, sessions, UserRole } from '../db/schema';
 import type { Env } from '../../types/worker';
-
-const SESSION_COOKIE = 'session';
+import { getSessionCookieName } from '../lib/session';
 
 export interface AuthUser {
   id: string;
@@ -25,7 +24,7 @@ export interface AuthUser {
  * Get the current authenticated user from session cookie
  */
 export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<AuthUser | null> {
-  const sessionToken = getCookie(c, SESSION_COOKIE);
+  const sessionToken = getCookie(c, getSessionCookieName(c.env));
 
   if (!sessionToken) {
     return null;

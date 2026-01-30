@@ -1,7 +1,25 @@
 @import "tailwindcss" source(".");
 @import "@tampadevs/tailwind-preset/theme.css";
+@plugin "@tailwindcss/typography";
 
 html,
 body {
   @apply bg-white dark:bg-gray-950;
+}
+
+/* Override default leaflet.markercluster styles */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: transparent !important;
+}
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background: transparent !important;
+}
+.custom-marker,
+.custom-cluster {
+  background: transparent !important;
+  border: none !important;
 }

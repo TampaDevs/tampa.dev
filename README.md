@@ -3,7 +3,7 @@
 This repository contains both the **Events API** and the **tampa.dev** website for discovering tech events in the Tampa Bay area.
 
 - **Website**: [tampa.dev](https://tampa.dev)
-- **API**: [events.api.tampa.dev](https://events.api.tampa.dev)
+- **API**: [api.tampa.dev](https://api.tampa.dev)
 
 ## Add Your Group
 
@@ -17,11 +17,11 @@ Want your group included in the Tampa Bay events feed?
 
 Interactive API documentation with all available endpoints is available at:
 
-**https://events.api.tampa.dev/docs**
+**https://api.tampa.dev/docs**
 
 The OpenAPI specification is available at:
 
-**https://events.api.tampa.dev/openapi.json**
+**https://api.tampa.dev/openapi.json**
 
 ## API Clients
 
@@ -119,31 +119,31 @@ JSON Schema definitions for all data models are available in [`schemas/models/`]
 
 Get all upcoming events:
 ```
-GET https://events.api.tampa.dev/events
+GET https://api.tampa.dev/events
 ```
 
 Get the next event for each group:
 ```
-GET https://events.api.tampa.dev/events/next
+GET https://api.tampa.dev/events/next
 ```
 
 ### Feed Formats
 
 RSS Feed:
 ```
-https://events.api.tampa.dev/rss
+https://api.tampa.dev/rss
 ```
 
 iCalendar Feed:
 ```
-https://events.api.tampa.dev/ical
+https://api.tampa.dev/ical
 ```
 
 ### HTML Pages
 
 Upcoming Events Page:
 ```
-https://events.api.tampa.dev/html
+https://api.tampa.dev/html
 ```
 
 ### Filters
@@ -158,20 +158,20 @@ All endpoints support optional query parameters:
 
 Example:
 ```
-https://events.api.tampa.dev/events?groups=tampadevs&noonline=1
+https://api.tampa.dev/events?groups=tampadevs&noonline=1
 ```
 
 ## Widgets
 
 ### Next Event Widget
 
-https://events.api.tampa.dev/widget/next-event?groups=tampadevs
+https://api.tampa.dev/widget/next-event?groups=tampadevs
 
 Displays the next upcoming event for the specified group(s).
 
 ### Events Carousel
 
-https://events.api.tampa.dev/widget/carousel
+https://api.tampa.dev/widget/carousel
 
 Displays a carousel of upcoming events.
 

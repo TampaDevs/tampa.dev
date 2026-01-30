@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -93,7 +94,7 @@ export default function App() {
   return (
     <>
       <Header user={user} />
-      <main className="flex-1">
+      <main className="flex-1 relative z-0">
         <Outlet />
       </main>
       <Footer />
@@ -102,15 +103,17 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
+  let status = 500;
+  let message = "Something went wrong";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    status = error.status;
+    message = error.status === 404 ? "Page not found" : `Error ${error.status}`;
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? "The page you're looking for doesn't exist or has been moved."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -118,14 +121,37 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <>
+      <Header />
+      <main className="flex-1 flex items-center justify-center px-4 py-16">
+        <div className="text-center max-w-md">
+          <p className="text-6xl font-bold text-coral mb-4">{status}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {message}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">{details}</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-coral hover:bg-coral-dark text-white rounded-lg font-medium transition-colors"
+            >
+              Go Home
+            </Link>
+            <Link
+              to="/events"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
+            >
+              Browse Events
+            </Link>
+          </div>
+          {stack && (
+            <pre className="mt-8 w-full p-4 overflow-x-auto text-left text-xs bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <code>{stack}</code>
+            </pre>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }

@@ -21,10 +21,16 @@ export async function action({ request }: Route.ActionArgs) {
   await logout(cookieHeader);
 
   // Redirect to home page after logout
+  // Clear both possible session cookie names (prod + staging)
+  // so sessions don't linger when switching environments.
+  const clearCookies = [
+    "session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Domain=.tampa.dev",
+    "session_staging=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Domain=.tampa.dev",
+  ];
   return redirect("/", {
-    headers: {
-      // Clear the session cookie on the web side
-      "Set-Cookie": "session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax",
-    },
+    headers: [
+      ["Set-Cookie", clearCookies[0]],
+      ["Set-Cookie", clearCookies[1]],
+    ],
   });
 }

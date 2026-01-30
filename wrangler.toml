@@ -24,13 +24,131 @@ bucket_name = "tampa-dev-uploads-public"
 [version_metadata]
 binding = "CF_VERSION_METADATA"
 
+# Cloudflare Queue for domain event bus
+[[queues.producers]]
+queue = "events-bus"
+binding = "EVENTS_QUEUE"
+
+[[queues.consumers]]
+queue = "events-bus"
+max_batch_size = 10
+max_batch_timeout = 5
+
 # Cron triggers for event aggregation
 # Runs every 30 minutes to fetch fresh data from external sources
+# Daily at 3 AM UTC for data truncation (sync logs, webhook deliveries)
 [triggers]
-crons = ["0,30 * * * *"]
+crons = ["0,30 * * * *", "0 3 * * *"]
 
 [env.pr]
 name = "events-api-pr"
+
+[env.staging]
+name = "events-api-staging"
+workers_dev = true
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/auth/*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/api/*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/ical*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/webcal*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/upcoming-events*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/feed*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/events.json*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "events-staging.api.tampa.dev/*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "events-staging.api.tampa.dev"
+zone_name = "tampa.dev"
+custom_domain = true
+
+# New canonical staging API domain
+[[env.staging.routes]]
+pattern = "api-staging.tampa.dev/*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "api-staging.tampa.dev"
+zone_name = "tampa.dev"
+custom_domain = true
+
+# OAuth on staging.tampa.dev (more specific → beats web worker's staging.tampa.dev/*)
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/oauth/token*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/oauth/register*"
+zone_name = "tampa.dev"
+
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/.well-known/oauth-authorization-server*"
+zone_name = "tampa.dev"
+
+[env.staging.vars]
+ADMIN_ALLOWLIST = "chtzvt"
+GITHUB_REDIRECT_URI = "https://staging.tampa.dev/auth/github/callback"
+GOOGLE_REDIRECT_URI = "https://staging.tampa.dev/auth/google/callback"
+LINKEDIN_REDIRECT_URI = "https://staging.tampa.dev/auth/linkedin/callback"
+SLACK_REDIRECT_URI = "https://staging.tampa.dev/auth/slack/callback"
+UPLOADS_PUBLIC_BUCKET_NAME = "tampa-dev-uploads-public-staging"
+UPLOADS_PUBLIC_URL = "https://td-uploads-public-staging.tampa.dev"
+ENVIRONMENT = "staging"
+
+[[env.staging.kv_namespaces]]
+binding = "kv"
+id = "be4898d3ea204f94a8ab87fc64a2c0d2"
+
+[[env.staging.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "be4898d3ea204f94a8ab87fc64a2c0d2"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "events-db-staging"
+database_id = "6948f136-c3dd-4342-be15-fef196f67709"
+migrations_dir = "drizzle/migrations"
+
+[[env.staging.r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "tampa-dev-uploads-public"
+
+[env.staging.version_metadata]
+binding = "CF_VERSION_METADATA"
+
+# Staging event bus (separate from production)
+[[env.staging.queues.producers]]
+queue = "events-bus-staging"
+binding = "EVENTS_QUEUE"
+
+[[env.staging.queues.consumers]]
+queue = "events-bus-staging"
+max_batch_size = 10
+max_batch_timeout = 5
+
+# No cron triggers for staging — sync manually via admin UI
 
 [env.production]
 name = "events-api-tampa-dev"
@@ -38,6 +156,10 @@ name = "events-api-tampa-dev"
 # Routes for tampa.dev paths
 [[env.production.routes]]
 pattern = "tampa.dev/auth/*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/api/*"
 zone_name = "tampa.dev"
 
 [[env.production.routes]]
@@ -69,10 +191,36 @@ pattern = "events.api.tampa.dev"
 zone_name = "tampa.dev"
 custom_domain = true
 
+# New canonical API domain
+[[env.production.routes]]
+pattern = "api.tampa.dev/*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "api.tampa.dev"
+zone_name = "tampa.dev"
+custom_domain = true
+
+# OAuth token + register on tampa.dev (more specific → beats web worker's tampa.dev/*)
+[[env.production.routes]]
+pattern = "tampa.dev/oauth/token*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/oauth/register*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/.well-known/oauth-authorization-server*"
+zone_name = "tampa.dev"
+
 # Environment variables
 [env.production.vars]
 ADMIN_ALLOWLIST = "chtzvt"
-GITHUB_REDIRECT_URI = "https://events.api.tampa.dev/auth/github/callback"
+GITHUB_REDIRECT_URI = "https://tampa.dev/auth/github/callback"
+GOOGLE_REDIRECT_URI = "https://tampa.dev/auth/google/callback"
+LINKEDIN_REDIRECT_URI = "https://tampa.dev/auth/linkedin/callback"
+SLACK_REDIRECT_URI = "https://tampa.dev/auth/slack/callback"
 UPLOADS_PUBLIC_BUCKET_NAME = "tampa-dev-uploads-public"
 UPLOADS_PUBLIC_URL = "https://td-uploads-public.tampa.dev"
 
@@ -98,4 +246,4 @@ bucket_name = "tampa-dev-uploads-public"
 binding = "CF_VERSION_METADATA"
 
 [env.production.triggers]
-crons = ["0,30 * * * *"]
+crons = ["0,30 * * * *", "0 3 * * *"]

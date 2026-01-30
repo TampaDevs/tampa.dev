@@ -42,7 +42,7 @@ for (const [name, schemaInfo] of Object.entries(allSchemas)) {
   // Add metadata to the schema
   const schemaWithMeta = {
     $schema: 'http://json-schema.org/draft-07/schema#',
-    $id: `https://events.api.tampa.dev/2026-01-25/schemas/${name}`,
+    $id: `https://api.tampa.dev/2026-01-25/schemas/${name}`,
     title: schemaInfo.title,
     description: schemaInfo.description,
     ...schemaInfo.schema,
@@ -62,7 +62,7 @@ const indexContent = {
     title: info.title,
     description: info.description,
     file: `models/${name}.schema.json`,
-    url: `https://events.api.tampa.dev/2026-01-25/schemas/${name}`,
+    url: `https://api.tampa.dev/2026-01-25/schemas/${name}`,
   })),
 };
 
@@ -96,8 +96,8 @@ ${Object.entries(allSchemas).map(([name, info]) =>
 The complete API specification is available at:
 
 - **File:** [openapi.json](./openapi.json)
-- **Interactive Docs:** https://events.api.tampa.dev/docs
-- **API URL:** https://events.api.tampa.dev/openapi.json
+- **Interactive Docs:** https://api.tampa.dev/docs
+- **API URL:** https://api.tampa.dev/openapi.json
 
 ## Usage
 

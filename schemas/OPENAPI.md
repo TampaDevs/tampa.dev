@@ -35,7 +35,7 @@ Import this file into tools like:
 The OpenAPI spec serves as the single source of truth for API documentation.
 You can view the interactive documentation at:
 
-- **Production:** https://events.api.tampa.dev/docs
+- **Production:** https://api.tampa.dev/docs
 - **Development:** http://localhost:8787/docs
 
 ### Regeneration
@@ -49,12 +49,12 @@ npm run generate-openapi
 Or fetch it from the running API:
 
 ```bash
-curl https://events.api.tampa.dev/openapi.json > openapi.json
+curl https://api.tampa.dev/openapi.json > openapi.json
 ```
 
 ## Live Spec
 
 The most up-to-date OpenAPI spec is always available at runtime:
-- https://events.api.tampa.dev/openapi.json
+- https://api.tampa.dev/openapi.json
 
 This generated file is a snapshot for convenience and SDK generation.

@@ -167,22 +167,29 @@ function SyncLogRow({ log }: { log: SyncLog }) {
 
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
         <span className="capitalize font-medium text-gray-900 dark:text-white">
           {log.platform}
         </span>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm hidden sm:table-cell">
+        {log.groupName ? (
+          <span className="text-gray-900 dark:text-white">{log.groupName}</span>
+        ) : (
+          <span className="text-gray-400 dark:text-gray-500">&mdash;</span>
+        )}
+      </td>
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
         <StatusBadge status={log.status} />
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
         {formatDateTime(log.startedAt)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
         {formatDuration(log.startedAt, log.completedAt)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center gap-4 text-sm">
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center gap-2 sm:gap-4 text-sm">
           <span className="text-green-600 dark:text-green-400">
             +{log.eventsCreated}
           </span>
@@ -194,7 +201,7 @@ function SyncLogRow({ log }: { log: SyncLog }) {
           </span>
         </div>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
         {log.errorMessage && (
           <button
             onClick={() => setExpanded(!expanded)}
@@ -318,7 +325,7 @@ export default function AdminSync({ loaderData, actionData }: Route.ComponentPro
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Provider Status
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {platforms.map((platform) => (
             <ProviderCard
               key={platform}
@@ -332,7 +339,7 @@ export default function AdminSync({ loaderData, actionData }: Route.ComponentPro
 
       {/* Group Stats */}
       {status && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Groups</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
@@ -365,22 +372,25 @@ export default function AdminSync({ loaderData, actionData }: Route.ComponentPro
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Platform
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
+                  Group
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
                   Started
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
                   Duration
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Events
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
                   Error
                 </th>
               </tr>
@@ -388,7 +398,7 @@ export default function AdminSync({ loaderData, actionData }: Route.ComponentPro
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     No sync logs yet. Run a sync to see results here.
                   </td>
                 </tr>

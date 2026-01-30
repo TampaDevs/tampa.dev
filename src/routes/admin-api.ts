@@ -8,9 +8,9 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, like } from 'drizzle-orm';
+import { eq, desc, and, like, or } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { groups, events, syncLogs, users, userIdentities, sessions, EventPlatform, UserRole } from '../db/schema';
+import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, EventPlatform, UserRole } from '../db/schema';
 import { SyncService } from '../services/sync';
 import { providerRegistry } from '../providers';
 import type { Env } from '../../types/worker';
@@ -49,6 +49,7 @@ const updateGroupSchema = z.object({
   description: z.string().optional(),
   link: z.string().url().optional(),
   website: z.string().url().optional().nullable(),
+  photoUrl: z.string().url().optional().nullable(),
   isActive: z.boolean().optional(),
   // Site display configuration
   displayOnSite: z.boolean().optional(),
@@ -367,15 +368,27 @@ export function createAdminApiRoutes() {
    * POST /api/admin/sync/all
    */
   app.post('/sync/all', async (c) => {
-    const db = createDatabase(c.env.DB);
+    try {
+      const db = createDatabase(c.env.DB);
 
-    // Initialize providers
-    await providerRegistry.initializeAll(c.env);
+      // Initialize providers (non-fatal — individual group syncs handle missing providers)
+      try {
+        await providerRegistry.initializeAll(c.env);
+      } catch (initError) {
+        console.error('Provider initialization error (continuing):', initError);
+      }
 
-    const syncService = new SyncService(db, providerRegistry, c.env);
-    const result = await syncService.syncAllGroups();
+      const syncService = new SyncService(db, providerRegistry, c.env);
+      const result = await syncService.syncAllGroups();
 
-    return c.json(result);
+      return c.json(result);
+    } catch (error) {
+      console.error('Sync all failed:', error);
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }, 500);
+    }
   });
 
   /**
@@ -383,25 +396,37 @@ export function createAdminApiRoutes() {
    * POST /api/admin/sync/group/:id
    */
   app.post('/sync/group/:id', async (c) => {
-    const db = createDatabase(c.env.DB);
-    const id = c.req.param('id');
+    try {
+      const db = createDatabase(c.env.DB);
+      const id = c.req.param('id');
 
-    // Check group exists
-    const group = await db.query.groups.findFirst({
-      where: eq(groups.id, id),
-    });
+      // Check group exists
+      const group = await db.query.groups.findFirst({
+        where: eq(groups.id, id),
+      });
 
-    if (!group) {
-      return c.json({ error: 'Group not found' }, 404);
+      if (!group) {
+        return c.json({ error: 'Group not found' }, 404);
+      }
+
+      // Initialize providers (non-fatal — sync handles missing providers)
+      try {
+        await providerRegistry.initializeAll(c.env);
+      } catch (initError) {
+        console.error('Provider initialization error (continuing):', initError);
+      }
+
+      const syncService = new SyncService(db, providerRegistry, c.env);
+      const result = await syncService.syncGroup(id);
+
+      return c.json(result);
+    } catch (error) {
+      console.error('Sync group failed:', error);
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }, 500);
     }
-
-    // Initialize providers
-    await providerRegistry.initializeAll(c.env);
-
-    const syncService = new SyncService(db, providerRegistry, c.env);
-    const result = await syncService.syncGroup(id);
-
-    return c.json(result);
   });
 
   /**
@@ -448,6 +473,144 @@ export function createAdminApiRoutes() {
     });
   });
 
+  // ============== Group Members ==============
+
+  const addGroupMemberSchema = z.object({
+    userId: z.string().min(1),
+    role: z.enum(['owner', 'admin', 'member']).optional().default('member'),
+  });
+
+  const updateGroupMemberSchema = z.object({
+    role: z.enum(['owner', 'admin', 'member']),
+  });
+
+  /**
+   * List group members
+   * GET /api/admin/groups/:groupId/members
+   */
+  app.get('/groups/:groupId/members', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
+    if (!group) return c.json({ error: 'Group not found' }, 404);
+
+    const members = await db.query.groupMembers.findMany({
+      where: eq(groupMembers.groupId, groupId),
+    });
+
+    // Enrich with user info
+    const membersWithUsers = await Promise.all(
+      members.map(async (member) => {
+        const user = await db.query.users.findFirst({ where: eq(users.id, member.userId) });
+        return {
+          id: member.id,
+          role: member.role,
+          createdAt: member.createdAt,
+          user: user ? {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            username: user.username,
+            avatarUrl: user.avatarUrl,
+          } : null,
+        };
+      })
+    );
+
+    return c.json({ members: membersWithUsers });
+  });
+
+  /**
+   * Add a member to a group
+   * POST /api/admin/groups/:groupId/members
+   */
+  app.post('/groups/:groupId/members', zValidator('json', addGroupMemberSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+    const { userId, role } = c.req.valid('json');
+
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
+    if (!group) return c.json({ error: 'Group not found' }, 404);
+
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    // Check if already a member
+    const existing = await db.query.groupMembers.findFirst({
+      where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)),
+    });
+    if (existing) return c.json({ error: 'User is already a member of this group' }, 409);
+
+    await db.insert(groupMembers).values({
+      id: crypto.randomUUID(),
+      groupId,
+      userId,
+      role,
+    });
+
+    return c.json({ success: true, message: 'Member added' }, 201);
+  });
+
+  /**
+   * Update a group member's role
+   * PATCH /api/admin/groups/:groupId/members/:memberId
+   */
+  app.patch('/groups/:groupId/members/:memberId', zValidator('json', updateGroupMemberSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+    const memberId = c.req.param('memberId');
+    const { role } = c.req.valid('json');
+
+    const member = await db.query.groupMembers.findFirst({
+      where: and(eq(groupMembers.id, memberId), eq(groupMembers.groupId, groupId)),
+    });
+    if (!member) return c.json({ error: 'Member not found' }, 404);
+
+    // If demoting the last owner, prevent it
+    if (member.role === 'owner' && role !== 'owner') {
+      const owners = await db.query.groupMembers.findMany({
+        where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.role, 'owner')),
+      });
+      if (owners.length <= 1) {
+        return c.json({ error: 'Cannot remove the last owner' }, 400);
+      }
+    }
+
+    await db.update(groupMembers).set({ role }).where(eq(groupMembers.id, memberId));
+
+    return c.json({ success: true });
+  });
+
+  /**
+   * Remove a member from a group
+   * DELETE /api/admin/groups/:groupId/members/:memberId
+   */
+  app.delete('/groups/:groupId/members/:memberId', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+    const memberId = c.req.param('memberId');
+
+    const member = await db.query.groupMembers.findFirst({
+      where: and(eq(groupMembers.id, memberId), eq(groupMembers.groupId, groupId)),
+    });
+    if (!member) return c.json({ error: 'Member not found' }, 404);
+
+    // Prevent removing the last owner
+    if (member.role === 'owner') {
+      const owners = await db.query.groupMembers.findMany({
+        where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.role, 'owner')),
+      });
+      if (owners.length <= 1) {
+        return c.json({ error: 'Cannot remove the last owner' }, 400);
+      }
+    }
+
+    await db.delete(groupMembers).where(eq(groupMembers.id, memberId));
+
+    return c.json({ success: true, message: 'Member removed' });
+  });
+
   // ============== Users ==============
 
   const listUsersSchema = z.object({
@@ -475,7 +638,13 @@ export function createAdminApiRoutes() {
       conditions.push(eq(users.role, role));
     }
     if (search) {
-      conditions.push(like(users.email, `%${search}%`));
+      conditions.push(
+        or(
+          like(users.email, `%${search}%`),
+          like(users.name, `%${search}%`),
+          like(users.username, `%${search}%`),
+        )!
+      );
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
@@ -534,16 +703,38 @@ export function createAdminApiRoutes() {
       return c.json({ error: 'User not found' }, 404);
     }
 
-    const identities = await db.query.userIdentities.findMany({
-      where: eq(userIdentities.userId, id),
-    });
+    // Fetch identities, badges, and feature flag overrides in parallel
+    const [identities, userBadgeRows, flagOverrides] = await Promise.all([
+      db.query.userIdentities.findMany({ where: eq(userIdentities.userId, id) }),
+      db.query.userBadges.findMany({ where: eq(userBadges.userId, id) }),
+      db.query.userFeatureFlags.findMany({ where: eq(userFeatureFlags.userId, id) }),
+    ]);
+
+    // Enrich badges with badge info
+    const badgesWithInfo = await Promise.all(
+      userBadgeRows.map(async (ub) => {
+        const badge = await db.query.badges.findFirst({ where: eq(badges.id, ub.badgeId) });
+        return badge ? { ...badge, awardedAt: ub.awardedAt, userBadgeId: ub.id } : null;
+      })
+    );
+
+    // Enrich flag overrides with flag info
+    const flagsWithInfo = await Promise.all(
+      flagOverrides.map(async (fo) => {
+        const flag = await db.query.featureFlags.findFirst({ where: eq(featureFlags.id, fo.flagId) });
+        return flag ? { id: fo.id, flagId: fo.flagId, enabled: fo.enabled, flagName: flag.name, flagSlug: flag.slug } : null;
+      })
+    );
 
     return c.json({
       ...user,
       identities: identities.map((i) => ({
         provider: i.provider,
         username: i.providerUsername,
+        email: i.providerEmail,
       })),
+      badges: badgesWithInfo.filter(Boolean),
+      featureFlagOverrides: flagsWithInfo.filter(Boolean),
     });
   });
 
@@ -605,6 +796,102 @@ export function createAdminApiRoutes() {
     await db.delete(users).where(eq(users.id, id));
 
     return c.json({ success: true, message: 'User deleted' });
+  });
+
+  /**
+   * Merge two user accounts
+   * POST /api/admin/users/merge
+   *
+   * Transfers identities from mergeUserId to keepUserId,
+   * transfers favorites, deletes sessions, and deletes the merge user.
+   */
+  app.post('/users/merge', zValidator('json', z.object({
+    keepUserId: z.string().min(1),
+    mergeUserId: z.string().min(1),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const { keepUserId, mergeUserId } = c.req.valid('json');
+
+    if (keepUserId === mergeUserId) {
+      return c.json({ error: 'Cannot merge a user with themselves' }, 400);
+    }
+
+    // Verify both users exist
+    const keepUser = await db.query.users.findFirst({
+      where: eq(users.id, keepUserId),
+    });
+    const mergeUser = await db.query.users.findFirst({
+      where: eq(users.id, mergeUserId),
+    });
+
+    if (!keepUser) {
+      return c.json({ error: 'Keep user not found' }, 404);
+    }
+    if (!mergeUser) {
+      return c.json({ error: 'Merge user not found' }, 404);
+    }
+
+    // Get identities for both users
+    const keepIdentities = await db.query.userIdentities.findMany({
+      where: eq(userIdentities.userId, keepUserId),
+    });
+    const mergeIdentities = await db.query.userIdentities.findMany({
+      where: eq(userIdentities.userId, mergeUserId),
+    });
+
+    const keepProviders = new Set(keepIdentities.map((i) => i.provider));
+
+    // Transfer identities (skip provider conflicts)
+    let transferredIdentities = 0;
+    let skippedIdentities = 0;
+    for (const identity of mergeIdentities) {
+      if (keepProviders.has(identity.provider)) {
+        skippedIdentities++;
+        continue;
+      }
+      await db.update(userIdentities)
+        .set({ userId: keepUserId })
+        .where(eq(userIdentities.id, identity.id));
+      transferredIdentities++;
+    }
+
+    // Transfer favorites (skip duplicates via ignore)
+    const mergeFavorites = await db.query.userFavorites.findMany({
+      where: eq(userFavorites.userId, mergeUserId),
+    });
+
+    let transferredFavorites = 0;
+    for (const fav of mergeFavorites) {
+      try {
+        await db.update(userFavorites)
+          .set({ userId: keepUserId })
+          .where(eq(userFavorites.id, fav.id));
+        transferredFavorites++;
+      } catch {
+        // Duplicate — delete instead
+        await db.delete(userFavorites).where(eq(userFavorites.id, fav.id));
+      }
+    }
+
+    // Delete merge user's sessions
+    await db.delete(sessions).where(eq(sessions.userId, mergeUserId));
+
+    // Delete any remaining identities for merge user (conflicts)
+    await db.delete(userIdentities).where(eq(userIdentities.userId, mergeUserId));
+
+    // Delete remaining favorites for merge user
+    await db.delete(userFavorites).where(eq(userFavorites.userId, mergeUserId));
+
+    // Delete the merge user
+    await db.delete(users).where(eq(users.id, mergeUserId));
+
+    return c.json({
+      success: true,
+      message: 'Users merged successfully',
+      transferredIdentities,
+      skippedIdentities,
+      transferredFavorites,
+    });
   });
 
   // ============== OAuth Clients ==============
@@ -787,6 +1074,501 @@ export function createAdminApiRoutes() {
       activeTokens: tokenCount,
       pendingCodes: pendingCodeCount,
     });
+  });
+
+  // ============== Badges ==============
+
+  const createBadgeSchema = z.object({
+    name: z.string().min(1).max(100),
+    slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
+    description: z.string().max(500).optional(),
+    icon: z.string().min(1).max(50),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().default('#E5574F'),
+    sortOrder: z.number().int().min(0).optional().default(0),
+  });
+
+  const updateBadgeSchema = z.object({
+    name: z.string().min(1).max(100).optional(),
+    slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/).optional(),
+    description: z.string().max(500).optional().nullable(),
+    icon: z.string().min(1).max(50).optional(),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    sortOrder: z.number().int().min(0).optional(),
+  });
+
+  /**
+   * List all badges
+   * GET /api/admin/badges
+   */
+  app.get('/badges', async (c) => {
+    const db = createDatabase(c.env.DB);
+
+    const allBadges = await db.query.badges.findMany({
+      orderBy: [badges.sortOrder],
+    });
+
+    // Get user count per badge
+    const badgesWithCounts = await Promise.all(
+      allBadges.map(async (badge) => {
+        const badgeUsers = await db.query.userBadges.findMany({
+          where: eq(userBadges.badgeId, badge.id),
+        });
+        return { ...badge, userCount: badgeUsers.length };
+      })
+    );
+
+    return c.json({ badges: badgesWithCounts });
+  });
+
+  /**
+   * Create a badge
+   * POST /api/admin/badges
+   */
+  app.post('/badges', zValidator('json', createBadgeSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const data = c.req.valid('json');
+
+    // Check slug uniqueness
+    const existing = await db.query.badges.findFirst({
+      where: eq(badges.slug, data.slug),
+    });
+    if (existing) {
+      return c.json({ error: 'A badge with this slug already exists' }, 409);
+    }
+
+    const id = crypto.randomUUID();
+    await db.insert(badges).values({
+      id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      icon: data.icon,
+      color: data.color,
+      sortOrder: data.sortOrder,
+    });
+
+    const created = await db.query.badges.findFirst({
+      where: eq(badges.id, id),
+    });
+
+    return c.json(created, 201);
+  });
+
+  /**
+   * Update a badge
+   * PATCH /api/admin/badges/:id
+   */
+  app.patch('/badges/:id', zValidator('json', updateBadgeSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+    const data = c.req.valid('json');
+
+    const existing = await db.query.badges.findFirst({
+      where: eq(badges.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Badge not found' }, 404);
+    }
+
+    // Check slug uniqueness if changing
+    if (data.slug && data.slug !== existing.slug) {
+      const slugExists = await db.query.badges.findFirst({
+        where: eq(badges.slug, data.slug),
+      });
+      if (slugExists) {
+        return c.json({ error: 'A badge with this slug already exists' }, 409);
+      }
+    }
+
+    await db.update(badges).set(data).where(eq(badges.id, id));
+
+    const updated = await db.query.badges.findFirst({
+      where: eq(badges.id, id),
+    });
+
+    return c.json(updated);
+  });
+
+  /**
+   * Delete a badge
+   * DELETE /api/admin/badges/:id
+   */
+  app.delete('/badges/:id', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const existing = await db.query.badges.findFirst({
+      where: eq(badges.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Badge not found' }, 404);
+    }
+
+    // Delete user_badges first (cascade should handle, but be explicit)
+    await db.delete(userBadges).where(eq(userBadges.badgeId, id));
+    await db.delete(badges).where(eq(badges.id, id));
+
+    return c.json({ success: true, message: 'Badge deleted' });
+  });
+
+  /**
+   * Award a badge to a user
+   * POST /api/admin/users/:userId/badges/:badgeId
+   */
+  app.post('/users/:userId/badges/:badgeId', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const userId = c.req.param('userId');
+    const badgeId = c.req.param('badgeId');
+
+    // Verify user and badge exist
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    const badge = await db.query.badges.findFirst({ where: eq(badges.id, badgeId) });
+    if (!badge) return c.json({ error: 'Badge not found' }, 404);
+
+    // Check if already awarded
+    const existing = await db.query.userBadges.findFirst({
+      where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)),
+    });
+    if (existing) {
+      return c.json({ error: 'Badge already awarded to this user' }, 409);
+    }
+
+    await db.insert(userBadges).values({
+      id: crypto.randomUUID(),
+      userId,
+      badgeId,
+    });
+
+    return c.json({ success: true, message: 'Badge awarded' }, 201);
+  });
+
+  /**
+   * Revoke a badge from a user
+   * DELETE /api/admin/users/:userId/badges/:badgeId
+   */
+  app.delete('/users/:userId/badges/:badgeId', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const userId = c.req.param('userId');
+    const badgeId = c.req.param('badgeId');
+
+    const existing = await db.query.userBadges.findFirst({
+      where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)),
+    });
+    if (!existing) {
+      return c.json({ error: 'User does not have this badge' }, 404);
+    }
+
+    await db.delete(userBadges).where(eq(userBadges.id, existing.id));
+
+    return c.json({ success: true, message: 'Badge revoked' });
+  });
+
+  // ============== Feature Flags ==============
+
+  const createFlagSchema = z.object({
+    name: z.string().min(1).max(100),
+    slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
+    description: z.string().max(500).optional(),
+    enabledByDefault: z.boolean().optional().default(false),
+  });
+
+  const updateFlagSchema = z.object({
+    name: z.string().min(1).max(100).optional(),
+    slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/).optional(),
+    description: z.string().max(500).optional().nullable(),
+    enabledByDefault: z.boolean().optional(),
+  });
+
+  /**
+   * List all feature flags
+   * GET /api/admin/flags
+   */
+  app.get('/flags', async (c) => {
+    const db = createDatabase(c.env.DB);
+
+    const allFlags = await db.query.featureFlags.findMany({
+      orderBy: [featureFlags.createdAt],
+    });
+
+    // Get override counts per flag
+    const flagsWithCounts = await Promise.all(
+      allFlags.map(async (flag) => {
+        const userOverrides = await db.query.userFeatureFlags.findMany({
+          where: eq(userFeatureFlags.flagId, flag.id),
+        });
+        const groupOverrides = await db.query.groupFeatureFlags.findMany({
+          where: eq(groupFeatureFlags.flagId, flag.id),
+        });
+        return {
+          ...flag,
+          userOverrideCount: userOverrides.length,
+          groupOverrideCount: groupOverrides.length,
+        };
+      })
+    );
+
+    return c.json({ flags: flagsWithCounts });
+  });
+
+  /**
+   * Create a feature flag
+   * POST /api/admin/flags
+   */
+  app.post('/flags', zValidator('json', createFlagSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const data = c.req.valid('json');
+
+    const existing = await db.query.featureFlags.findFirst({
+      where: eq(featureFlags.slug, data.slug),
+    });
+    if (existing) {
+      return c.json({ error: 'A flag with this slug already exists' }, 409);
+    }
+
+    const id = crypto.randomUUID();
+    await db.insert(featureFlags).values({
+      id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      enabledByDefault: data.enabledByDefault,
+    });
+
+    const created = await db.query.featureFlags.findFirst({
+      where: eq(featureFlags.id, id),
+    });
+
+    return c.json(created, 201);
+  });
+
+  /**
+   * Update a feature flag
+   * PATCH /api/admin/flags/:id
+   */
+  app.patch('/flags/:id', zValidator('json', updateFlagSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+    const data = c.req.valid('json');
+
+    const existing = await db.query.featureFlags.findFirst({
+      where: eq(featureFlags.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Flag not found' }, 404);
+    }
+
+    // Check slug uniqueness if changing
+    if (data.slug && data.slug !== existing.slug) {
+      const slugExists = await db.query.featureFlags.findFirst({
+        where: eq(featureFlags.slug, data.slug),
+      });
+      if (slugExists) {
+        return c.json({ error: 'A flag with this slug already exists' }, 409);
+      }
+    }
+
+    await db.update(featureFlags).set(data).where(eq(featureFlags.id, id));
+
+    const updated = await db.query.featureFlags.findFirst({
+      where: eq(featureFlags.id, id),
+    });
+
+    return c.json(updated);
+  });
+
+  /**
+   * Delete a feature flag
+   * DELETE /api/admin/flags/:id
+   */
+  app.delete('/flags/:id', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const existing = await db.query.featureFlags.findFirst({
+      where: eq(featureFlags.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Flag not found' }, 404);
+    }
+
+    // Delete overrides first
+    await db.delete(userFeatureFlags).where(eq(userFeatureFlags.flagId, id));
+    await db.delete(groupFeatureFlags).where(eq(groupFeatureFlags.flagId, id));
+    await db.delete(featureFlags).where(eq(featureFlags.id, id));
+
+    return c.json({ success: true, message: 'Flag deleted' });
+  });
+
+  /**
+   * Get flag details with overrides
+   * GET /api/admin/flags/:id
+   */
+  app.get('/flags/:id', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const flag = await db.query.featureFlags.findFirst({
+      where: eq(featureFlags.id, id),
+    });
+    if (!flag) {
+      return c.json({ error: 'Flag not found' }, 404);
+    }
+
+    // Get user overrides with user info
+    const userOverrides = await db.query.userFeatureFlags.findMany({
+      where: eq(userFeatureFlags.flagId, id),
+    });
+    const userOverridesWithInfo = await Promise.all(
+      userOverrides.map(async (override) => {
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, override.userId),
+        });
+        return {
+          ...override,
+          userName: user?.name || user?.email || 'Unknown',
+          userEmail: user?.email,
+        };
+      })
+    );
+
+    // Get group overrides with group info
+    const groupOverrides = await db.query.groupFeatureFlags.findMany({
+      where: eq(groupFeatureFlags.flagId, id),
+    });
+    const groupOverridesWithInfo = await Promise.all(
+      groupOverrides.map(async (override) => {
+        const group = await db.query.groups.findFirst({
+          where: eq(groups.id, override.groupId),
+        });
+        return {
+          ...override,
+          groupName: group?.name || 'Unknown',
+          groupUrlname: group?.urlname,
+        };
+      })
+    );
+
+    return c.json({
+      ...flag,
+      userOverrides: userOverridesWithInfo,
+      groupOverrides: groupOverridesWithInfo,
+    });
+  });
+
+  /**
+   * Toggle user feature flag override
+   * POST /api/admin/flags/:flagId/users/:userId
+   */
+  app.post('/flags/:flagId/users/:userId', zValidator('json', z.object({
+    enabled: z.boolean(),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const flagId = c.req.param('flagId');
+    const userId = c.req.param('userId');
+    const { enabled } = c.req.valid('json');
+
+    // Verify flag and user exist
+    const flag = await db.query.featureFlags.findFirst({ where: eq(featureFlags.id, flagId) });
+    if (!flag) return c.json({ error: 'Flag not found' }, 404);
+
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    // Check if override already exists
+    const existing = await db.query.userFeatureFlags.findFirst({
+      where: and(eq(userFeatureFlags.userId, userId), eq(userFeatureFlags.flagId, flagId)),
+    });
+
+    if (existing) {
+      await db.update(userFeatureFlags).set({ enabled }).where(eq(userFeatureFlags.id, existing.id));
+    } else {
+      await db.insert(userFeatureFlags).values({
+        id: crypto.randomUUID(),
+        userId,
+        flagId,
+        enabled,
+      });
+    }
+
+    return c.json({ success: true });
+  });
+
+  /**
+   * Remove user feature flag override
+   * DELETE /api/admin/flags/:flagId/users/:userId
+   */
+  app.delete('/flags/:flagId/users/:userId', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const flagId = c.req.param('flagId');
+    const userId = c.req.param('userId');
+
+    const existing = await db.query.userFeatureFlags.findFirst({
+      where: and(eq(userFeatureFlags.userId, userId), eq(userFeatureFlags.flagId, flagId)),
+    });
+    if (!existing) {
+      return c.json({ error: 'Override not found' }, 404);
+    }
+
+    await db.delete(userFeatureFlags).where(eq(userFeatureFlags.id, existing.id));
+    return c.json({ success: true });
+  });
+
+  /**
+   * Toggle group feature flag override
+   * POST /api/admin/flags/:flagId/groups/:groupId
+   */
+  app.post('/flags/:flagId/groups/:groupId', zValidator('json', z.object({
+    enabled: z.boolean(),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const flagId = c.req.param('flagId');
+    const groupId = c.req.param('groupId');
+    const { enabled } = c.req.valid('json');
+
+    const flag = await db.query.featureFlags.findFirst({ where: eq(featureFlags.id, flagId) });
+    if (!flag) return c.json({ error: 'Flag not found' }, 404);
+
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
+    if (!group) return c.json({ error: 'Group not found' }, 404);
+
+    const existing = await db.query.groupFeatureFlags.findFirst({
+      where: and(eq(groupFeatureFlags.groupId, groupId), eq(groupFeatureFlags.flagId, flagId)),
+    });
+
+    if (existing) {
+      await db.update(groupFeatureFlags).set({ enabled }).where(eq(groupFeatureFlags.id, existing.id));
+    } else {
+      await db.insert(groupFeatureFlags).values({
+        id: crypto.randomUUID(),
+        groupId,
+        flagId,
+        enabled,
+      });
+    }
+
+    return c.json({ success: true });
+  });
+
+  /**
+   * Remove group feature flag override
+   * DELETE /api/admin/flags/:flagId/groups/:groupId
+   */
+  app.delete('/flags/:flagId/groups/:groupId', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const flagId = c.req.param('flagId');
+    const groupId = c.req.param('groupId');
+
+    const existing = await db.query.groupFeatureFlags.findFirst({
+      where: and(eq(groupFeatureFlags.groupId, groupId), eq(groupFeatureFlags.flagId, flagId)),
+    });
+    if (!existing) {
+      return c.json({ error: 'Override not found' }, 404);
+    }
+
+    await db.delete(groupFeatureFlags).where(eq(groupFeatureFlags.id, existing.id));
+    return c.json({ success: true });
   });
 
   return app;

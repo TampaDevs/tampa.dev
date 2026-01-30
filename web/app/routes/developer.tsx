@@ -20,6 +20,24 @@ interface DeveloperApp {
   activeUsers?: number;
 }
 
+interface DeveloperWebhook {
+  id: string;
+  url: string;
+  eventTypes: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface WebhookDelivery {
+  id: string;
+  eventType: string;
+  statusCode: number | null;
+  attempt: number;
+  deliveredAt: string;
+  responseBody: string | null;
+}
+
 export const meta: Route.MetaFunction = () => [
   { title: "Developer Portal | Tampa.dev" },
   { name: "description", content: "Register and manage your OAuth applications." },
@@ -34,33 +52,47 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   // Fetch user's apps
-  const apiUrl = import.meta.env.EVENTS_API_URL || "https://events.api.tampa.dev";
+  const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
 
   let apps: DeveloperApp[] = [];
-  try {
-    const response = await fetch(`${apiUrl}/api/developer/apps`, {
-      headers: {
-        Accept: "application/json",
-        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
-      },
-    });
+  let webhooksList: DeveloperWebhook[] = [];
 
-    if (response.ok) {
-      const data = await response.json() as { apps: DeveloperApp[] };
+  try {
+    const [appsRes, webhooksRes] = await Promise.all([
+      fetch(`${apiUrl}/developer/apps`, {
+        headers: {
+          Accept: "application/json",
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+      }),
+      fetch(`${apiUrl}/developer/webhooks`, {
+        headers: {
+          Accept: "application/json",
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+      }),
+    ]);
+
+    if (appsRes.ok) {
+      const data = await appsRes.json() as { apps: DeveloperApp[] };
       apps = data.apps || [];
     }
+    if (webhooksRes.ok) {
+      const data = await webhooksRes.json() as { webhooks: DeveloperWebhook[] };
+      webhooksList = data.webhooks || [];
+    }
   } catch (error) {
-    console.error("Failed to fetch apps:", error);
+    console.error("Failed to fetch developer data:", error);
   }
 
-  return { user, apps };
+  return { user, apps, webhooks: webhooksList };
 }
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const cookieHeader = request.headers.get("Cookie") || undefined;
-  const apiUrl = import.meta.env.EVENTS_API_URL || "https://events.api.tampa.dev";
+  const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
 
   if (intent === "create") {
     const name = formData.get("name") as string;
@@ -72,7 +104,7 @@ export async function action({ request }: Route.ActionArgs) {
     const website = formData.get("website") as string;
 
     try {
-      const response = await fetch(`${apiUrl}/api/developer/apps`, {
+      const response = await fetch(`${apiUrl}/developer/apps`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +134,7 @@ export async function action({ request }: Route.ActionArgs) {
     const clientId = formData.get("clientId") as string;
 
     try {
-      const response = await fetch(`${apiUrl}/api/developer/apps/${clientId}`, {
+      const response = await fetch(`${apiUrl}/developer/apps/${clientId}`, {
         method: "DELETE",
         headers: {
           ...(cookieHeader ? { Cookie: cookieHeader } : {}),
@@ -124,7 +156,7 @@ export async function action({ request }: Route.ActionArgs) {
     const clientId = formData.get("clientId") as string;
 
     try {
-      const response = await fetch(`${apiUrl}/api/developer/apps/${clientId}/regenerate-secret`, {
+      const response = await fetch(`${apiUrl}/developer/apps/${clientId}/regenerate-secret`, {
         method: "POST",
         headers: {
           ...(cookieHeader ? { Cookie: cookieHeader } : {}),
@@ -148,7 +180,7 @@ export async function action({ request }: Route.ActionArgs) {
     const logoUri = formData.get("logoUri") as string;
 
     try {
-      const response = await fetch(`${apiUrl}/api/developer/apps/${clientId}`, {
+      const response = await fetch(`${apiUrl}/developer/apps/${clientId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -162,6 +194,105 @@ export async function action({ request }: Route.ActionArgs) {
       } else {
         const error = await response.json() as { error?: string };
         return { success: false, error: error.error || "Failed to update logo" };
+      }
+    } catch (error) {
+      return { success: false, error: "Network error" };
+    }
+  }
+
+  // ============== Webhook Actions ==============
+
+  if (intent === "createWebhook") {
+    const url = formData.get("url") as string;
+    const eventTypesRaw = formData.get("eventTypes") as string;
+    const eventTypes = eventTypesRaw ? eventTypesRaw.split(",").map((s) => s.trim()).filter(Boolean) : ["*"];
+
+    try {
+      const response = await fetch(`${apiUrl}/developer/webhooks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+        body: JSON.stringify({ url, eventTypes }),
+      });
+
+      if (response.ok) {
+        const data = await response.json() as { id: string; secret: string };
+        return { success: true, webhookCreated: data };
+      } else {
+        const error = await response.json() as { error?: string };
+        return { success: false, error: error.error || "Failed to create webhook" };
+      }
+    } catch (error) {
+      return { success: false, error: "Network error" };
+    }
+  }
+
+  if (intent === "toggleWebhook") {
+    const webhookId = formData.get("webhookId") as string;
+    const isActive = formData.get("isActive") === "true";
+
+    try {
+      const response = await fetch(`${apiUrl}/developer/webhooks/${webhookId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+        body: JSON.stringify({ isActive }),
+      });
+
+      if (response.ok) {
+        return { success: true };
+      } else {
+        const error = await response.json() as { error?: string };
+        return { success: false, error: error.error || "Failed to update webhook" };
+      }
+    } catch (error) {
+      return { success: false, error: "Network error" };
+    }
+  }
+
+  if (intent === "deleteWebhook") {
+    const webhookId = formData.get("webhookId") as string;
+
+    try {
+      const response = await fetch(`${apiUrl}/developer/webhooks/${webhookId}`, {
+        method: "DELETE",
+        headers: {
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+      });
+
+      if (response.ok) {
+        return { success: true };
+      } else {
+        const error = await response.json() as { error?: string };
+        return { success: false, error: error.error || "Failed to delete webhook" };
+      }
+    } catch (error) {
+      return { success: false, error: "Network error" };
+    }
+  }
+
+  if (intent === "testWebhook") {
+    const webhookId = formData.get("webhookId") as string;
+
+    try {
+      const response = await fetch(`${apiUrl}/developer/webhooks/${webhookId}/test`, {
+        method: "POST",
+        headers: {
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json() as { deliveryId: string; statusCode: number | null; success: boolean };
+        return { success: true, testResult: data };
+      } else {
+        const error = await response.json() as { error?: string };
+        return { success: false, error: error.error || "Failed to send test" };
       }
     } catch (error) {
       return { success: false, error: "Network error" };
@@ -589,12 +720,267 @@ function AppCard({ app, onDelete, onLogoUpdate }: { app: DeveloperApp; onDelete:
   );
 }
 
+const AVAILABLE_EVENT_TYPES = [
+  { value: "*", label: "All Events" },
+  { value: "event.created", label: "Event Created" },
+  { value: "event.updated", label: "Event Updated" },
+  { value: "event.deleted", label: "Event Deleted" },
+  { value: "sync.completed", label: "Sync Completed" },
+  { value: "user.badge_awarded", label: "Badge Awarded" },
+];
+
+function WebhookCard({
+  webhook,
+  onToggle,
+  onDelete,
+  onTest,
+}: {
+  webhook: DeveloperWebhook;
+  onToggle: (id: string, isActive: boolean) => void;
+  onDelete: (id: string) => void;
+  onTest: (id: string) => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showDeliveries, setShowDeliveries] = useState(false);
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+
+  const loadDeliveries = async () => {
+    if (showDeliveries) {
+      setShowDeliveries(false);
+      return;
+    }
+    setLoadingDeliveries(true);
+    try {
+      const response = await fetch(`/api/developer/webhooks/${webhook.id}/deliveries`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = (await response.json()) as { deliveries: WebhookDelivery[] };
+        setDeliveries(data.deliveries);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingDeliveries(false);
+      setShowDeliveries(true);
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className={`inline-block w-2 h-2 rounded-full ${webhook.isActive ? "bg-green-500" : "bg-gray-400"}`} />
+            <code className="text-sm font-mono text-gray-900 dark:text-white truncate block">
+              {webhook.url}
+            </code>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {webhook.eventTypes.map((et) => (
+              <span
+                key={et}
+                className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded"
+              >
+                {et}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => onToggle(webhook.id, !webhook.isActive)}
+          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${webhook.isActive
+              ? "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+              : "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
+            }`}
+        >
+          {webhook.isActive ? "Pause" : "Enable"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onTest(webhook.id)}
+          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+        >
+          Send Test
+        </button>
+
+        <button
+          type="button"
+          onClick={loadDeliveries}
+          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+        >
+          {loadingDeliveries ? "..." : showDeliveries ? "Hide Deliveries" : "Deliveries"}
+        </button>
+
+        {confirmDelete ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onDelete(webhook.id)}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+            >
+              Confirm Delete
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(false)}
+              className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            Delete
+          </button>
+        )}
+      </div>
+
+      {/* Delivery Log */}
+      {showDeliveries && (
+        <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Recent Deliveries
+          </h4>
+          {deliveries.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No deliveries yet.</p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-auto">
+              {deliveries.map((d) => (
+                <div
+                  key={d.id}
+                  className="flex items-center justify-between gap-3 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${d.statusCode && d.statusCode >= 200 && d.statusCode < 300
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                        }`}
+                    />
+                    <span className="text-gray-600 dark:text-gray-400 truncate">
+                      {d.eventType}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className={`font-mono text-xs ${d.statusCode && d.statusCode >= 200 && d.statusCode < 300
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                      }`}>
+                      {d.statusCode || "ERR"}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-500">
+                      {new Date(d.deliveredAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <p className="mt-3 text-xs text-gray-500 dark:text-gray-500">
+        Created {new Date(webhook.createdAt).toLocaleDateString()}
+      </p>
+    </div>
+  );
+}
+
+function WebhookSecretModal({
+  secret,
+  onClose,
+}: {
+  secret: string;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    await navigator.clipboard.writeText(secret);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Webhook Created!</h2>
+        </div>
+
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            <strong>Important:</strong> Copy your webhook signing secret now. You won't be able to see it again!
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Signing Secret
+          </label>
+          <div className="flex gap-2">
+            <code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-mono text-gray-900 dark:text-white overflow-x-auto">
+              {secret}
+            </code>
+            <button
+              onClick={copyToClipboard}
+              className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Use this secret to verify webhook signatures via the <code className="text-xs">X-Webhook-Signature</code> header (HMAC-SHA256).
+          </p>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="mt-6 w-full px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+        >
+          I've saved my secret
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DeveloperPortal() {
-  const { apps } = useLoaderData<typeof loader>();
+  const { apps, webhooks: webhooksList } = useLoaderData<typeof loader>();
+  const [activeTab, setActiveTab] = useState<"apps" | "webhooks">("apps");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showWebhookForm, setShowWebhookForm] = useState(false);
   const [newCredentials, setNewCredentials] = useState<{ clientId: string; clientSecret: string } | null>(null);
+  const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookEventTypes, setWebhookEventTypes] = useState("*");
   const fetcher = useFetcher();
+  const webhookFetcher = useFetcher<{ success: boolean; webhookCreated?: { secret: string }; testResult?: { statusCode: number | null; success: boolean }; error?: string }>();
   const { revalidate } = useRevalidator();
+
+  // Handle webhook creation result
+  if (webhookFetcher.data?.webhookCreated?.secret && !newWebhookSecret) {
+    setNewWebhookSecret(webhookFetcher.data.webhookCreated.secret);
+    setShowWebhookForm(false);
+    setWebhookUrl("");
+    setWebhookEventTypes("*");
+  }
 
   const handleAppCreated = (credentials: { clientId: string; clientSecret: string }) => {
     setNewCredentials(credentials);
@@ -609,7 +995,6 @@ export default function DeveloperPortal() {
   };
 
   const handleLogoUpdate = async (clientId: string, logoUri: string) => {
-    // Update logo via direct API call (bypasses React Router CSRF check)
     try {
       const response = await fetch(`/api/developer/apps/${clientId}`, {
         method: "PATCH",
@@ -625,8 +1010,28 @@ export default function DeveloperPortal() {
       console.error("Failed to update logo:", error);
     }
 
-    // Revalidate to refresh the page data
     revalidate();
+  };
+
+  const handleToggleWebhook = (webhookId: string, isActive: boolean) => {
+    fetcher.submit(
+      { intent: "toggleWebhook", webhookId, isActive: String(isActive) },
+      { method: "post" }
+    );
+  };
+
+  const handleDeleteWebhook = (webhookId: string) => {
+    fetcher.submit(
+      { intent: "deleteWebhook", webhookId },
+      { method: "post" }
+    );
+  };
+
+  const handleTestWebhook = (webhookId: string) => {
+    fetcher.submit(
+      { intent: "testWebhook", webhookId },
+      { method: "post" }
+    );
   };
 
   return (
@@ -639,87 +1044,222 @@ export default function DeveloperPortal() {
         </p>
       </div>
 
-      {/* OAuth Documentation Link */}
+      {/* Quick Links */}
       <div className="mb-8 p-4 bg-navy/5 dark:bg-navy-light/10 rounded-xl border border-navy/10 dark:border-navy-light/20">
         <div className="flex items-start gap-3">
           <svg className="w-5 h-5 text-navy dark:text-navy-light mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <div>
+          <div className="flex-1">
             <h3 className="font-medium text-gray-900 dark:text-white">OAuth 2.1 with PKCE</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Tampa.dev uses OAuth 2.1 with PKCE for secure authorization. Your app can request access to user profiles, events, groups, RSVPs, and favorites.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">profile</code>
-              <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">events:read</code>
-              <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">groups:read</code>
-              <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">favorites:read</code>
-              <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">favorites:write</code>
+            <div className="mt-3 flex items-center gap-4">
+              <a
+                href="/developer/docs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-navy dark:bg-navy-light text-white text-sm font-medium rounded-lg hover:bg-navy/90 dark:hover:bg-navy-light/90 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                API Documentation
+              </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Create App Button / Form */}
-      {showCreateForm ? (
-        <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Register New Application</h2>
+      {/* Tabs */}
+      <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+        <nav className="flex gap-6" aria-label="Tabs">
+          <button
+            onClick={() => setActiveTab("apps")}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "apps"
+                ? "border-coral text-coral"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+          >
+            Applications ({apps.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("webhooks")}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "webhooks"
+                ? "border-coral text-coral"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+          >
+            Webhooks ({webhooksList.length})
+          </button>
+        </nav>
+      </div>
+
+      {/* Apps Tab */}
+      {activeTab === "apps" && (
+        <>
+          {/* Create App Button / Form */}
+          {showCreateForm ? (
+            <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Register New Application</h2>
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <CreateAppForm onSuccess={handleAppCreated} />
+            </div>
+          ) : (
             <button
-              onClick={() => setShowCreateForm(false)}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              onClick={() => setShowCreateForm(true)}
+              className="mb-8 inline-flex items-center gap-2 px-4 py-2 bg-coral hover:bg-coral-dark text-white font-medium rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
+              Register New Application
             </button>
-          </div>
-          <CreateAppForm onSuccess={handleAppCreated} />
-        </div>
-      ) : (
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="mb-8 inline-flex items-center gap-2 px-4 py-2 bg-coral hover:bg-coral-dark text-white font-medium rounded-lg transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Register New Application
-        </button>
+          )}
+
+          {/* Apps List */}
+          {apps.length > 0 ? (
+            <div className="grid gap-4">
+              {apps.map((app) => (
+                <AppCard
+                  key={app.clientId}
+                  app={app}
+                  onDelete={() => handleDeleteApp(app.clientId)}
+                  onLogoUpdate={handleLogoUpdate}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+              <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No applications yet
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Register your first OAuth application to get started.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Apps List */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Your Applications ({apps.length})
-        </h2>
+      {/* Webhooks Tab */}
+      {activeTab === "webhooks" && (
+        <>
+          {/* Create Webhook Form */}
+          {showWebhookForm ? (
+            <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Create Webhook</h2>
+                <button
+                  onClick={() => setShowWebhookForm(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <webhookFetcher.Form method="post" className="space-y-4">
+                <input type="hidden" name="intent" value="createWebhook" />
+                <div>
+                  <label htmlFor="webhookUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Payload URL *
+                  </label>
+                  <input
+                    type="url"
+                    id="webhookUrl"
+                    name="url"
+                    required
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral focus:border-transparent"
+                    placeholder="https://example.com/webhooks/tampadevs"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="webhookEvents" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Event Types
+                  </label>
+                  <select
+                    id="webhookEvents"
+                    value={webhookEventTypes}
+                    onChange={(e) => setWebhookEventTypes(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral focus:border-transparent"
+                  >
+                    {AVAILABLE_EVENT_TYPES.map((et) => (
+                      <option key={et.value} value={et.value}>{et.label}</option>
+                    ))}
+                  </select>
+                  <input type="hidden" name="eventTypes" value={webhookEventTypes} />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Select "All Events" to receive every event type.
+                  </p>
+                </div>
+                {webhookFetcher.data?.error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-sm text-red-600 dark:text-red-400">{webhookFetcher.data.error}</p>
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={webhookFetcher.state !== "idle"}
+                  className="w-full px-4 py-2 bg-coral hover:bg-coral-dark text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {webhookFetcher.state !== "idle" ? "Creating..." : "Create Webhook"}
+                </button>
+              </webhookFetcher.Form>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowWebhookForm(true)}
+              className="mb-8 inline-flex items-center gap-2 px-4 py-2 bg-coral hover:bg-coral-dark text-white font-medium rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Create Webhook
+            </button>
+          )}
 
-        {apps.length > 0 ? (
-          <div className="grid gap-4">
-            {apps.map((app) => (
-              <AppCard
-                key={app.clientId}
-                app={app}
-                onDelete={() => handleDeleteApp(app.clientId)}
-                onLogoUpdate={handleLogoUpdate}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
-            <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No applications yet
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Register your first OAuth application to get started.
-            </p>
-          </div>
-        )}
-      </div>
+          {/* Webhooks List */}
+          {webhooksList.length > 0 ? (
+            <div className="grid gap-4">
+              {webhooksList.map((wh) => (
+                <WebhookCard
+                  key={wh.id}
+                  webhook={wh}
+                  onToggle={handleToggleWebhook}
+                  onDelete={handleDeleteWebhook}
+                  onTest={handleTestWebhook}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+              <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No webhooks yet
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Create a webhook to receive real-time notifications when events occur.
+              </p>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Credentials Modal */}
       {newCredentials && (
@@ -727,8 +1267,18 @@ export default function DeveloperPortal() {
           credentials={newCredentials}
           onClose={() => {
             setNewCredentials(null);
-            // Reload page to show new app
             window.location.reload();
+          }}
+        />
+      )}
+
+      {/* Webhook Secret Modal */}
+      {newWebhookSecret && (
+        <WebhookSecretModal
+          secret={newWebhookSecret}
+          onClose={() => {
+            setNewWebhookSecret(null);
+            revalidate();
           }}
         />
       )}

@@ -16,7 +16,7 @@
  *
  * Examples:
  *   npm run generate-openapi
- *   npm run generate-openapi https://events.api.tampa.dev/openapi.json
+ *   npm run generate-openapi https://api.tampa.dev/openapi.json
  */
 
 import * as fs from 'fs';
@@ -73,7 +73,7 @@ async function generateSpec() {
     console.error('   1. Start the server: npm start');
     console.error('   2. In another terminal: npm run generate-openapi\n');
     console.error('   Or fetch from production:');
-    console.error('   npm run generate-openapi https://events.api.tampa.dev/openapi.json\n');
+    console.error('   npm run generate-openapi https://api.tampa.dev/openapi.json\n');
     process.exit(1);
   }
 }

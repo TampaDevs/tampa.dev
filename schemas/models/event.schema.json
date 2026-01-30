@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://events.api.tampa.dev/2026-01-25/schemas/event",
+  "$id": "https://api.tampa.dev/2026-01-25/schemas/event",
   "title": "Event Schema",
   "description": "Schema for event data - core fields common across event providers",
   "$ref": "#/definitions/Event",
@@ -93,11 +93,14 @@
             "baseUrl": {
               "type": "string",
               "format": "uri"
+            },
+            "directUrl": {
+              "type": "string",
+              "format": "uri"
             }
           },
           "required": [
-            "id",
-            "baseUrl"
+            "id"
           ],
           "additionalProperties": false
         },

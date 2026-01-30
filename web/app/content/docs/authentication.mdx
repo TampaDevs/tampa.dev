@@ -1,0 +1,47 @@
+---
+title: Authentication
+description: OAuth 2.1 with PKCE authorization flow for Tampa.dev
+order: 1
+---
+
+# Authentication
+
+Tampa.dev uses **OAuth 2.1 with PKCE** for authorization. This is the recommended
+flow for all applications — both server-side and single-page apps.
+
+## Authorization Flow
+
+1. Register an application in the [Developer Portal](/developer)
+2. Generate a PKCE code verifier and challenge
+3. Redirect the user to: `https://tampa.dev/oauth/authorize`
+4. User approves your app and is redirected back with an authorization code
+5. Exchange the code for tokens at: `https://tampa.dev/oauth/token`
+6. Use the access token to call API endpoints on `https://api.tampa.dev`: `Authorization: Bearer <token>`
+
+## Authorization URL Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `response_type` | Yes | Must be `code` |
+| `client_id` | Yes | Your app's client ID |
+| `redirect_uri` | Yes | One of your registered redirect URIs |
+| `scope` | Yes | Space-separated list of scopes |
+| `code_challenge` | Yes | PKCE code challenge (S256) |
+| `code_challenge_method` | Yes | Must be `S256` |
+| `state` | Recommended | Random string to prevent CSRF |
+
+## Token Exchange
+
+After the user approves, exchange the authorization code for tokens:
+
+```bash
+curl -X POST https://tampa.dev/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "code=AUTH_CODE_HERE" \
+  -d "redirect_uri=https://myapp.com/callback" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "code_verifier=YOUR_CODE_VERIFIER"
+```
+
+The response includes an `access_token` and `refresh_token`.

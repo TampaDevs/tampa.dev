@@ -46,7 +46,7 @@ export function eventToIcal(event: Event): any {
       .format('YYYY-M-D-H-m')
       .split('-')
       .map((v: string) => parseInt(v, 10)),
-    productId: 'events.api.tampa.dev',
+    productId: 'api.tampa.dev',
     uid: event.id,
     startInputType: 'utc',
     startOutputType: 'utc',
@@ -114,7 +114,7 @@ export function eventToIcalLegacy(event: any): any {
       .format('YYYY-M-D-H-m')
       .split('-')
       .map((v: string) => parseInt(v, 10)),
-    productId: 'events.api.tampa.dev',
+    productId: 'api.tampa.dev',
     uid: event.data.id,
     startInputType: 'utc',
     startOutputType: 'utc',

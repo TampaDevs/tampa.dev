@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { users, sessions } from '../db/schema';
 import type { Env } from '../../types/worker';
+import { getSessionCookieName } from '../lib/session';
 import { generatePresignedUploadUrl } from '../lib/r2-presign.js';
 
 // ============== Constants ==============
@@ -70,7 +71,8 @@ async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
   const cookieHeader = c.req.raw.headers.get('Cookie');
   if (!cookieHeader) return null;
 
-  const sessionMatch = cookieHeader.match(/session=([^;]+)/);
+  const cookieName = getSessionCookieName(c.env);
+  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
   const sessionToken = sessionMatch?.[1];
   if (!sessionToken) return null;
 
@@ -362,7 +364,7 @@ export function createUploadRoutes() {
       return c.json({ error: 'Uploads not configured' }, 500);
     }
 
-    const key = c.req.path.replace('/api/uploads/file/', '');
+    const key = c.req.path.replace('/uploads/file/', '');
     if (!key) {
       return c.json({ error: 'Invalid file path' }, 400);
     }
@@ -402,7 +404,7 @@ export function createUploadRoutes() {
       return c.json({ error: 'Uploads not configured' }, 500);
     }
 
-    const key = c.req.path.replace('/api/uploads/file/', '');
+    const key = c.req.path.replace('/uploads/file/', '');
     if (!key) {
       return c.json({ error: 'Invalid file path' }, 400);
     }

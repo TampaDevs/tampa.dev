@@ -1,0 +1,37 @@
+---
+title: Personal Access Tokens
+description: Simpler alternative to OAuth for API access
+order: 5
+---
+
+# Personal Access Tokens
+
+Personal Access Tokens (PATs) provide a simpler alternative to the full OAuth flow.
+Create tokens in your [Profile settings](/profile).
+
+## Usage
+
+Include the token in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile
+```
+
+## Token Format
+
+Tokens are prefixed with `td_pat_` followed by 40 hex characters. The full token is only shown once at creation time. We store a SHA-256 hash for verification.
+
+Example: `td_pat_a1b2c3d4e5f6...`
+
+## Scopes
+
+PATs use the same scope system as OAuth tokens. When creating a token, select the scopes your integration needs. Token scopes cannot exceed your user permissions.
+
+## Security Best Practices
+
+- **Never commit tokens** to version control or share them publicly
+- **Use the minimum scopes** required for your integration
+- **Set expiration dates** for tokens used in CI/CD or automated workflows
+- **Revoke tokens** immediately if they are compromised
+- **Rotate tokens** regularly for long-lived integrations

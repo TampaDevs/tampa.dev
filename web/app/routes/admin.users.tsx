@@ -1,11 +1,11 @@
 /**
  * Admin Users Management Page
  *
- * View, manage roles, and delete users from the admin panel.
+ * View, search, manage roles, and delete users from the admin panel.
  */
 
-import { useLoaderData, useFetcher, Link } from "react-router";
-import { Table, Avatar, Button } from "@tampadevs/react";
+import { useLoaderData, useFetcher, Link, Form, useSearchParams } from "react-router";
+import { Avatar, Button } from "@tampadevs/react";
 import type { Route } from "./+types/admin.users";
 import {
   fetchAdminUsers,
@@ -22,18 +22,22 @@ export async function loader({ request }: Route.LoaderArgs) {
     | "superadmin"
     | null;
   const search = url.searchParams.get("search") || undefined;
+  const page = parseInt(url.searchParams.get("page") || "1", 10);
+  const limit = 50;
+  const offset = (page - 1) * limit;
   const cookieHeader = request.headers.get("Cookie") || undefined;
 
   const data = await fetchAdminUsers(
     {
       role: role || undefined,
       search,
-      limit: 100,
+      limit,
+      offset,
     },
     cookieHeader
   );
 
-  return { users: data.users, pagination: data.pagination };
+  return { users: data.users, pagination: data.pagination, currentPage: page };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -74,16 +78,32 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
+const providerIcons: Record<string, { label: string; color: string }> = {
+  github: { label: "GH", color: "bg-gray-900 dark:bg-white dark:text-gray-900 text-white" },
+  google: { label: "G", color: "bg-blue-500 text-white" },
+  discord: { label: "DC", color: "bg-indigo-500 text-white" },
+};
+
+function ProviderBadge({ provider }: { provider: string }) {
+  const info = providerIcons[provider] || { label: provider.slice(0, 2).toUpperCase(), color: "bg-gray-500 text-white" };
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold ${info.color}`}
+      title={provider}
+    >
+      {info.label}
+    </span>
+  );
+}
+
 function UserRow({ user }: { user: AdminUser }) {
   const fetcher = useFetcher();
   const isUpdating = fetcher.state !== "idle";
 
-  const githubIdentity = user.identities.find((i) => i.provider === "github");
-
   return (
     <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
       <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
+        <Link to={`/admin/users/${user.id}`} className="flex items-center gap-3">
           <Avatar
             src={user.avatarUrl || undefined}
             name={user.name || user.email}
@@ -97,26 +117,35 @@ function UserRow({ user }: { user: AdminUser }) {
               {user.email}
             </div>
           </div>
-        </div>
+        </Link>
       </td>
       <td className="px-4 py-3 hidden sm:table-cell">
-        {githubIdentity?.username ? (
-          <a
-            href={`https://github.com/${githubIdentity.username}`}
-            target="_blank"
-            rel="noopener noreferrer"
+        {user.username ? (
+          <Link
+            to={`/p/${user.username}`}
             className="text-sm text-coral hover:underline"
           >
-            @{githubIdentity.username}
-          </a>
+            @{user.username}
+          </Link>
         ) : (
-          <span className="text-sm text-gray-400">-</span>
+          <span className="text-sm text-gray-400">&mdash;</span>
         )}
+      </td>
+      <td className="px-4 py-3 hidden md:table-cell">
+        <div className="flex items-center gap-1.5">
+          {user.identities.length > 0 ? (
+            user.identities.map((identity) => (
+              <ProviderBadge key={identity.provider} provider={identity.provider} />
+            ))
+          ) : (
+            <span className="text-sm text-gray-400">&mdash;</span>
+          )}
+        </div>
       </td>
       <td className="px-4 py-3">
         <RoleBadge role={user.role} />
       </td>
-      <td className="px-4 py-3 hidden md:table-cell">
+      <td className="px-4 py-3 hidden lg:table-cell">
         <span className="text-sm text-gray-500 dark:text-gray-400">
           {new Date(user.createdAt).toLocaleDateString()}
         </span>
@@ -182,7 +211,12 @@ function UserRow({ user }: { user: AdminUser }) {
 }
 
 export default function AdminUsersPage() {
-  const { users, pagination } = useLoaderData<typeof loader>();
+  const { users, pagination, currentPage } = useLoaderData<typeof loader>();
+  const [searchParams] = useSearchParams();
+  const currentSearch = searchParams.get("search") || "";
+  const currentRole = searchParams.get("role") || "";
+
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
 
   const roleStats = {
     total: pagination.total,
@@ -190,6 +224,12 @@ export default function AdminUsersPage() {
     admin: users.filter((u) => u.role === "admin").length,
     user: users.filter((u) => u.role === "user").length,
   };
+
+  function buildPageUrl(page: number) {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", String(page));
+    return `?${params}`;
+  }
 
   return (
     <div className="space-y-6">
@@ -237,6 +277,55 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {/* Search and Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <Form method="get" className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 relative">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              name="search"
+              defaultValue={currentSearch}
+              placeholder="Search by name, email, or username..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-coral/50 focus:border-coral"
+            />
+          </div>
+          <select
+            name="role"
+            defaultValue={currentRole}
+            className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm"
+          >
+            <option value="">All Roles</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">Super Admin</option>
+          </select>
+          <Button type="submit" size="sm">
+            Search
+          </Button>
+          {(currentSearch || currentRole) && (
+            <Link
+              to="/admin/users"
+              className="inline-flex items-center px-3 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              Clear
+            </Link>
+          )}
+        </Form>
+      </div>
+
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
@@ -247,12 +336,15 @@ export default function AdminUsersPage() {
                   User
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
-                  GitHub
+                  Username
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                  Providers
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">
                   Joined
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -267,16 +359,70 @@ export default function AdminUsersPage() {
               {users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
-                    No users found
+                    {currentSearch
+                      ? `No users found matching "${currentSearch}"`
+                      : "No users found"}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Showing {pagination.offset + 1}&ndash;{Math.min(pagination.offset + users.length, pagination.total)} of {pagination.total} users
+            </div>
+            <div className="flex items-center gap-2">
+              {currentPage > 1 && (
+                <Link
+                  to={buildPageUrl(currentPage - 1)}
+                  className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  Previous
+                </Link>
+              )}
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let page: number;
+                if (totalPages <= 5) {
+                  page = i + 1;
+                } else if (currentPage <= 3) {
+                  page = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  page = totalPages - 4 + i;
+                } else {
+                  page = currentPage - 2 + i;
+                }
+                return (
+                  <Link
+                    key={page}
+                    to={buildPageUrl(page)}
+                    className={`px-3 py-1.5 text-sm rounded-lg ${
+                      page === currentPage
+                        ? "bg-coral text-white font-medium"
+                        : "border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    {page}
+                  </Link>
+                );
+              })}
+              {currentPage < totalPages && (
+                <Link
+                  to={buildPageUrl(currentPage + 1)}
+                  className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  Next
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Info notice */}
