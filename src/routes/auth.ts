@@ -1115,7 +1115,7 @@ export function createAuthRoutes() {
       }
 
       const redirectUrl = isLinkMode ? `${origin}/profile` : (stateData?.returnTo || `${origin}/`);
-      return c.redirect(redirectUrl);
+      console.error('OAuth error during provider callback', { provider: providerKey, error });
     } catch (error) {
       console.error(`${providerConfig.name} OAuth error:`, error);
       return c.redirect(`${origin}/login?error=oauth_failed`);
