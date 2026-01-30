@@ -966,7 +966,9 @@ export function createAuthRoutes() {
       }
 
       if (!accessToken) {
-        console.error(`${providerConfig.name} token exchange failed:`, tokenData);
+        console.error(
+          `${providerConfig.name} token exchange failed: missing access token (status ${tokenResponse.status})`
+        );
         return c.redirect(`${origin}/login?error=token_exchange_failed`);
       }
 
