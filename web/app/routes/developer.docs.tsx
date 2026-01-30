@@ -5,7 +5,7 @@
  * Child routes render individual MDX content pages via <Outlet />.
  */
 
-import { Link, Outlet, useParams } from "react-router";
+import { Link, Outlet, useNavigate, useParams } from "react-router";
 import { DOCS } from "~/content/docs";
 import type { Route } from "./+types/developer.docs";
 
@@ -16,6 +16,7 @@ export const meta: Route.MetaFunction = () => [
 
 export default function DocsLayout() {
   const params = useParams();
+  const navigate = useNavigate();
   const currentSlug = params.slug || DOCS[0]?.slug;
 
   return (
@@ -59,7 +60,7 @@ export default function DocsLayout() {
             <select
               value={currentSlug}
               onChange={(e) => {
-                window.location.href = `/developer/docs/${e.target.value}`;
+                navigate(`/developer/docs/${e.target.value}`);
               }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             >
