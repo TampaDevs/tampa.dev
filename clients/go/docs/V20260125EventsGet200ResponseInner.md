@@ -18,6 +18,7 @@ Name | Type | Description | Notes
 **Group** | Pointer to **interface{}** |  | [optional] 
 **Address** | Pointer to **string** |  | [optional] 
 **GoogleMapsUrl** | Pointer to **string** |  | [optional] 
+**AppleMapsUrl** | Pointer to **string** |  | [optional] 
 **PhotoUrl** | Pointer to **string** |  | [optional] 
 **IsOnline** | **bool** |  | 
 
@@ -374,6 +375,31 @@ SetGoogleMapsUrl sets GoogleMapsUrl field to given value.
 `func (o *V20260125EventsGet200ResponseInner) HasGoogleMapsUrl() bool`
 
 HasGoogleMapsUrl returns a boolean if a field has been set.
+
+### GetAppleMapsUrl
+
+`func (o *V20260125EventsGet200ResponseInner) GetAppleMapsUrl() string`
+
+GetAppleMapsUrl returns the AppleMapsUrl field if non-nil, zero value otherwise.
+
+### GetAppleMapsUrlOk
+
+`func (o *V20260125EventsGet200ResponseInner) GetAppleMapsUrlOk() (*string, bool)`
+
+GetAppleMapsUrlOk returns a tuple with the AppleMapsUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAppleMapsUrl
+
+`func (o *V20260125EventsGet200ResponseInner) SetAppleMapsUrl(v string)`
+
+SetAppleMapsUrl sets AppleMapsUrl field to given value.
+
+### HasAppleMapsUrl
+
+`func (o *V20260125EventsGet200ResponseInner) HasAppleMapsUrl() bool`
+
+HasAppleMapsUrl returns a boolean if a field has been set.
 
 ### GetPhotoUrl
 

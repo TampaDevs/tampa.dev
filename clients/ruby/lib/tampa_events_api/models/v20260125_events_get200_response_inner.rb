@@ -43,6 +43,8 @@ module TampaEventsAPI
 
     attr_accessor :google_maps_url
 
+    attr_accessor :apple_maps_url
+
     attr_accessor :photo_url
 
     attr_accessor :is_online
@@ -86,6 +88,7 @@ module TampaEventsAPI
         :'group' => :'group',
         :'address' => :'address',
         :'google_maps_url' => :'googleMapsUrl',
+        :'apple_maps_url' => :'appleMapsUrl',
         :'photo_url' => :'photoUrl',
         :'is_online' => :'isOnline'
       }
@@ -118,6 +121,7 @@ module TampaEventsAPI
         :'group' => :'Object',
         :'address' => :'String',
         :'google_maps_url' => :'String',
+        :'apple_maps_url' => :'String',
         :'photo_url' => :'String',
         :'is_online' => :'Boolean'
       }
@@ -217,6 +221,10 @@ module TampaEventsAPI
 
       if attributes.key?(:'google_maps_url')
         self.google_maps_url = attributes[:'google_maps_url']
+      end
+
+      if attributes.key?(:'apple_maps_url')
+        self.apple_maps_url = attributes[:'apple_maps_url']
       end
 
       if attributes.key?(:'photo_url')
@@ -398,6 +406,7 @@ module TampaEventsAPI
           group == o.group &&
           address == o.address &&
           google_maps_url == o.google_maps_url &&
+          apple_maps_url == o.apple_maps_url &&
           photo_url == o.photo_url &&
           is_online == o.is_online
     end
@@ -411,7 +420,7 @@ module TampaEventsAPI
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, title, description, date_time, duration, event_url, status, event_type, rsvp_count, venues, photo, group, address, google_maps_url, photo_url, is_online].hash
+      [id, title, description, date_time, duration, event_url, status, event_type, rsvp_count, venues, photo, group, address, google_maps_url, apple_maps_url, photo_url, is_online].hash
     end
 
     # Builds the object from hash

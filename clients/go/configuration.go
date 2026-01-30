@@ -90,8 +90,12 @@ func NewConfiguration() *Configuration {
 		Debug:            false,
 		Servers:          ServerConfigurations{
 			{
-				URL: "https://events.api.tampa.dev",
+				URL: "https://api.tampa.dev",
 				Description: "Production",
+			},
+			{
+				URL: "https://events.api.tampa.dev",
+				Description: "Production (legacy)",
 			},
 			{
 				URL: "http://localhost:8787",

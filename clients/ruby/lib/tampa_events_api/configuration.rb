@@ -158,7 +158,7 @@ module TampaEventsAPI
 
     def initialize
       @scheme = 'https'
-      @host = 'events.api.tampa.dev'
+      @host = 'api.tampa.dev'
       @base_path = ''
       @server_index = nil
       @server_operation_index = {}
@@ -251,8 +251,12 @@ module TampaEventsAPI
     def server_settings
       [
         {
-          url: "https://events.api.tampa.dev",
+          url: "https://api.tampa.dev",
           description: "Production",
+        },
+        {
+          url: "https://events.api.tampa.dev",
+          description: "Production (legacy)",
         },
         {
           url: "http://localhost:8787",

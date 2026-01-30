@@ -47,7 +47,7 @@ npm install PATH_TO_GENERATED_PACKAGE --save
 
 ### Documentation for API Endpoints
 
-All URIs are relative to *https://events.api.tampa.dev*
+All URIs are relative to *https://api.tampa.dev*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
@@ -58,11 +58,12 @@ Class | Method | HTTP request | Description
 *FeedsApi* | [**_20260125icsGet**](docs/FeedsApi.md#_20260125icsget) | **GET** /2026-01-25/ics | Get iCalendar feed
 *FeedsApi* | [**_20260125rssGet**](docs/FeedsApi.md#_20260125rssget) | **GET** /2026-01-25/rss | Get RSS feed
 *FeedsApi* | [**_20260125webcalGet**](docs/FeedsApi.md#_20260125webcalget) | **GET** /2026-01-25/webcal | Get webcal feed
+*GroupsApi* | [**_20260125groupsGet**](docs/GroupsApi.md#_20260125groupsget) | **GET** /2026-01-25/groups | Get all public groups
+*GroupsApi* | [**_20260125groupsSlugGet**](docs/GroupsApi.md#_20260125groupsslugget) | **GET** /2026-01-25/groups/{slug} | Get a group by slug
 *PagesApi* | [**htmlGet**](docs/PagesApi.md#htmlget) | **GET** /html | HTML page with upcoming events
 *PagesApi* | [**upcomingEventsGet**](docs/PagesApi.md#upcomingeventsget) | **GET** /upcoming-events | Upcoming events HTML page
 *SchemasApi* | [**_20260125schemasGet**](docs/SchemasApi.md#_20260125schemasget) | **GET** /2026-01-25/schemas | List all JSON schemas
 *SchemasApi* | [**_20260125schemasNameGet**](docs/SchemasApi.md#_20260125schemasnameget) | **GET** /2026-01-25/schemas/{name} | Get specific JSON schema
-*ServiceApi* | [**serviceStatusGet**](docs/ServiceApi.md#servicestatusget) | **GET** /service/status | Service status
 *WidgetsApi* | [**widgetCarouselGet**](docs/WidgetsApi.md#widgetcarouselget) | **GET** /widget/carousel | Carousel HTML widget
 *WidgetsApi* | [**widgetNextEventGet**](docs/WidgetsApi.md#widgetnexteventget) | **GET** /widget/next-event | Next event HTML widget
 
@@ -70,13 +71,12 @@ Class | Method | HTTP request | Description
 ### Documentation For Models
 
  - [V20260125EventsGet200ResponseInner](docs/V20260125EventsGet200ResponseInner.md)
+ - [V20260125GroupsGet200ResponseInner](docs/V20260125GroupsGet200ResponseInner.md)
+ - [V20260125GroupsGet200ResponseInnerSocialLinks](docs/V20260125GroupsGet200ResponseInnerSocialLinks.md)
+ - [V20260125GroupsSlugGet404Response](docs/V20260125GroupsSlugGet404Response.md)
  - [V20260125SchemasGet200Response](docs/V20260125SchemasGet200Response.md)
  - [V20260125SchemasGet200ResponseSchemasInner](docs/V20260125SchemasGet200ResponseSchemasInner.md)
  - [V20260125SchemasNameGet404Response](docs/V20260125SchemasNameGet404Response.md)
- - [VServiceStatusGet200Response](docs/VServiceStatusGet200Response.md)
- - [VServiceStatusGet200ResponseAggregation](docs/VServiceStatusGet200ResponseAggregation.md)
- - [VServiceStatusGet200ResponseGroupsInner](docs/VServiceStatusGet200ResponseGroupsInner.md)
- - [VServiceStatusGet200ResponsePlatformsInner](docs/VServiceStatusGet200ResponsePlatformsInner.md)
 
 
 <a id="documentation-for-authorization"></a>

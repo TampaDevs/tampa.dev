@@ -20,9 +20,9 @@ __version__ = "1.0.0"
 __all__ = [
     "EventsApi",
     "FeedsApi",
+    "GroupsApi",
     "PagesApi",
     "SchemasApi",
-    "ServiceApi",
     "WidgetsApi",
     "ApiResponse",
     "ApiClient",
@@ -34,21 +34,20 @@ __all__ = [
     "ApiAttributeError",
     "ApiException",
     "V20260125EventsGet200ResponseInner",
+    "V20260125GroupsGet200ResponseInner",
+    "V20260125GroupsGet200ResponseInnerSocialLinks",
+    "V20260125GroupsSlugGet404Response",
     "V20260125SchemasGet200Response",
     "V20260125SchemasGet200ResponseSchemasInner",
     "V20260125SchemasNameGet404Response",
-    "VServiceStatusGet200Response",
-    "VServiceStatusGet200ResponseAggregation",
-    "VServiceStatusGet200ResponseGroupsInner",
-    "VServiceStatusGet200ResponsePlatformsInner",
 ]
 
 # import apis into sdk package
 from tampa_events_api.api.events_api import EventsApi as EventsApi
 from tampa_events_api.api.feeds_api import FeedsApi as FeedsApi
+from tampa_events_api.api.groups_api import GroupsApi as GroupsApi
 from tampa_events_api.api.pages_api import PagesApi as PagesApi
 from tampa_events_api.api.schemas_api import SchemasApi as SchemasApi
-from tampa_events_api.api.service_api import ServiceApi as ServiceApi
 from tampa_events_api.api.widgets_api import WidgetsApi as WidgetsApi
 
 # import ApiClient
@@ -64,11 +63,10 @@ from tampa_events_api.exceptions import ApiException as ApiException
 
 # import models into sdk package
 from tampa_events_api.models.v20260125_events_get200_response_inner import V20260125EventsGet200ResponseInner as V20260125EventsGet200ResponseInner
+from tampa_events_api.models.v20260125_groups_get200_response_inner import V20260125GroupsGet200ResponseInner as V20260125GroupsGet200ResponseInner
+from tampa_events_api.models.v20260125_groups_get200_response_inner_social_links import V20260125GroupsGet200ResponseInnerSocialLinks as V20260125GroupsGet200ResponseInnerSocialLinks
+from tampa_events_api.models.v20260125_groups_slug_get404_response import V20260125GroupsSlugGet404Response as V20260125GroupsSlugGet404Response
 from tampa_events_api.models.v20260125_schemas_get200_response import V20260125SchemasGet200Response as V20260125SchemasGet200Response
 from tampa_events_api.models.v20260125_schemas_get200_response_schemas_inner import V20260125SchemasGet200ResponseSchemasInner as V20260125SchemasGet200ResponseSchemasInner
 from tampa_events_api.models.v20260125_schemas_name_get404_response import V20260125SchemasNameGet404Response as V20260125SchemasNameGet404Response
-from tampa_events_api.models.v_service_status_get200_response import VServiceStatusGet200Response as VServiceStatusGet200Response
-from tampa_events_api.models.v_service_status_get200_response_aggregation import VServiceStatusGet200ResponseAggregation as VServiceStatusGet200ResponseAggregation
-from tampa_events_api.models.v_service_status_get200_response_groups_inner import VServiceStatusGet200ResponseGroupsInner as VServiceStatusGet200ResponseGroupsInner
-from tampa_events_api.models.v_service_status_get200_response_platforms_inner import VServiceStatusGet200ResponsePlatformsInner as VServiceStatusGet200ResponsePlatformsInner
 

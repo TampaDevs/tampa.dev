@@ -38,6 +38,7 @@ export interface V20260125EventsGet200ResponseInner {
     'group'?: any;
     'address'?: string;
     'googleMapsUrl'?: string;
+    'appleMapsUrl'?: string;
     'photoUrl'?: string;
     'isOnline': boolean;
 }
@@ -57,6 +58,41 @@ export const V20260125EventsGet200ResponseInnerEventTypeEnum = {
 
 export type V20260125EventsGet200ResponseInnerEventTypeEnum = typeof V20260125EventsGet200ResponseInnerEventTypeEnum[keyof typeof V20260125EventsGet200ResponseInnerEventTypeEnum];
 
+export interface V20260125GroupsGet200ResponseInner {
+    'id': string;
+    'urlname': string;
+    'name': string;
+    'description': string;
+    'link': string;
+    'website': string;
+    'platform': V20260125GroupsGet200ResponseInnerPlatformEnum;
+    'memberCount': number;
+    'photoUrl': string;
+    'isFeatured': boolean;
+    'displayOnSite': boolean;
+    'tags': Array<string>;
+    'socialLinks': V20260125GroupsGet200ResponseInnerSocialLinks;
+}
+
+export const V20260125GroupsGet200ResponseInnerPlatformEnum = {
+    Meetup: 'meetup',
+    Eventbrite: 'eventbrite',
+    Luma: 'luma'
+} as const;
+
+export type V20260125GroupsGet200ResponseInnerPlatformEnum = typeof V20260125GroupsGet200ResponseInnerPlatformEnum[keyof typeof V20260125GroupsGet200ResponseInnerPlatformEnum];
+
+export interface V20260125GroupsGet200ResponseInnerSocialLinks {
+    'slack'?: string;
+    'discord'?: string;
+    'linkedin'?: string;
+    'twitter'?: string;
+    'github'?: string;
+    'meetup'?: string;
+}
+export interface V20260125GroupsSlugGet404Response {
+    'error': string;
+}
 export interface V20260125SchemasGet200Response {
     'schemas': Array<V20260125SchemasGet200ResponseSchemasInner>;
     'version': string;
@@ -70,28 +106,6 @@ export interface V20260125SchemasGet200ResponseSchemasInner {
 export interface V20260125SchemasNameGet404Response {
     'error': string;
     'available': Array<string>;
-}
-export interface VServiceStatusGet200Response {
-    'platforms': Array<VServiceStatusGet200ResponsePlatformsInner>;
-    'groups': Array<VServiceStatusGet200ResponseGroupsInner>;
-    'totalGroups': number;
-    'aggregation'?: VServiceStatusGet200ResponseAggregation;
-}
-export interface VServiceStatusGet200ResponseAggregation {
-    'lastRunAt'?: string;
-    'durationMs'?: number;
-    'groupsProcessed'?: number;
-    'groupsFailed'?: number;
-    'dataHash'?: string;
-    'errors': Array<string>;
-}
-export interface VServiceStatusGet200ResponseGroupsInner {
-    'urlname': string;
-    'platform': string;
-}
-export interface VServiceStatusGet200ResponsePlatformsInner {
-    'name': string;
-    'configured': boolean;
 }
 
 /**
@@ -868,6 +882,184 @@ export class FeedsApi extends BaseAPI {
 
 
 /**
+ * GroupsApi - axios parameter creator
+ */
+export const GroupsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns a list of all groups displayed on the website
+         * @summary Get all public groups
+         * @param {string} [featured] 
+         * @param {string} [tag] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        _20260125groupsGet: async (featured?: string, tag?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/2026-01-25/groups`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (featured !== undefined) {
+                localVarQueryParameter['featured'] = featured;
+            }
+
+            if (tag !== undefined) {
+                localVarQueryParameter['tag'] = tag;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns a single group by its URL slug
+         * @summary Get a group by slug
+         * @param {string} slug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        _20260125groupsSlugGet: async (slug: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'slug' is not null or undefined
+            assertParamExists('_20260125groupsSlugGet', 'slug', slug)
+            const localVarPath = `/2026-01-25/groups/{slug}`
+                .replace(`{${"slug"}}`, encodeURIComponent(String(slug)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * GroupsApi - functional programming interface
+ */
+export const GroupsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = GroupsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns a list of all groups displayed on the website
+         * @summary Get all public groups
+         * @param {string} [featured] 
+         * @param {string} [tag] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async _20260125groupsGet(featured?: string, tag?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<V20260125GroupsGet200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator._20260125groupsGet(featured, tag, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GroupsApi._20260125groupsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns a single group by its URL slug
+         * @summary Get a group by slug
+         * @param {string} slug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async _20260125groupsSlugGet(slug: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<V20260125GroupsGet200ResponseInner>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator._20260125groupsSlugGet(slug, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GroupsApi._20260125groupsSlugGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * GroupsApi - factory interface
+ */
+export const GroupsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = GroupsApiFp(configuration)
+    return {
+        /**
+         * Returns a list of all groups displayed on the website
+         * @summary Get all public groups
+         * @param {string} [featured] 
+         * @param {string} [tag] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        _20260125groupsGet(featured?: string, tag?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<V20260125GroupsGet200ResponseInner>> {
+            return localVarFp._20260125groupsGet(featured, tag, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns a single group by its URL slug
+         * @summary Get a group by slug
+         * @param {string} slug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        _20260125groupsSlugGet(slug: string, options?: RawAxiosRequestConfig): AxiosPromise<V20260125GroupsGet200ResponseInner> {
+            return localVarFp._20260125groupsSlugGet(slug, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * GroupsApi - object-oriented interface
+ */
+export class GroupsApi extends BaseAPI {
+    /**
+     * Returns a list of all groups displayed on the website
+     * @summary Get all public groups
+     * @param {string} [featured] 
+     * @param {string} [tag] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public _20260125groupsGet(featured?: string, tag?: string, options?: RawAxiosRequestConfig) {
+        return GroupsApiFp(this.configuration)._20260125groupsGet(featured, tag, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns a single group by its URL slug
+     * @summary Get a group by slug
+     * @param {string} slug 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public _20260125groupsSlugGet(slug: string, options?: RawAxiosRequestConfig) {
+        return GroupsApiFp(this.configuration)._20260125groupsSlugGet(slug, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * PagesApi - axios parameter creator
  */
 export const PagesApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -1259,100 +1451,6 @@ export class SchemasApi extends BaseAPI {
      */
     public _20260125schemasNameGet(name: string, options?: RawAxiosRequestConfig) {
         return SchemasApiFp(this.configuration)._20260125schemasNameGet(name, options).then((request) => request(this.axios, this.basePath));
-    }
-}
-
-
-
-/**
- * ServiceApi - axios parameter creator
- */
-export const ServiceApiAxiosParamCreator = function (configuration?: Configuration) {
-    return {
-        /**
-         * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
-         * @summary Service status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        serviceStatusGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/service/status`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-    }
-};
-
-/**
- * ServiceApi - functional programming interface
- */
-export const ServiceApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = ServiceApiAxiosParamCreator(configuration)
-    return {
-        /**
-         * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
-         * @summary Service status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async serviceStatusGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VServiceStatusGet200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.serviceStatusGet(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ServiceApi.serviceStatusGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-    }
-};
-
-/**
- * ServiceApi - factory interface
- */
-export const ServiceApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = ServiceApiFp(configuration)
-    return {
-        /**
-         * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
-         * @summary Service status
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        serviceStatusGet(options?: RawAxiosRequestConfig): AxiosPromise<VServiceStatusGet200Response> {
-            return localVarFp.serviceStatusGet(options).then((request) => request(axios, basePath));
-        },
-    };
-};
-
-/**
- * ServiceApi - object-oriented interface
- */
-export class ServiceApi extends BaseAPI {
-    /**
-     * Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.
-     * @summary Service status
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public serviceStatusGet(options?: RawAxiosRequestConfig) {
-        return ServiceApiFp(this.configuration).serviceStatusGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

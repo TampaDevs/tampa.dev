@@ -40,9 +40,10 @@ class V20260125EventsGet200ResponseInner(BaseModel):
     group: Optional[Any] = None
     address: Optional[StrictStr] = None
     google_maps_url: Optional[StrictStr] = Field(default=None, alias="googleMapsUrl")
+    apple_maps_url: Optional[StrictStr] = Field(default=None, alias="appleMapsUrl")
     photo_url: Optional[StrictStr] = Field(default=None, alias="photoUrl")
     is_online: StrictBool = Field(alias="isOnline")
-    __properties: ClassVar[List[str]] = ["id", "title", "description", "dateTime", "duration", "eventUrl", "status", "eventType", "rsvpCount", "venues", "photo", "group", "address", "googleMapsUrl", "photoUrl", "isOnline"]
+    __properties: ClassVar[List[str]] = ["id", "title", "description", "dateTime", "duration", "eventUrl", "status", "eventType", "rsvpCount", "venues", "photo", "group", "address", "googleMapsUrl", "appleMapsUrl", "photoUrl", "isOnline"]
 
     @field_validator('status')
     def status_validate_enum(cls, value):
@@ -136,6 +137,7 @@ class V20260125EventsGet200ResponseInner(BaseModel):
             "group": obj.get("group"),
             "address": obj.get("address"),
             "googleMapsUrl": obj.get("googleMapsUrl"),
+            "appleMapsUrl": obj.get("appleMapsUrl"),
             "photoUrl": obj.get("photoUrl"),
             "isOnline": obj.get("isOnline")
         })

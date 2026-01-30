@@ -19,6 +19,7 @@ Name | Type | Description | Notes
 **group** | **object** |  | [optional] 
 **address** | **str** |  | [optional] 
 **google_maps_url** | **str** |  | [optional] 
+**apple_maps_url** | **str** |  | [optional] 
 **photo_url** | **str** |  | [optional] 
 **is_online** | **bool** |  | 
 
