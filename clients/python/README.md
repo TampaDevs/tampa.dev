@@ -56,10 +56,10 @@ import tampa_events_api
 from tampa_events_api.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://events.api.tampa.dev
+# Defining the host is optional and defaults to https://api.tampa.dev
 # See configuration.py for a list of all supported configuration parameters.
 configuration = tampa_events_api.Configuration(
-    host = "https://events.api.tampa.dev"
+    host = "https://api.tampa.dev"
 )
 
 
@@ -86,7 +86,7 @@ with tampa_events_api.ApiClient(configuration) as api_client:
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *https://events.api.tampa.dev*
+All URIs are relative to *https://api.tampa.dev*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
@@ -97,11 +97,12 @@ Class | Method | HTTP request | Description
 *FeedsApi* | [**call_20260125_ics_get**](docs/FeedsApi.md#call_20260125_ics_get) | **GET** /2026-01-25/ics | Get iCalendar feed
 *FeedsApi* | [**call_20260125_rss_get**](docs/FeedsApi.md#call_20260125_rss_get) | **GET** /2026-01-25/rss | Get RSS feed
 *FeedsApi* | [**call_20260125_webcal_get**](docs/FeedsApi.md#call_20260125_webcal_get) | **GET** /2026-01-25/webcal | Get webcal feed
+*GroupsApi* | [**call_20260125_groups_get**](docs/GroupsApi.md#call_20260125_groups_get) | **GET** /2026-01-25/groups | Get all public groups
+*GroupsApi* | [**call_20260125_groups_slug_get**](docs/GroupsApi.md#call_20260125_groups_slug_get) | **GET** /2026-01-25/groups/{slug} | Get a group by slug
 *PagesApi* | [**html_get**](docs/PagesApi.md#html_get) | **GET** /html | HTML page with upcoming events
 *PagesApi* | [**upcoming_events_get**](docs/PagesApi.md#upcoming_events_get) | **GET** /upcoming-events | Upcoming events HTML page
 *SchemasApi* | [**call_20260125_schemas_get**](docs/SchemasApi.md#call_20260125_schemas_get) | **GET** /2026-01-25/schemas | List all JSON schemas
 *SchemasApi* | [**call_20260125_schemas_name_get**](docs/SchemasApi.md#call_20260125_schemas_name_get) | **GET** /2026-01-25/schemas/{name} | Get specific JSON schema
-*ServiceApi* | [**service_status_get**](docs/ServiceApi.md#service_status_get) | **GET** /service/status | Service status
 *WidgetsApi* | [**widget_carousel_get**](docs/WidgetsApi.md#widget_carousel_get) | **GET** /widget/carousel | Carousel HTML widget
 *WidgetsApi* | [**widget_next_event_get**](docs/WidgetsApi.md#widget_next_event_get) | **GET** /widget/next-event | Next event HTML widget
 
@@ -109,13 +110,12 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [V20260125EventsGet200ResponseInner](docs/V20260125EventsGet200ResponseInner.md)
+ - [V20260125GroupsGet200ResponseInner](docs/V20260125GroupsGet200ResponseInner.md)
+ - [V20260125GroupsGet200ResponseInnerSocialLinks](docs/V20260125GroupsGet200ResponseInnerSocialLinks.md)
+ - [V20260125GroupsSlugGet404Response](docs/V20260125GroupsSlugGet404Response.md)
  - [V20260125SchemasGet200Response](docs/V20260125SchemasGet200Response.md)
  - [V20260125SchemasGet200ResponseSchemasInner](docs/V20260125SchemasGet200ResponseSchemasInner.md)
  - [V20260125SchemasNameGet404Response](docs/V20260125SchemasNameGet404Response.md)
- - [VServiceStatusGet200Response](docs/VServiceStatusGet200Response.md)
- - [VServiceStatusGet200ResponseAggregation](docs/VServiceStatusGet200ResponseAggregation.md)
- - [VServiceStatusGet200ResponseGroupsInner](docs/VServiceStatusGet200ResponseGroupsInner.md)
- - [VServiceStatusGet200ResponsePlatformsInner](docs/VServiceStatusGet200ResponsePlatformsInner.md)
 
 
 <a id="documentation-for-authorization"></a>

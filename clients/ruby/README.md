@@ -79,7 +79,7 @@ end
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *https://events.api.tampa.dev*
+All URIs are relative to *https://api.tampa.dev*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
@@ -90,11 +90,12 @@ Class | Method | HTTP request | Description
 *TampaEventsAPI::FeedsApi* | [**call_20260125_ics_get**](docs/FeedsApi.md#call_20260125_ics_get) | **GET** /2026-01-25/ics | Get iCalendar feed
 *TampaEventsAPI::FeedsApi* | [**call_20260125_rss_get**](docs/FeedsApi.md#call_20260125_rss_get) | **GET** /2026-01-25/rss | Get RSS feed
 *TampaEventsAPI::FeedsApi* | [**call_20260125_webcal_get**](docs/FeedsApi.md#call_20260125_webcal_get) | **GET** /2026-01-25/webcal | Get webcal feed
+*TampaEventsAPI::GroupsApi* | [**call_20260125_groups_get**](docs/GroupsApi.md#call_20260125_groups_get) | **GET** /2026-01-25/groups | Get all public groups
+*TampaEventsAPI::GroupsApi* | [**call_20260125_groups_slug_get**](docs/GroupsApi.md#call_20260125_groups_slug_get) | **GET** /2026-01-25/groups/{slug} | Get a group by slug
 *TampaEventsAPI::PagesApi* | [**html_get**](docs/PagesApi.md#html_get) | **GET** /html | HTML page with upcoming events
 *TampaEventsAPI::PagesApi* | [**upcoming_events_get**](docs/PagesApi.md#upcoming_events_get) | **GET** /upcoming-events | Upcoming events HTML page
 *TampaEventsAPI::SchemasApi* | [**call_20260125_schemas_get**](docs/SchemasApi.md#call_20260125_schemas_get) | **GET** /2026-01-25/schemas | List all JSON schemas
 *TampaEventsAPI::SchemasApi* | [**call_20260125_schemas_name_get**](docs/SchemasApi.md#call_20260125_schemas_name_get) | **GET** /2026-01-25/schemas/{name} | Get specific JSON schema
-*TampaEventsAPI::ServiceApi* | [**service_status_get**](docs/ServiceApi.md#service_status_get) | **GET** /service/status | Service status
 *TampaEventsAPI::WidgetsApi* | [**widget_carousel_get**](docs/WidgetsApi.md#widget_carousel_get) | **GET** /widget/carousel | Carousel HTML widget
 *TampaEventsAPI::WidgetsApi* | [**widget_next_event_get**](docs/WidgetsApi.md#widget_next_event_get) | **GET** /widget/next-event | Next event HTML widget
 
@@ -102,13 +103,12 @@ Class | Method | HTTP request | Description
 ## Documentation for Models
 
  - [TampaEventsAPI::V20260125EventsGet200ResponseInner](docs/V20260125EventsGet200ResponseInner.md)
+ - [TampaEventsAPI::V20260125GroupsGet200ResponseInner](docs/V20260125GroupsGet200ResponseInner.md)
+ - [TampaEventsAPI::V20260125GroupsGet200ResponseInnerSocialLinks](docs/V20260125GroupsGet200ResponseInnerSocialLinks.md)
+ - [TampaEventsAPI::V20260125GroupsSlugGet404Response](docs/V20260125GroupsSlugGet404Response.md)
  - [TampaEventsAPI::V20260125SchemasGet200Response](docs/V20260125SchemasGet200Response.md)
  - [TampaEventsAPI::V20260125SchemasGet200ResponseSchemasInner](docs/V20260125SchemasGet200ResponseSchemasInner.md)
  - [TampaEventsAPI::V20260125SchemasNameGet404Response](docs/V20260125SchemasNameGet404Response.md)
- - [TampaEventsAPI::VServiceStatusGet200Response](docs/VServiceStatusGet200Response.md)
- - [TampaEventsAPI::VServiceStatusGet200ResponseAggregation](docs/VServiceStatusGet200ResponseAggregation.md)
- - [TampaEventsAPI::VServiceStatusGet200ResponseGroupsInner](docs/VServiceStatusGet200ResponseGroupsInner.md)
- - [TampaEventsAPI::VServiceStatusGet200ResponsePlatformsInner](docs/VServiceStatusGet200ResponsePlatformsInner.md)
 
 
 ## Documentation for Authorization

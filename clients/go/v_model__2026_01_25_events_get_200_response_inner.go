@@ -35,6 +35,7 @@ type V20260125EventsGet200ResponseInner struct {
 	Group interface{} `json:"group,omitempty"`
 	Address *string `json:"address,omitempty"`
 	GoogleMapsUrl *string `json:"googleMapsUrl,omitempty"`
+	AppleMapsUrl *string `json:"appleMapsUrl,omitempty"`
 	PhotoUrl *string `json:"photoUrl,omitempty"`
 	IsOnline bool `json:"isOnline"`
 }
@@ -460,6 +461,38 @@ func (o *V20260125EventsGet200ResponseInner) SetGoogleMapsUrl(v string) {
 	o.GoogleMapsUrl = &v
 }
 
+// GetAppleMapsUrl returns the AppleMapsUrl field value if set, zero value otherwise.
+func (o *V20260125EventsGet200ResponseInner) GetAppleMapsUrl() string {
+	if o == nil || IsNil(o.AppleMapsUrl) {
+		var ret string
+		return ret
+	}
+	return *o.AppleMapsUrl
+}
+
+// GetAppleMapsUrlOk returns a tuple with the AppleMapsUrl field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *V20260125EventsGet200ResponseInner) GetAppleMapsUrlOk() (*string, bool) {
+	if o == nil || IsNil(o.AppleMapsUrl) {
+		return nil, false
+	}
+	return o.AppleMapsUrl, true
+}
+
+// HasAppleMapsUrl returns a boolean if a field has been set.
+func (o *V20260125EventsGet200ResponseInner) HasAppleMapsUrl() bool {
+	if o != nil && !IsNil(o.AppleMapsUrl) {
+		return true
+	}
+
+	return false
+}
+
+// SetAppleMapsUrl gets a reference to the given string and assigns it to the AppleMapsUrl field.
+func (o *V20260125EventsGet200ResponseInner) SetAppleMapsUrl(v string) {
+	o.AppleMapsUrl = &v
+}
+
 // GetPhotoUrl returns the PhotoUrl field value if set, zero value otherwise.
 func (o *V20260125EventsGet200ResponseInner) GetPhotoUrl() string {
 	if o == nil || IsNil(o.PhotoUrl) {
@@ -553,6 +586,9 @@ func (o V20260125EventsGet200ResponseInner) ToMap() (map[string]interface{}, err
 	}
 	if !IsNil(o.GoogleMapsUrl) {
 		toSerialize["googleMapsUrl"] = o.GoogleMapsUrl
+	}
+	if !IsNil(o.AppleMapsUrl) {
+		toSerialize["appleMapsUrl"] = o.AppleMapsUrl
 	}
 	if !IsNil(o.PhotoUrl) {
 		toSerialize["photoUrl"] = o.PhotoUrl

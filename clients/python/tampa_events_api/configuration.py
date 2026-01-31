@@ -192,7 +192,7 @@ class Configuration:
     ) -> None:
         """Constructor
         """
-        self._base_path = "https://events.api.tampa.dev" if host is None else host
+        self._base_path = "https://api.tampa.dev" if host is None else host
         """Default Base url
         """
         self.server_index = 0 if server_index is None and host is None else server_index
@@ -516,8 +516,12 @@ class Configuration:
         """
         return [
             {
-                'url': "https://events.api.tampa.dev",
+                'url': "https://api.tampa.dev",
                 'description': "Production",
+            },
+            {
+                'url': "https://events.api.tampa.dev",
+                'description': "Production (legacy)",
             },
             {
                 'url': "http://localhost:8787",

@@ -1,6 +1,6 @@
 # SchemasApi
 
-All URIs are relative to *https://events.api.tampa.dev*
+All URIs are relative to *https://api.tampa.dev*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|

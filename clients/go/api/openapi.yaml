@@ -8,6 +8,8 @@ info:
   version: 2026-01-25
 servers:
 - description: Production
+  url: https://api.tampa.dev
+- description: Production (legacy)
   url: https://events.api.tampa.dev
 - description: Development
   url: http://localhost:8787
@@ -149,6 +151,69 @@ paths:
       summary: Get next event per group
       tags:
       - Events
+  /2026-01-25/groups:
+    get:
+      description: Returns a list of all groups displayed on the website
+      parameters:
+      - explode: true
+        in: query
+        name: featured
+        required: false
+        schema:
+          description: Filter to only featured groups (set to "1" to filter)
+          example: "1"
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: tag
+        required: false
+        schema:
+          description: Filter groups by tag
+          example: cloud
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/_2026_01_25_groups_get_200_response_inner"
+                type: array
+          description: List of groups
+      summary: Get all public groups
+      tags:
+      - Groups
+  /2026-01-25/groups/{slug}:
+    get:
+      description: Returns a single group by its URL slug
+      parameters:
+      - explode: false
+        in: path
+        name: slug
+        required: true
+        schema:
+          description: The group URL slug (urlname)
+          example: tampadevs
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_2026_01_25_groups_get_200_response_inner"
+          description: Group details
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_2026_01_25_groups__slug__get_404_response"
+          description: Group not found
+      summary: Get a group by slug
+      tags:
+      - Groups
   /2026-01-25/schemas:
     get:
       description: Returns metadata about all available JSON schemas for the API models
@@ -659,20 +724,6 @@ paths:
       summary: Upcoming events HTML page
       tags:
       - Pages
-  /service/status:
-    get:
-      description: "Returns service status and configuration information, including\
-        \ platforms, groups, and aggregation diagnostics."
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/_service_status_get_200_response"
-          description: Service status
-      summary: Service status
-      tags:
-      - Service
 components:
   parameters: {}
   schemas:
@@ -680,6 +731,7 @@ components:
       example:
         dateTime: dateTime
         address: address
+        appleMapsUrl: appleMapsUrl
         eventUrl: eventUrl
         description: description
         photo: ""
@@ -737,6 +789,9 @@ components:
         googleMapsUrl:
           type: string
           nullable: true
+        appleMapsUrl:
+          type: string
+          nullable: true
         photoUrl:
           type: string
           nullable: true
@@ -751,6 +806,113 @@ components:
       - status
       - title
       - venues
+    _2026_01_25_groups_get_200_response_inner_socialLinks:
+      example:
+        twitter: twitter
+        github: github
+        discord: discord
+        slack: slack
+        linkedin: linkedin
+        meetup: meetup
+      properties:
+        slack:
+          type: string
+        discord:
+          type: string
+        linkedin:
+          type: string
+        twitter:
+          type: string
+        github:
+          type: string
+        meetup:
+          type: string
+      nullable: true
+    _2026_01_25_groups_get_200_response_inner:
+      example:
+        website: website
+        socialLinks:
+          twitter: twitter
+          github: github
+          discord: discord
+          slack: slack
+          linkedin: linkedin
+          meetup: meetup
+        memberCount: 0.8008281904610115
+        link: link
+        description: description
+        platform: meetup
+        tags:
+        - tags
+        - tags
+        photoUrl: photoUrl
+        name: name
+        displayOnSite: true
+        id: id
+        urlname: urlname
+        isFeatured: true
+      properties:
+        id:
+          type: string
+        urlname:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        link:
+          type: string
+        website:
+          type: string
+          nullable: true
+        platform:
+          enum:
+          - meetup
+          - eventbrite
+          - luma
+          type: string
+        memberCount:
+          type: number
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        isFeatured:
+          type: boolean
+          nullable: true
+        displayOnSite:
+          type: boolean
+          nullable: true
+        tags:
+          items:
+            type: string
+          type: array
+          nullable: true
+        socialLinks:
+          $ref: "#/components/schemas/_2026_01_25_groups_get_200_response_inner_socialLinks"
+      required:
+      - description
+      - displayOnSite
+      - id
+      - isFeatured
+      - link
+      - memberCount
+      - name
+      - photoUrl
+      - platform
+      - socialLinks
+      - tags
+      - urlname
+      - website
+    _2026_01_25_groups__slug__get_404_response:
+      example:
+        error: error
+      properties:
+        error:
+          type: string
+      required:
+      - error
     _2026_01_25_schemas_get_200_response_schemas_inner:
       example:
         name: name
@@ -809,99 +971,3 @@ components:
       required:
       - available
       - error
-    _service_status_get_200_response_platforms_inner:
-      example:
-        configured: true
-        name: name
-      properties:
-        name:
-          type: string
-        configured:
-          type: boolean
-      required:
-      - configured
-      - name
-    _service_status_get_200_response_groups_inner:
-      example:
-        urlname: urlname
-        platform: platform
-      properties:
-        urlname:
-          type: string
-        platform:
-          type: string
-      required:
-      - platform
-      - urlname
-    _service_status_get_200_response_aggregation:
-      example:
-        lastRunAt: lastRunAt
-        groupsProcessed: 1.4658129805029452
-        dataHash: dataHash
-        groupsFailed: 5.962133916683182
-        durationMs: 6.027456183070403
-        errors:
-        - errors
-        - errors
-      properties:
-        lastRunAt:
-          type: string
-          nullable: true
-        durationMs:
-          type: number
-          nullable: true
-        groupsProcessed:
-          type: number
-          nullable: true
-        groupsFailed:
-          type: number
-          nullable: true
-        dataHash:
-          type: string
-          nullable: true
-        errors:
-          items:
-            type: string
-          type: array
-      required:
-      - errors
-      nullable: true
-    _service_status_get_200_response:
-      example:
-        groups:
-        - urlname: urlname
-          platform: platform
-        - urlname: urlname
-          platform: platform
-        totalGroups: 0.8008281904610115
-        aggregation:
-          lastRunAt: lastRunAt
-          groupsProcessed: 1.4658129805029452
-          dataHash: dataHash
-          groupsFailed: 5.962133916683182
-          durationMs: 6.027456183070403
-          errors:
-          - errors
-          - errors
-        platforms:
-        - configured: true
-          name: name
-        - configured: true
-          name: name
-      properties:
-        platforms:
-          items:
-            $ref: "#/components/schemas/_service_status_get_200_response_platforms_inner"
-          type: array
-        groups:
-          items:
-            $ref: "#/components/schemas/_service_status_get_200_response_groups_inner"
-          type: array
-        totalGroups:
-          type: number
-        aggregation:
-          $ref: "#/components/schemas/_service_status_get_200_response_aggregation"
-      required:
-      - groups
-      - platforms
-      - totalGroups

@@ -11,8 +11,12 @@
   },
   "servers": [
     {
-      "url": "https://events.api.tampa.dev",
+      "url": "https://api.tampa.dev",
       "description": "Production"
+    },
+    {
+      "url": "https://events.api.tampa.dev",
+      "description": "Production (legacy)"
     },
     {
       "url": "http://localhost:8787",
@@ -147,6 +151,10 @@
                         "nullable": true
                       },
                       "googleMapsUrl": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "appleMapsUrl": {
                         "type": "string",
                         "nullable": true
                       },
@@ -312,6 +320,10 @@
                         "type": "string",
                         "nullable": true
                       },
+                      "appleMapsUrl": {
+                        "type": "string",
+                        "nullable": true
+                      },
                       "photoUrl": {
                         "type": "string",
                         "nullable": true
@@ -341,6 +353,287 @@
               "text/plain": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/groups": {
+      "get": {
+        "summary": "Get all public groups",
+        "description": "Returns a list of all groups displayed on the website",
+        "tags": [
+          "Groups"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter to only featured groups (set to \"1\" to filter)",
+              "example": "1"
+            },
+            "required": false,
+            "name": "featured",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter groups by tag",
+              "example": "cloud"
+            },
+            "required": false,
+            "name": "tag",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of groups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "urlname": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "website": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "platform": {
+                        "type": "string",
+                        "enum": [
+                          "meetup",
+                          "eventbrite",
+                          "luma"
+                        ]
+                      },
+                      "memberCount": {
+                        "type": "number",
+                        "nullable": true
+                      },
+                      "photoUrl": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "isFeatured": {
+                        "type": "boolean",
+                        "nullable": true
+                      },
+                      "displayOnSite": {
+                        "type": "boolean",
+                        "nullable": true
+                      },
+                      "tags": {
+                        "type": "array",
+                        "nullable": true,
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "socialLinks": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "slack": {
+                            "type": "string"
+                          },
+                          "discord": {
+                            "type": "string"
+                          },
+                          "linkedin": {
+                            "type": "string"
+                          },
+                          "twitter": {
+                            "type": "string"
+                          },
+                          "github": {
+                            "type": "string"
+                          },
+                          "meetup": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "urlname",
+                      "name",
+                      "description",
+                      "link",
+                      "website",
+                      "platform",
+                      "memberCount",
+                      "photoUrl",
+                      "isFeatured",
+                      "displayOnSite",
+                      "tags",
+                      "socialLinks"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/2026-01-25/groups/{slug}": {
+      "get": {
+        "summary": "Get a group by slug",
+        "description": "Returns a single group by its URL slug",
+        "tags": [
+          "Groups"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The group URL slug (urlname)",
+              "example": "tampadevs"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Group details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "urlname": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "link": {
+                      "type": "string"
+                    },
+                    "website": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "platform": {
+                      "type": "string",
+                      "enum": [
+                        "meetup",
+                        "eventbrite",
+                        "luma"
+                      ]
+                    },
+                    "memberCount": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "photoUrl": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "isFeatured": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "displayOnSite": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "tags": {
+                      "type": "array",
+                      "nullable": true,
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "socialLinks": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "slack": {
+                          "type": "string"
+                        },
+                        "discord": {
+                          "type": "string"
+                        },
+                        "linkedin": {
+                          "type": "string"
+                        },
+                        "twitter": {
+                          "type": "string"
+                        },
+                        "github": {
+                          "type": "string"
+                        },
+                        "meetup": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "urlname",
+                    "name",
+                    "description",
+                    "link",
+                    "website",
+                    "platform",
+                    "memberCount",
+                    "photoUrl",
+                    "isFeatured",
+                    "displayOnSite",
+                    "tags",
+                    "socialLinks"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Group not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -1032,108 +1325,6 @@
               "text/html": {
                 "schema": {
                   "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/service/status": {
-      "get": {
-        "summary": "Service status",
-        "description": "Returns service status and configuration information, including platforms, groups, and aggregation diagnostics.",
-        "tags": [
-          "Service"
-        ],
-        "responses": {
-          "200": {
-            "description": "Service status",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "platforms": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "name": {
-                            "type": "string"
-                          },
-                          "configured": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "name",
-                          "configured"
-                        ]
-                      }
-                    },
-                    "groups": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "urlname": {
-                            "type": "string"
-                          },
-                          "platform": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "urlname",
-                          "platform"
-                        ]
-                      }
-                    },
-                    "totalGroups": {
-                      "type": "number"
-                    },
-                    "aggregation": {
-                      "type": "object",
-                      "nullable": true,
-                      "properties": {
-                        "lastRunAt": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "durationMs": {
-                          "type": "number",
-                          "nullable": true
-                        },
-                        "groupsProcessed": {
-                          "type": "number",
-                          "nullable": true
-                        },
-                        "groupsFailed": {
-                          "type": "number",
-                          "nullable": true
-                        },
-                        "dataHash": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "errors": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        }
-                      },
-                      "required": [
-                        "errors"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "platforms",
-                    "groups",
-                    "totalGroups"
-                  ]
                 }
               }
             }

@@ -18,6 +18,7 @@
 | **group** | **Object** |  | [optional] |
 | **address** | **String** |  | [optional] |
 | **google_maps_url** | **String** |  | [optional] |
+| **apple_maps_url** | **String** |  | [optional] |
 | **photo_url** | **String** |  | [optional] |
 | **is_online** | **Boolean** |  |  |
 
@@ -41,6 +42,7 @@ instance = TampaEventsAPI::V20260125EventsGet200ResponseInner.new(
   group: null,
   address: null,
   google_maps_url: null,
+  apple_maps_url: null,
   photo_url: null,
   is_online: null
 )

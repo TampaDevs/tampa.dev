@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY
  *
  * Generated from: http://localhost:8787/openapi.json
- * Generated at: 2026-01-29T03:44:27.946Z
+ * Generated at: 2026-01-30T05:01:16.888Z
  *
  * Regenerate with: npm run generate:types
  */
@@ -58,6 +58,7 @@ export interface paths {
                             group?: unknown;
                             address?: string | null;
                             googleMapsUrl?: string | null;
+                            appleMapsUrl?: string | null;
                             photoUrl?: string | null;
                             isOnline: boolean;
                         }[];
@@ -131,6 +132,7 @@ export interface paths {
                             group?: unknown;
                             address?: string | null;
                             googleMapsUrl?: string | null;
+                            appleMapsUrl?: string | null;
                             photoUrl?: string | null;
                             isOnline: boolean;
                         }[];
@@ -196,6 +198,7 @@ export interface paths {
                             memberCount: number | null;
                             photoUrl: string | null;
                             isFeatured: boolean | null;
+                            displayOnSite: boolean | null;
                             tags: string[] | null;
                             socialLinks: {
                                 slack?: string;
@@ -258,6 +261,7 @@ export interface paths {
                             memberCount: number | null;
                             photoUrl: string | null;
                             isFeatured: boolean | null;
+                            displayOnSite: boolean | null;
                             tags: string[] | null;
                             socialLinks: {
                                 slack?: string;

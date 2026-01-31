@@ -19,6 +19,7 @@ Name | Type | Description | Notes
 **group** | **any** |  | [optional] [default to undefined]
 **address** | **string** |  | [optional] [default to undefined]
 **googleMapsUrl** | **string** |  | [optional] [default to undefined]
+**appleMapsUrl** | **string** |  | [optional] [default to undefined]
 **photoUrl** | **string** |  | [optional] [default to undefined]
 **isOnline** | **boolean** |  | [default to undefined]
 
@@ -42,6 +43,7 @@ const instance: V20260125EventsGet200ResponseInner = {
     group,
     address,
     googleMapsUrl,
+    appleMapsUrl,
     photoUrl,
     isOnline,
 };

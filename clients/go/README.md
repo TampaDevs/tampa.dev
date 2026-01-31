@@ -75,7 +75,7 @@ ctx = context.WithValue(context.Background(), tampaevents.ContextOperationServer
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *https://events.api.tampa.dev*
+All URIs are relative to *https://api.tampa.dev*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
@@ -86,11 +86,12 @@ Class | Method | HTTP request | Description
 *FeedsAPI* | [**Call20260125IcsGet**](docs/FeedsAPI.md#call20260125icsget) | **Get** /2026-01-25/ics | Get iCalendar feed
 *FeedsAPI* | [**Call20260125RssGet**](docs/FeedsAPI.md#call20260125rssget) | **Get** /2026-01-25/rss | Get RSS feed
 *FeedsAPI* | [**Call20260125WebcalGet**](docs/FeedsAPI.md#call20260125webcalget) | **Get** /2026-01-25/webcal | Get webcal feed
+*GroupsAPI* | [**Call20260125GroupsGet**](docs/GroupsAPI.md#call20260125groupsget) | **Get** /2026-01-25/groups | Get all public groups
+*GroupsAPI* | [**Call20260125GroupsSlugGet**](docs/GroupsAPI.md#call20260125groupsslugget) | **Get** /2026-01-25/groups/{slug} | Get a group by slug
 *PagesAPI* | [**HtmlGet**](docs/PagesAPI.md#htmlget) | **Get** /html | HTML page with upcoming events
 *PagesAPI* | [**UpcomingEventsGet**](docs/PagesAPI.md#upcomingeventsget) | **Get** /upcoming-events | Upcoming events HTML page
 *SchemasAPI* | [**Call20260125SchemasGet**](docs/SchemasAPI.md#call20260125schemasget) | **Get** /2026-01-25/schemas | List all JSON schemas
 *SchemasAPI* | [**Call20260125SchemasNameGet**](docs/SchemasAPI.md#call20260125schemasnameget) | **Get** /2026-01-25/schemas/{name} | Get specific JSON schema
-*ServiceAPI* | [**ServiceStatusGet**](docs/ServiceAPI.md#servicestatusget) | **Get** /service/status | Service status
 *WidgetsAPI* | [**WidgetCarouselGet**](docs/WidgetsAPI.md#widgetcarouselget) | **Get** /widget/carousel | Carousel HTML widget
 *WidgetsAPI* | [**WidgetNextEventGet**](docs/WidgetsAPI.md#widgetnexteventget) | **Get** /widget/next-event | Next event HTML widget
 
@@ -98,13 +99,12 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [V20260125EventsGet200ResponseInner](docs/V20260125EventsGet200ResponseInner.md)
+ - [V20260125GroupsGet200ResponseInner](docs/V20260125GroupsGet200ResponseInner.md)
+ - [V20260125GroupsGet200ResponseInnerSocialLinks](docs/V20260125GroupsGet200ResponseInnerSocialLinks.md)
+ - [V20260125GroupsSlugGet404Response](docs/V20260125GroupsSlugGet404Response.md)
  - [V20260125SchemasGet200Response](docs/V20260125SchemasGet200Response.md)
  - [V20260125SchemasGet200ResponseSchemasInner](docs/V20260125SchemasGet200ResponseSchemasInner.md)
  - [V20260125SchemasNameGet404Response](docs/V20260125SchemasNameGet404Response.md)
- - [VServiceStatusGet200Response](docs/VServiceStatusGet200Response.md)
- - [VServiceStatusGet200ResponseAggregation](docs/VServiceStatusGet200ResponseAggregation.md)
- - [VServiceStatusGet200ResponseGroupsInner](docs/VServiceStatusGet200ResponseGroupsInner.md)
- - [VServiceStatusGet200ResponsePlatformsInner](docs/VServiceStatusGet200ResponsePlatformsInner.md)
 
 
 ## Documentation For Authorization

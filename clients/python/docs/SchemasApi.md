@@ -1,6 +1,6 @@
 # tampa_events_api.SchemasApi
 
-All URIs are relative to *https://events.api.tampa.dev*
+All URIs are relative to *https://api.tampa.dev*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -24,10 +24,10 @@ from tampa_events_api.models.v20260125_schemas_get200_response import V20260125S
 from tampa_events_api.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://events.api.tampa.dev
+# Defining the host is optional and defaults to https://api.tampa.dev
 # See configuration.py for a list of all supported configuration parameters.
 configuration = tampa_events_api.Configuration(
-    host = "https://events.api.tampa.dev"
+    host = "https://api.tampa.dev"
 )
 
 
@@ -87,10 +87,10 @@ import tampa_events_api
 from tampa_events_api.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://events.api.tampa.dev
+# Defining the host is optional and defaults to https://api.tampa.dev
 # See configuration.py for a list of all supported configuration parameters.
 configuration = tampa_events_api.Configuration(
-    host = "https://events.api.tampa.dev"
+    host = "https://api.tampa.dev"
 )
 
 
