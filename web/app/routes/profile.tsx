@@ -15,6 +15,7 @@ import { ProviderIcon } from "./login";
 import { SocialLinkIcon } from "~/components/SocialLinkIcon";
 import { getTrophyTier, TrophyIcon, type TrophyTier } from "~/lib/trophy-tiers";
 import { getRarityTier } from "~/lib/rarity";
+import { BadgeDetailModal } from "~/components/BadgeDetailModal";
 
 interface OAuthGrant {
   grantId: string;
@@ -1841,24 +1842,74 @@ function ApiTokenCard({ token }: { token: ApiTokenInfo }) {
   );
 }
 
-function BadgePillWithPopover({ badge }: { badge: ProfileBadge }) {
+function ProfileTiltCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState(false);
+
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rx = ((y - rect.height / 2) / (rect.height / 2)) * -4;
+    const ry = ((x - rect.width / 2) / (rect.width / 2)) * 4;
+    el.style.setProperty("--rx", `${rx}deg`);
+    el.style.setProperty("--ry", `${ry}deg`);
+    el.style.setProperty("--sx", `${(x / rect.width) * 100}%`);
+    el.style.setProperty("--sy", `${(y / rect.height) * 100}%`);
+  }, []);
+
+  const onLeave = useCallback(() => {
+    const el = ref.current;
+    if (el) {
+      el.style.setProperty("--rx", "0deg");
+      el.style.setProperty("--ry", "0deg");
+    }
+    setHovered(false);
+  }, []);
+
+  return (
+    <div
+      style={{ perspective: "800px", display: "inline-block" }}
+      onMouseMove={onMove}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={onLeave}
+    >
+      <div
+        ref={ref}
+        className={`relative ${className}`}
+        style={{
+          transformStyle: "preserve-3d",
+          transform: "rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))",
+          transition: "transform 0.15s ease-out, box-shadow 0.3s ease",
+        }}
+      >
+        <div className="relative">{children}</div>
+        <div
+          className="absolute inset-0 rounded-[inherit] pointer-events-none transition-opacity duration-300"
+          style={{
+            background:
+              "radial-gradient(circle at var(--sx, 50%) var(--sy, 50%), rgba(255,255,255,0.10) 0%, transparent 60%)",
+            opacity: hovered ? 1 : 0,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function BadgePillWithPopover({ badge, onSelect }: { badge: ProfileBadge; onSelect: (badge: ProfileBadge) => void }) {
   const [open, setOpen] = useState(false);
-  const [pinned, setPinned] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [popoverAlign, setPopoverAlign] = useState<"center" | "left" | "right">("center");
-
-  useEffect(() => {
-    if (!pinned) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setPinned(false);
-        setOpen(false);
-      }
-    }
-    document.addEventListener("click", handleClickOutside, true);
-    return () => document.removeEventListener("click", handleClickOutside, true);
-  }, [pinned]);
 
   useLayoutEffect(() => {
     if (!open || !popoverRef.current) return;
@@ -1871,8 +1922,6 @@ function BadgePillWithPopover({ badge }: { badge: ProfileBadge }) {
       setPopoverAlign("center");
     }
   }, [open]);
-
-  const hasPopoverContent = badge.description || (badge.points != null && badge.points > 0) || badge.rarity;
 
   const popoverPositionClass =
     popoverAlign === "left"
@@ -1892,25 +1941,22 @@ function BadgePillWithPopover({ badge }: { badge: ProfileBadge }) {
     <div
       ref={ref}
       className="relative"
-      onMouseEnter={() => hasPopoverContent && setOpen(true)}
-      onMouseLeave={() => !pinned && setOpen(false)}
+      onMouseEnter={() => (badge.description || (badge.points && badge.points > 0) || badge.rarity) && setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
     >
-      <button
-        type="button"
-        onClick={() => {
-          if (!hasPopoverContent) return;
-          setPinned(!pinned);
-          setOpen(!pinned);
-        }}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-white"
-        style={{
-          backgroundColor: badge.color,
-          cursor: hasPopoverContent ? "pointer" : "default",
-        }}
-      >
-        {badge.icon} {badge.name}
-      </button>
-      {open && hasPopoverContent && (
+      <ProfileTiltCard className="rounded-full">
+        <button
+          type="button"
+          onClick={() => onSelect(badge)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-white shadow-sm backdrop-blur-sm border border-white/20 cursor-pointer"
+          style={{
+            backgroundColor: `${badge.color}dd`,
+          }}
+        >
+          {badge.icon} {badge.name}
+        </button>
+      </ProfileTiltCard>
+      {open && (badge.description || (badge.points && badge.points > 0) || badge.rarity) && (
         <div ref={popoverRef} className={`absolute ${popoverPositionClass} top-full mt-2 z-20 w-52 p-3 rounded-lg bg-gray-900/95 dark:bg-gray-800/95 text-white text-xs shadow-xl backdrop-blur-sm border border-white/10`}>
           <div className={`absolute ${arrowPositionClass} -top-1 w-2 h-2 rotate-45 bg-gray-900/95 dark:bg-gray-800/95 border-l border-t border-white/10`} />
           {badge.description && <p className="relative leading-relaxed">{badge.description}</p>}
@@ -2032,6 +2078,115 @@ function AchievementsSection({
         })}
       </div>
     </section>
+  );
+}
+
+function AchievementsBadgesTab({
+  achievements,
+  showAchievements,
+  badges,
+}: {
+  achievements: AchievementInfo[];
+  showAchievements: boolean;
+  badges: ProfileBadge[];
+}) {
+  const [modalBadge, setModalBadge] = useState<ProfileBadge | null>(null);
+
+  // Group badges by trophy tier, sort within each by rarity (rarest first)
+  const tierOrder: TrophyTier[] = ['diamond', 'platinum', 'gold', 'silver'];
+  const tiers: { tier: TrophyTier; label: string; items: ProfileBadge[] }[] = [];
+
+  for (const t of tierOrder) {
+    const tierInfo = getTrophyTier(t === 'diamond' ? 100 : t === 'platinum' ? 50 : t === 'gold' ? 25 : 1);
+    const items = badges.filter((badge) => {
+      const itemTier = getTrophyTier(badge.points || 0);
+      return itemTier?.tier === t;
+    });
+    items.sort((a, b) => (a.rarity?.percentage ?? 100) - (b.rarity?.percentage ?? 100));
+    if (items.length > 0) {
+      tiers.push({ tier: t, label: tierInfo!.label, items });
+    }
+  }
+
+  const noTierItems = badges.filter((badge) => !getTrophyTier(badge.points || 0));
+  noTierItems.sort((a, b) => (a.rarity?.percentage ?? 100) - (b.rarity?.percentage ?? 100));
+
+  const hasBadges = tiers.length > 0 || noTierItems.length > 0;
+
+  return (
+    <>
+      {achievements.length > 0 && (
+        <AchievementsSection
+          achievements={achievements}
+          showAchievements={showAchievements}
+        />
+      )}
+
+      {hasBadges && (
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            Badges
+          </h2>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
+            {tiers.map(({ tier, label, items }) => (
+              <div key={tier}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <TrophyIcon tier={tier} size={14} />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    {label}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {items.map((badge) => (
+                    <BadgePillWithPopover key={badge.slug} badge={badge} onSelect={setModalBadge} />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {noTierItems.length > 0 && (
+              <div>
+                {tiers.length > 0 && (
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Other
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {noTierItems.map((badge) => (
+                    <BadgePillWithPopover key={badge.slug} badge={badge} onSelect={setModalBadge} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {achievements.length === 0 && !hasBadges && (
+        <div className="mt-6 text-center py-12">
+          <div className="text-4xl mb-3">🏆</div>
+          <p className="text-gray-500 dark:text-gray-400">
+            No achievements yet. Start participating to earn badges!
+          </p>
+        </div>
+      )}
+
+      {modalBadge && (
+        <BadgeDetailModal
+          badge={{
+            name: modalBadge.name,
+            slug: modalBadge.slug,
+            icon: modalBadge.icon,
+            color: modalBadge.color,
+            description: modalBadge.description,
+            points: modalBadge.points,
+            rarity: modalBadge.rarity,
+          }}
+          onClose={() => setModalBadge(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -2424,81 +2579,11 @@ export default function ProfilePage() {
         )}
 
         {currentTab === "achievements" && (
-          <>
-            {achievements.length > 0 && (
-              <AchievementsSection
-                achievements={achievements}
-                showAchievements={user.showAchievements !== false}
-              />
-            )}
-            {user.badges && user.badges.length > 0 && (() => {
-              const tierOrder: TrophyTier[] = ['diamond', 'platinum', 'gold', 'silver'];
-              const badgeTiers: { tier: TrophyTier; label: string; badges: ProfileBadge[] }[] = [];
-
-              for (const t of tierOrder) {
-                const tierBadges = user.badges!.filter((b) => {
-                  const bt = getTrophyTier(b.points || 0);
-                  return bt?.tier === t;
-                });
-                tierBadges.sort((a, b) => (a.rarity?.percentage ?? 100) - (b.rarity?.percentage ?? 100));
-                if (tierBadges.length > 0) {
-                  const info = getTrophyTier(t === 'diamond' ? 100 : t === 'platinum' ? 50 : t === 'gold' ? 25 : 1);
-                  badgeTiers.push({ tier: t, label: info!.label, badges: tierBadges });
-                }
-              }
-
-              const noTier = user.badges!.filter((b) => !getTrophyTier(b.points || 0));
-              noTier.sort((a, b) => (a.rarity?.percentage ?? 100) - (b.rarity?.percentage ?? 100));
-
-              return (
-                <section className="mt-6">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                    Badges
-                  </h2>
-                  <div className="space-y-4">
-                    {badgeTiers.map(({ tier, label, badges }) => (
-                      <div key={tier}>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <TrophyIcon tier={tier} size={14} />
-                          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            {label}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {badges.map((badge) => (
-                            <BadgePillWithPopover key={badge.id} badge={badge} />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    {noTier.length > 0 && (
-                      <div>
-                        {badgeTiers.length > 0 && (
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                              Other
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          {noTier.map((badge) => (
-                            <BadgePillWithPopover key={badge.id} badge={badge} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </section>
-              );
-            })()}
-            {achievements.length === 0 && (!user.badges || user.badges.length === 0) && (
-              <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Complete activities to earn achievements and badges.
-                </p>
-              </div>
-            )}
-          </>
+          <AchievementsBadgesTab
+            achievements={achievements}
+            showAchievements={user.showAchievements !== false}
+            badges={user.badges || []}
+          />
         )}
 
         {currentTab === "settings" && (

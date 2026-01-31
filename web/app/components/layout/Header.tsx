@@ -135,6 +135,16 @@ function UserMenu({ user }: { user: User }) {
               </svg>
               Favorites
             </Link>
+            <Link
+              to="/profile?tab=achievements"
+              onClick={closeMenu}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l2.09 6.26L20.18 9l-5 4.09L16.82 20 12 16.54 7.18 20l1.64-6.91L3.82 9l6.09-.74z" />
+              </svg>
+              Achievements
+            </Link>
             {(user.role === "admin" || user.role === "superadmin") && (
               <Link
                 to="/admin"
@@ -358,6 +368,13 @@ export function Header({ user }: HeaderProps) {
                     className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400"
                   >
                     Profile
+                  </Link>
+                  <Link
+                    to="/profile?tab=achievements"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >
+                    Achievements
                   </Link>
                   {(user.role === "admin" || user.role === "superadmin") && (
                     <Link
