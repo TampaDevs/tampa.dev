@@ -36,7 +36,7 @@ export function AddToCalendar({
   size = "large",
   apiBase = "https://api.tampa.dev/2026-01-25",
 }: AddToCalendarProps) {
-  // Only render after hydration — the web component mutates its own DOM
+  // Only render after hydration - the web component mutates its own DOM
   // attributes on init, which always causes a hydration mismatch.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);

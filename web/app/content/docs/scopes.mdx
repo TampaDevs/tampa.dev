@@ -19,13 +19,14 @@ Scopes follow the GitHub model. The `user` scope implicitly includes `read:user`
 | `write:favorites` | Manage your favorite groups |
 | `read:portfolio` | Read your portfolio items |
 | `write:portfolio` | Manage your portfolio items |
+| `user:linked-accounts` | Read your connected identity providers |
 | `admin` | Full admin access |
 
 ## Scope Hierarchy
 
 The `user` scope is a parent scope that automatically grants:
-- `read:user` — read-only access to profile data
-- `user:email` — read access to email addresses
+- `read:user` - read-only access to profile data
+- `user:email` - read access to email addresses
 
 When requesting scopes during authorization, only request what your application needs. Users will see the full list of requested permissions on the consent screen.
 

@@ -278,13 +278,16 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (intent === "testWebhook") {
     const webhookId = formData.get("webhookId") as string;
+    const eventType = formData.get("eventType") as string | null;
 
     try {
       const response = await fetch(`${apiUrl}/developer/webhooks/${webhookId}/test`, {
         method: "POST",
         headers: {
+          "Content-Type": "application/json",
           ...(cookieHeader ? { Cookie: cookieHeader } : {}),
         },
+        body: JSON.stringify(eventType ? { eventType } : {}),
       });
 
       if (response.ok) {
@@ -721,13 +724,18 @@ function AppCard({ app, onDelete, onLogoUpdate }: { app: DeveloperApp; onDelete:
 }
 
 const AVAILABLE_EVENT_TYPES = [
-  { value: "*", label: "All Events" },
-  { value: "event.created", label: "Event Created" },
-  { value: "event.updated", label: "Event Updated" },
-  { value: "event.deleted", label: "Event Deleted" },
-  { value: "sync.completed", label: "Sync Completed" },
-  { value: "user.badge_awarded", label: "Badge Awarded" },
+  { value: "*", label: "All Events", adminOnly: false },
+  { value: "dev.tampa.events.synced", label: "Events Synced", adminOnly: false },
+  { value: "dev.tampa.sync.completed", label: "Sync Completed", adminOnly: false },
+  { value: "dev.tampa.user.favorite_added", label: "Favorite Added", adminOnly: false },
+  { value: "dev.tampa.user.portfolio_item_created", label: "Portfolio Item Created", adminOnly: false },
+  { value: "dev.tampa.user.identity_linked", label: "Identity Linked", adminOnly: true },
+  { value: "dev.tampa.user.registered", label: "User Registered", adminOnly: true },
+  { value: "dev.tampa.user.deleted", label: "User Deleted", adminOnly: true },
+  { value: "test.ping", label: "Test Ping", adminOnly: false },
 ];
+
+const TEST_EVENT_TYPES = AVAILABLE_EVENT_TYPES.filter((et) => et.value !== "*");
 
 function WebhookCard({
   webhook,
@@ -738,12 +746,13 @@ function WebhookCard({
   webhook: DeveloperWebhook;
   onToggle: (id: string, isActive: boolean) => void;
   onDelete: (id: string) => void;
-  onTest: (id: string) => void;
+  onTest: (id: string, eventType?: string) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showDeliveries, setShowDeliveries] = useState(false);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+  const [testEventType, setTestEventType] = useState("test.ping");
 
   const loadDeliveries = async () => {
     if (showDeliveries) {
@@ -802,13 +811,24 @@ function WebhookCard({
           {webhook.isActive ? "Pause" : "Enable"}
         </button>
 
-        <button
-          type="button"
-          onClick={() => onTest(webhook.id)}
-          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-        >
-          Send Test
-        </button>
+        <div className="flex items-center gap-1.5">
+          <select
+            value={testEventType}
+            onChange={(e) => setTestEventType(e.target.value)}
+            className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-coral/50"
+          >
+            {TEST_EVENT_TYPES.map((et) => (
+              <option key={et.value} value={et.value}>{et.label}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => onTest(webhook.id, testEventType)}
+            className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+          >
+            Send Test
+          </button>
+        </div>
 
         <button
           type="button"
@@ -1027,9 +1047,9 @@ export default function DeveloperPortal() {
     );
   };
 
-  const handleTestWebhook = (webhookId: string) => {
+  const handleTestWebhook = (webhookId: string, eventType?: string) => {
     fetcher.submit(
-      { intent: "testWebhook", webhookId },
+      { intent: "testWebhook", webhookId, ...(eventType ? { eventType } : {}) },
       { method: "post" }
     );
   };

@@ -533,7 +533,9 @@ export interface Badge {
   description: string | null;
   icon: string;
   color: string;
+  points: number;
   sortOrder: number;
+  hideFromDirectory: number;
   createdAt: string;
   userCount?: number;
 }
@@ -566,7 +568,9 @@ export interface CreateBadgeData {
   description?: string;
   icon: string;
   color?: string;
+  points?: number;
   sortOrder?: number;
+  hideFromDirectory?: boolean;
 }
 
 export async function createBadge(

@@ -42,6 +42,13 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 # APPLE_KEY_ID=your_key_id
 # APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 
+# Discord OAuth (for account linking)
+# Create an application at https://discord.com/developers/applications
+# Add OAuth2 redirect: https://your-domain.com/auth/discord/callback
+# Required scopes: identify, email
+# DISCORD_CLIENT_ID=your_discord_client_id
+# DISCORD_CLIENT_SECRET=your_discord_client_secret
+
 # =============================================================================
 # Session Security
 # Generate a random secret: openssl rand -base64 32

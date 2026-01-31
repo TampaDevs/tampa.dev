@@ -12,6 +12,8 @@ import { createDatabase } from '../db';
 import { users, sessions, webhooks, webhookDeliveries } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
+import { hasAdminRestrictedEvents, getAdminRestrictedFromList } from '../lib/webhook-events';
+import { emitEvent } from '../lib/event-bus.js';
 
 // ============== Validation Schemas ==============
 
@@ -120,6 +122,57 @@ function generateWebhookSecret(): string {
   return 'whsec_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Build a realistic test payload for a given event type
+ */
+function buildTestPayloadData(eventType: string): Record<string, unknown> {
+  switch (eventType) {
+    case 'dev.tampa.events.synced':
+      return {
+        groupId: 'test-group-id',
+        groupUrlname: 'tampadevs',
+        eventsCreated: 2,
+        eventsUpdated: 1,
+        eventsDeleted: 0,
+      };
+    case 'dev.tampa.sync.completed':
+      return {
+        total: 10,
+        succeeded: 9,
+        failed: 1,
+        durationMs: 3200,
+      };
+    case 'dev.tampa.user.favorite_added':
+      return {
+        userId: 'test-user-id',
+        groupId: 'test-group-id',
+      };
+    case 'dev.tampa.user.portfolio_item_created':
+      return {
+        userId: 'test-user-id',
+        portfolioItemId: 'test-item-id',
+      };
+    case 'dev.tampa.user.identity_linked':
+      return {
+        userId: 'test-user-id',
+        provider: 'github',
+      };
+    case 'dev.tampa.user.registered':
+      return {
+        userId: 'test-user-id',
+        email: 'test@example.com',
+      };
+    case 'dev.tampa.user.deleted':
+      return {
+        userId: 'test-user-id',
+      };
+    default:
+      return {
+        message: 'This is a test webhook delivery from Tampa Devs.',
+      };
+  }
+}
+
 // ============== Routes ==============
 
 export function createDeveloperRoutes() {
@@ -206,6 +259,13 @@ export function createDeveloperRoutes() {
 
     // Store in KV
     await kv.put(`client:${clientId}`, JSON.stringify(clientData));
+
+    // Emit event for achievement tracking
+    emitEvent(c, {
+      type: 'dev.tampa.developer.application_registered',
+      payload: { userId: user.id, clientId, appName: data.name },
+      metadata: { userId: user.id, source: 'developer' },
+    });
 
     // Return credentials (secret shown only once!)
     return c.json({
@@ -468,6 +528,16 @@ export function createDeveloperRoutes() {
     const data = c.req.valid('json');
     const db = createDatabase(c.env.DB);
 
+    // Check admin-restricted event types
+    if (hasAdminRestrictedEvents(data.eventTypes)) {
+      if (user.role !== 'admin' && user.role !== 'superadmin') {
+        return c.json({
+          error: 'Some event types require admin role to subscribe',
+          adminRestrictedEvents: getAdminRestrictedFromList(data.eventTypes),
+        }, 403);
+      }
+    }
+
     const id = crypto.randomUUID();
     const secret = generateWebhookSecret();
 
@@ -480,6 +550,13 @@ export function createDeveloperRoutes() {
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+    });
+
+    // Emit event for achievement tracking
+    emitEvent(c, {
+      type: 'dev.tampa.developer.webhook_created',
+      payload: { userId: user.id, webhookId: id, url: data.url },
+      metadata: { userId: user.id, source: 'developer' },
     });
 
     return c.json({
@@ -513,6 +590,17 @@ export function createDeveloperRoutes() {
     }
 
     const updates = c.req.valid('json');
+
+    // Check admin-restricted event types on update
+    if (updates.eventTypes && hasAdminRestrictedEvents(updates.eventTypes)) {
+      if (user.role !== 'admin' && user.role !== 'superadmin') {
+        return c.json({
+          error: 'Some event types require admin role to subscribe',
+          adminRestrictedEvents: getAdminRestrictedFromList(updates.eventTypes),
+        }, 403);
+      }
+    }
+
     const updateValues: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
     };
@@ -615,15 +703,20 @@ export function createDeveloperRoutes() {
       return c.json({ error: 'Webhook not found' }, 404);
     }
 
-    // Build a test payload
+    // Parse optional event type from request body
+    let eventType = 'test.ping';
+    try {
+      const body = await c.req.json<{ eventType?: string }>().catch(() => ({}));
+      if (body.eventType) eventType = body.eventType;
+    } catch { /* use default */ }
+
+    // Build a test payload with realistic shape per event type
     const deliveryId = crypto.randomUUID();
     const testPayload = JSON.stringify({
       id: deliveryId,
-      type: 'test.ping',
+      type: eventType,
       timestamp: new Date().toISOString(),
-      data: {
-        message: 'This is a test webhook delivery from Tampa Devs.',
-      },
+      data: buildTestPayloadData(eventType),
     });
 
     // Sign the payload
@@ -649,7 +742,7 @@ export function createDeveloperRoutes() {
         headers: {
           'Content-Type': 'application/json',
           'X-Webhook-Signature': `sha256=${signature}`,
-          'X-Event-Type': 'test.ping',
+          'X-Event-Type': eventType,
           'X-Delivery-ID': deliveryId,
           'User-Agent': 'TampaDevs-Webhooks/1.0',
         },
@@ -670,7 +763,7 @@ export function createDeveloperRoutes() {
     await db.insert(webhookDeliveries).values({
       id: deliveryId,
       webhookId: webhook.id,
-      eventType: 'test.ping',
+      eventType,
       payload: testPayload,
       statusCode,
       responseBody,

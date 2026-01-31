@@ -21,13 +21,14 @@ export function fromJSON(events: Event[], request: Request): string {
     const img = util.photoUrl(event.photo || event.group.photo);
     const title = `${event.group.name} - ${event.title}`;
     const description = event.description || '';
+    const descriptionHtml = util.markdownToHtml(description);
 
     rssFeed += `
   <item>
     <title>${util.escapeXml(title)}</title>
     <link>${event.eventUrl}</link>
     <guid isPermaLink="true">${event.eventUrl}</guid>
-    <description><![CDATA[${img ? `<img src="${img}" alt="Event image"/>` : ''}<p>${util.escapeXml(description)}</p>]]></description>
+    <description><![CDATA[${img ? `<img src="${img}" alt="Event image"/>` : ''}${descriptionHtml}]]></description>
     <pubDate>${event.dateTime.toUTCString()}</pubDate>
   </item>`;
   }

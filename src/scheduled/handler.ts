@@ -5,12 +5,11 @@
  * and perform periodic data maintenance.
  */
 
-import { lt } from 'drizzle-orm';
-import type { Env } from '../app.js';
+import { lt, sql } from 'drizzle-orm';
+import type { Env } from '../../types/worker.js';
 import { createDatabase } from '../db/index.js';
-import { syncLogs } from '../db/schema.js';
+import { syncLogs, badgeClaimLinks } from '../db/schema.js';
 import { SyncService } from '../services/sync.js';
-import { EventBus } from '../lib/event-bus.js';
 import { providerRegistry } from '../providers/index.js';
 
 /**
@@ -30,21 +29,19 @@ export async function handleScheduled(
   if (controller.cron === '0 3 * * *') {
     await handleTruncation(env);
   } else {
-    await handleSync(env);
+    await handleSync(env, ctx);
   }
 }
 
 /**
- * Sync handler — fetches events from all configured platforms
+ * Sync handler - fetches events from all configured platforms
  */
-async function handleSync(env: Env): Promise<void> {
+async function handleSync(env: Env, ctx: ExecutionContext): Promise<void> {
   const db = createDatabase(env.DB);
   const syncService = new SyncService(db, providerRegistry, env);
 
-  // Attach event bus if queue is available
-  if (env.EVENTS_QUEUE) {
-    syncService.setEventBus(new EventBus(env.EVENTS_QUEUE));
-  }
+  // Attach event context for domain event emission
+  syncService.setEventContext({ env, executionCtx: ctx });
 
   // Initialize all configured providers
   await providerRegistry.initializeAll(env);
@@ -77,7 +74,7 @@ async function handleSync(env: Env): Promise<void> {
 }
 
 /**
- * Truncation handler — deletes stale data
+ * Truncation handler - deletes stale data
  * - sync_logs older than 30 days
  * - webhook_deliveries older than 7 days (added when webhooks table exists)
  */
@@ -92,5 +89,11 @@ async function handleTruncation(env: Env): Promise<void> {
 
   console.log('Truncation complete: sync_logs older than 30 days deleted');
 
-  // webhook_deliveries truncation will be added in WS5 when the table exists
+  // Clean up expired badge claim links
+  const now = new Date().toISOString();
+  await db
+    .delete(badgeClaimLinks)
+    .where(sql`${badgeClaimLinks.expiresAt} IS NOT NULL AND ${badgeClaimLinks.expiresAt} < ${now}`);
+
+  console.log('Truncation complete: expired badge claim links deleted');
 }

@@ -26,13 +26,24 @@ export function createApp() {
   // Add CORS middleware
   app.use('*', async (c, next) => {
     await next();
-    c.res.headers.set('Access-Control-Allow-Origin', '*');
-    c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    // WebSocket upgrade responses (101) have immutable headers in CF Workers
+    if (c.res.status === 101) return;
+
+    const origin = c.req.header('Origin');
+    // Allow requests from *.tampa.dev subdomains and localhost for development
+    if (origin && (/^https?:\/\/([a-z0-9-]+\.)*tampa\.dev$/.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin))) {
+      c.res.headers.set('Access-Control-Allow-Origin', origin);
+      c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+    } else {
+      c.res.headers.set('Access-Control-Allow-Origin', '*');
+    }
+    c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
   });
 
   // Handle OPTIONS requests
-  app.options('*', (c) => c.text('', 200));
+  app.options('*', (c) => c.body(null, 204));
 
   // Favicon handler
   app.get('/favicon.ico', (c) => c.text('', 404));

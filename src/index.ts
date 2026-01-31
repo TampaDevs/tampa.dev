@@ -25,6 +25,7 @@ import { handleScheduled } from './scheduled/handler.js';
 import { handleQueueBatch } from './queue/handler.js';
 import { registerWebhookHandler } from './queue/webhook-handler.js';
 import { registerAchievementHandler } from './queue/achievement-handler.js';
+import { registerNotificationHandler } from './queue/notification-handler.js';
 import { OAuthApiHandler } from './handlers/oauth-api.js';
 import { createDatabase } from './db/index.js';
 import { apiTokens, users } from './db/schema.js';
@@ -33,6 +34,7 @@ import { eq } from 'drizzle-orm';
 // Register queue event handlers
 registerWebhookHandler();
 registerAchievementHandler();
+registerNotificationHandler();
 import type { Env } from '../types/worker.js';
 
 // Create Hono app (becomes the defaultHandler for non-OAuth requests)
@@ -71,6 +73,34 @@ app.route('/profile', profileRoutes);
 // Mount public user profiles (no auth required)
 import { publicUsersRoutes } from './routes/public-users.js';
 app.route('/users', publicUsersRoutes);
+
+// Mount leaderboard (no auth required)
+import { leaderboardRoutes } from './routes/leaderboard.js';
+app.route('/leaderboard', leaderboardRoutes);
+
+// Mount badge claim routes (public for GET, auth for POST)
+import { claimRoutes } from './routes/claim.js';
+app.route('/claim', claimRoutes);
+
+// Mount public badges API (no auth required)
+import { badgesPublicRoutes } from './routes/badges-public.js';
+app.route('/badges', badgesPublicRoutes);
+
+// Mount linked accounts API (session-based auth)
+import { linkedAccountsRoutes } from './routes/linked-accounts.js';
+app.route('/me/linked-accounts', linkedAccountsRoutes);
+
+// Mount follows API (mixed: some auth required, some public)
+import { followsRoutes } from './routes/follows.js';
+app.route('/', followsRoutes);
+
+// Mount onboarding API (session-based auth)
+import { onboardingRoutes } from './routes/onboarding.js';
+app.route('/me/onboarding', onboardingRoutes);
+
+// Mount WebSocket upgrade routes (personal + broadcast)
+import { wsRoutes } from './routes/ws.js';
+app.route('/ws', wsRoutes);
 
 // Add OpenAPI documentation routes
 addOpenAPIRoutes(app);
@@ -203,9 +233,17 @@ function stripLegacyApiPrefix(request: Request): Request {
   return request;
 }
 
+// Export Durable Object classes (must be named exports from the entry point)
+export { UserNotificationDO } from './durable-objects/user-notification.js';
+export { BroadcastDO } from './durable-objects/broadcast.js';
+
 // Export combined worker with fetch (OAuth), scheduled, and queue handlers
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    // WebSocket upgrades bypass OAuthProvider (which can't handle 101 responses)
+    if (request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
+      return app.fetch(request, env, ctx);
+    }
     return oauthProvider.fetch(stripLegacyApiPrefix(request), env, ctx);
   },
   scheduled: handleScheduled,

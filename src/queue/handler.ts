@@ -34,7 +34,7 @@ export async function handleQueueBatch(
     const allHandlers = [...specificHandlers, ...wildcardHandlers];
 
     if (allHandlers.length === 0) {
-      // No handlers registered — ack and move on
+      // No handlers registered - ack and move on
       msg.ack();
       continue;
     }

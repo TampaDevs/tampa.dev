@@ -34,7 +34,7 @@
   "scripts": {
     "start": "wrangler dev",
     "start:https": "wrangler dev --local-protocol https --https-key-path ./certs/tampa.dev+5-key.pem --https-cert-path ./certs/tampa.dev+5.pem --port 8787",
-    "deploy": "wrangler publish",
+    "deploy": "wrangler deploy --env production",
     "test": "mocha",
     "test:watch": "mocha --watch",
     "generate-schemas": "tsx scripts/generate-schemas.ts",

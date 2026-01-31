@@ -1,5 +1,5 @@
 /**
- * Developer Docs — Slug-based content page
+ * Developer Docs - Slug-based content page
  *
  * Renders the MDX component for the matching doc entry.
  */

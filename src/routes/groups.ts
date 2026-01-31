@@ -8,9 +8,9 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, count, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { groups, groupMembers, users } from '../db/schema';
+import { groups, groupMembers, users, userFavorites } from '../db/schema';
 import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
 
 /**
@@ -64,6 +64,7 @@ const GroupResponseSchema = z.object({
   displayOnSite: z.boolean().nullable(),
   tags: z.array(z.string()).nullable(),
   socialLinks: SocialLinksSchema,
+  favoritesCount: z.number().optional(),
 });
 
 /**
@@ -173,10 +174,28 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       return createNotModifiedResponse(syncVersion);
     }
 
-    // Check cache first
+    // Always compute fresh favorites counts (not cached, since favorites change independently of sync)
+    const favCounts = await db
+      .select({ groupId: userFavorites.groupId, count: count() })
+      .from(userFavorites)
+      .groupBy(userFavorites.groupId);
+    const favCountMap = new Map(favCounts.map((f) => [f.groupId, f.count]));
+
+    // Check cache for group data
     const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
     if (cached) {
-      return cached;
+      // Inject fresh favorites counts into cached response
+      const cachedData = await cached.json() as any[];
+      const updated = cachedData.map((g: any) => ({
+        ...g,
+        favoritesCount: favCountMap.get(g.id) || 0,
+      }));
+      const headers = new Headers(cached.headers);
+      headers.set('Content-Type', 'application/json');
+      return new Response(JSON.stringify(updated), {
+        status: cached.status,
+        headers,
+      });
     }
 
     // Return all active groups (groups being synced)
@@ -202,7 +221,10 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       });
     }
 
-    const json = filteredResults.map(parseGroupJsonFields);
+    const json = filteredResults.map((g) => ({
+      ...parseGroupJsonFields(g),
+      favoritesCount: favCountMap.get(g.id) || 0,
+    }));
 
     const response = new Response(JSON.stringify(json), {
       status: 200,
@@ -248,10 +270,13 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
     const json = parseGroupJsonFields(group);
 
-    // Fetch owners for this group
-    const ownerMembers = await db.query.groupMembers.findMany({
-      where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.role, 'owner')),
-    });
+    // Fetch owners and favorites count in parallel
+    const [ownerMembers, favCountResult] = await Promise.all([
+      db.query.groupMembers.findMany({
+        where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.role, 'owner')),
+      }),
+      db.select({ count: count() }).from(userFavorites).where(eq(userFavorites.groupId, group.id)),
+    ]);
     const owners = await Promise.all(
       ownerMembers.map(async (m) => {
         const user = await db.query.users.findFirst({ where: eq(users.id, m.userId) });
@@ -263,6 +288,7 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       ...json,
       owners: owners.filter(Boolean),
       ownerCount: ownerMembers.length,
+      favoritesCount: favCountResult[0]?.count || 0,
     };
 
     const response = new Response(JSON.stringify(jsonWithOwners), {
@@ -277,6 +303,50 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     return cacheResponse(c.req.raw, response, syncVersion || undefined, waitUntil);
   };
 
+  // Group members handler (public users who favorited this group)
+  const groupMembersHandler = async (c: any) => {
+    const db = createDatabase(c.env.DB);
+    const slug = c.req.param('slug');
+
+    const group = await db.query.groups.findFirst({
+      where: and(eq(groups.urlname, slug), eq(groups.displayOnSite, true)),
+    });
+
+    if (!group) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+
+    const members = await db
+      .select({
+        username: users.username,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        favoritedAt: userFavorites.createdAt,
+      })
+      .from(userFavorites)
+      .innerJoin(users, eq(userFavorites.userId, users.id))
+      .where(
+        and(
+          eq(userFavorites.groupId, group.id),
+          eq(users.profileVisibility, 'public'),
+        )
+      )
+      .orderBy(desc(userFavorites.createdAt));
+
+    return c.json({
+      groupName: group.name,
+      groupSlug: group.urlname,
+      members: members
+        .filter((m) => m.username)
+        .map((m) => ({
+          username: m.username,
+          name: m.name,
+          avatarUrl: m.avatarUrl,
+          favoritedAt: m.favoritedAt,
+        })),
+    });
+  };
+
   // Versioned routes (OpenAPI documented)
   app.openapi(getAllGroupsRoute, allGroupsHandler);
   app.openapi(getGroupBySlugRoute, singleGroupHandler);
@@ -284,4 +354,8 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // Legacy unversioned routes (for backwards compatibility)
   app.get('/groups', allGroupsHandler);
   app.get('/groups/:slug', singleGroupHandler);
+
+  // Group members route
+  app.get('/groups/:slug/members', groupMembersHandler);
+  app.get('/2026-01-25/groups/:slug/members', groupMembersHandler);
 }

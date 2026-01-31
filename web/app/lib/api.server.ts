@@ -36,6 +36,7 @@ export interface ApiGroup {
     github?: string;
     meetup?: string;
   } | null;
+  favoritesCount?: number;
 }
 
 interface FetchGroupsOptions {
@@ -107,6 +108,7 @@ export function toLocalGroup(group: ApiGroup): LocalGroupCompat {
     socialLinks: group.socialLinks || undefined,
     tags: group.tags || [],
     featured: group.isFeatured || false,
+    favoritesCount: group.favoritesCount,
   };
 }
 

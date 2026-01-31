@@ -11,6 +11,10 @@ export interface Env {
   UPLOADS_BUCKET: R2Bucket;
   EVENTS_QUEUE: Queue;
 
+  // Durable Objects for real-time WebSocket notifications
+  USER_NOTIFICATIONS: DurableObjectNamespace;
+  BROADCAST: DurableObjectNamespace;
+
   // OAuth Provider helpers (injected by OAuthProvider wrapper)
   OAUTH_PROVIDER: OAuthHelpers;
 
@@ -63,6 +67,11 @@ export interface Env {
   APPLE_KEY_ID?: string;
   APPLE_PRIVATE_KEY?: string;     // PEM key for JWT signing
   APPLE_REDIRECT_URI?: string;
+
+  // Discord OAuth (upstream auth)
+  DISCORD_CLIENT_ID?: string;
+  DISCORD_CLIENT_SECRET?: string;
+  DISCORD_REDIRECT_URI?: string;
 
   // Session
   SESSION_SECRET?: string;

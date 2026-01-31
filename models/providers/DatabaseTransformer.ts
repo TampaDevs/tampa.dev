@@ -131,6 +131,7 @@ export class DatabaseTransformer {
       venues,
       photo,
       group: groupData,
+      source: group.platform,
     };
 
     return new Event(eventData);

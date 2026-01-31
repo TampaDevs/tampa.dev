@@ -22,7 +22,7 @@ import {
 } from '../db/schema';
 import type { ProviderRegistry } from '../providers/registry';
 import type { Env } from '../../types/worker';
-import type { EventBus } from '../lib/event-bus';
+import { emitEvent } from '../lib/event-bus';
 import type {
   CanonicalEvent,
   CanonicalGroup,
@@ -63,8 +63,11 @@ export interface SyncOptions {
 
 // ============== Sync Service ==============
 
+/** Context needed for emitting domain events from the sync service */
+export type SyncEventContext = Parameters<typeof emitEvent>[0];
+
 export class SyncService {
-  private eventBus?: EventBus;
+  private eventCtx?: SyncEventContext;
 
   constructor(
     private db: Database,
@@ -72,9 +75,9 @@ export class SyncService {
     private env: Env
   ) {}
 
-  /** Attach an EventBus to publish domain events during sync */
-  setEventBus(eventBus: EventBus): void {
-    this.eventBus = eventBus;
+  /** Attach an event context to publish domain events during sync */
+  setEventContext(ctx: SyncEventContext): void {
+    this.eventCtx = ctx;
   }
 
   /**
@@ -197,21 +200,17 @@ export class SyncService {
     };
 
     // Publish sync.completed event
-    if (this.eventBus) {
-      try {
-        await this.eventBus.publish({
-          type: 'sync.completed',
-          payload: {
-            total: syncAllResult.total,
-            succeeded: syncAllResult.succeeded,
-            failed: syncAllResult.failed,
-            durationMs: syncAllResult.durationMs,
-          },
-          metadata: { source: 'sync-service' },
-        });
-      } catch (err) {
-        console.error('Failed to publish sync.completed event:', err);
-      }
+    if (this.eventCtx) {
+      emitEvent(this.eventCtx, {
+        type: 'dev.tampa.sync.completed',
+        payload: {
+          total: syncAllResult.total,
+          succeeded: syncAllResult.succeeded,
+          failed: syncAllResult.failed,
+          durationMs: syncAllResult.durationMs,
+        },
+        metadata: { source: 'sync-service' },
+      });
     }
 
     return syncAllResult;
@@ -292,22 +291,18 @@ export class SyncService {
         .where(eq(groups.id, group.id));
 
       // Publish domain events for newly created events
-      if (this.eventBus && eventResults.created > 0) {
-        try {
-          await this.eventBus.publish({
-            type: 'events.synced',
-            payload: {
-              groupId: group.id,
-              groupUrlname: group.urlname,
-              eventsCreated: eventResults.created,
-              eventsUpdated: eventResults.updated,
-              eventsDeleted: deletedCount,
-            },
-            metadata: { source: 'sync-service' },
-          });
-        } catch (err) {
-          console.error('Failed to publish events.synced event:', err);
-        }
+      if (this.eventCtx && eventResults.created > 0) {
+        emitEvent(this.eventCtx, {
+          type: 'dev.tampa.events.synced',
+          payload: {
+            groupId: group.id,
+            groupUrlname: group.urlname,
+            eventsCreated: eventResults.created,
+            eventsUpdated: eventResults.updated,
+            eventsDeleted: deletedCount,
+          },
+          metadata: { source: 'sync-service' },
+        });
       }
 
       return {

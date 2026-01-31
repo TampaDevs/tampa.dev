@@ -38,6 +38,11 @@ const UPLOAD_CATEGORIES = {
     allowedTypes: ALLOWED_IMAGE_TYPES,
     path: 'media',
   },
+  hero: {
+    maxSize: MAX_FILE_SIZE, // 5MB - hero images are larger format
+    allowedTypes: ALLOWED_IMAGE_TYPES,
+    path: 'heroes',
+  },
 } as const;
 
 type UploadCategory = keyof typeof UPLOAD_CATEGORIES;
@@ -45,10 +50,10 @@ type UploadCategory = keyof typeof UPLOAD_CATEGORIES;
 // ============== Validation Schemas ==============
 
 const requestUploadSchema = z.object({
-  category: z.enum(['avatar', 'app-logo', 'media']),
+  category: z.enum(['avatar', 'app-logo', 'media', 'hero']),
   filename: z.string().min(1).max(255),
-  contentType: z.string(),
-  size: z.number().positive(),
+  contentType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+  size: z.number().positive().max(MAX_FILE_SIZE, 'File size must not exceed 5MB'),
 });
 
 // ============== Types ==============
@@ -101,7 +106,8 @@ function generateFileKey(category: UploadCategory, userId: string, filename: str
   const safeName = filename.replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 50);
   const prefix = isDev ? 'dev_' : '';
 
-  return `${prefix}${UPLOAD_CATEGORIES[category].path}/${userId}/${timestamp}-${random}-${safeName}`;
+  // All uploads are under uploads/{userId}/ for security isolation
+  return `${prefix}uploads/${userId}/${UPLOAD_CATEGORIES[category].path}/${timestamp}-${random}-${safeName}`;
 }
 
 /**

@@ -13,12 +13,24 @@ import {
 import type { Route } from "./+types/root";
 import { Header, Footer } from "./components";
 import { fetchCurrentUser, type AuthUser } from "./lib/admin-api.server";
+import { WebSocketProvider } from "./hooks/WebSocketProvider";
+import { NotificationToast } from "./components/NotificationToast";
+import { CelebrationToast } from "./components/CelebrationToast";
 import "./app.css";
+
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  if (loaderData && !loaderData.isProduction) {
+    return [{ name: "robots", content: "noindex, nofollow" }];
+  }
+  return [];
+};
 
 export async function loader({ request }: Route.LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie") || undefined;
   const user = await fetchCurrentUser(cookieHeader);
-  return { user };
+  const hostname = new URL(request.url).hostname;
+  const isProduction = hostname === "tampa.dev" || hostname === "www.tampa.dev";
+  return { user, isProduction };
 }
 
 /**
@@ -42,6 +54,8 @@ export function shouldRevalidate({
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/favicon.png" },
+  { rel: "manifest", href: "/manifest.json" },
+  { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -60,6 +74,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#F97066" />
         <Meta />
         <Links />
       </head>
@@ -92,13 +107,15 @@ export default function App() {
   }
 
   return (
-    <>
+    <WebSocketProvider user={user}>
       <Header user={user} />
       <main className="flex-1 relative z-0">
         <Outlet />
       </main>
       <Footer />
-    </>
+      <NotificationToast />
+      <CelebrationToast />
+    </WebSocketProvider>
   );
 }
 

@@ -16,7 +16,7 @@ import { users, userIdentities, sessions, UserRole } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { getConfiguredProviders, getProvider } from '../lib/oauth-providers';
-import { EventBus } from '../lib/event-bus.js';
+import { emitEvent } from '../lib/event-bus.js';
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -339,6 +339,7 @@ export function createAuthRoutes() {
             name: githubUser.name || githubUser.login,
             avatarUrl: githubUser.avatar_url,
             role,
+            profileVisibility: 'public',
             createdAt: now,
             updatedAt: now,
           });
@@ -385,17 +386,14 @@ export function createAuthRoutes() {
         });
 
         // Emit event for achievement tracking
-        if (c.env.EVENTS_QUEUE) {
-          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-          eventBus.publish({
-            type: 'user.identity_linked',
-            payload: { userId: user.id, provider: 'github' },
-            metadata: { userId: user.id, source: 'auth' },
-          }).catch(() => {});
-        }
+        emitEvent(c, {
+          type: 'dev.tampa.user.identity_linked',
+          payload: { userId: user.id, provider: 'github' },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      // Create session (skip if link mode — already has session)
+      // Create session (skip if link mode - already has session)
       if (!isLinkMode) {
         const sessionToken = generateSessionToken();
         const expiresAt = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
@@ -415,9 +413,19 @@ export function createAuthRoutes() {
           path: '/',
           domain: '.tampa.dev',
         });
+
+        // Emit login event
+        const daysSinceCreation = user.createdAt
+          ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        emitEvent(c, {
+          type: 'dev.tampa.user.login',
+          payload: { userId: user.id, daysSinceCreation },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      const redirectUrl = isLinkMode ? `${origin}/profile` : (returnTo || `${origin}/`);
+      const redirectUrl = returnTo || (isLinkMode ? `${origin}/profile?tab=accounts` : `${origin}/`);
       return c.redirect(redirectUrl);
     } catch (error) {
       console.error('GitHub OAuth error:', error instanceof Error ? error.message : 'unknown error');
@@ -587,6 +595,7 @@ export function createAuthRoutes() {
         name: `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`,
         avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${role}`,
         role: role as typeof UserRole.USER | typeof UserRole.ADMIN | typeof UserRole.SUPERADMIN,
+        profileVisibility: 'public',
         createdAt: now,
         updatedAt: now,
       });
@@ -813,6 +822,7 @@ export function createAuthRoutes() {
             email,
             name: appleName || email,
             role: UserRole.USER,
+            profileVisibility: 'public',
             createdAt: now,
             updatedAt: now,
           });
@@ -855,14 +865,11 @@ export function createAuthRoutes() {
         });
 
         // Emit event for achievement tracking
-        if (c.env.EVENTS_QUEUE) {
-          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-          eventBus.publish({
-            type: 'user.identity_linked',
-            payload: { userId: user.id, provider: 'apple' },
-            metadata: { userId: user.id, source: 'auth' },
-          }).catch(() => {});
-        }
+        emitEvent(c, {
+          type: 'dev.tampa.user.identity_linked',
+          payload: { userId: user.id, provider: 'apple' },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
       // Create session (skip if link mode)
@@ -885,9 +892,19 @@ export function createAuthRoutes() {
           path: '/',
           domain: '.tampa.dev',
         });
+
+        // Emit login event
+        const daysSinceCreation = user.createdAt
+          ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        emitEvent(c, {
+          type: 'dev.tampa.user.login',
+          payload: { userId: user.id, daysSinceCreation },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      const redirectUrl = isLinkMode ? `${origin}/profile` : (stateData?.returnTo || `${origin}/`);
+      const redirectUrl = stateData?.returnTo || (isLinkMode ? `${origin}/profile?tab=accounts` : `${origin}/`);
       return c.redirect(redirectUrl);
     } catch (error) {
       console.error('Apple Sign-In error:', error instanceof Error ? error.message : 'unknown error');
@@ -1074,6 +1091,7 @@ export function createAuthRoutes() {
             name: providerUser.name || providerUser.email,
             avatarUrl: providerUser.avatarUrl || null,
             role,
+            profileVisibility: 'public',
             createdAt: now,
             updatedAt: now,
           });
@@ -1113,17 +1131,14 @@ export function createAuthRoutes() {
         });
 
         // Emit event for achievement tracking
-        if (c.env.EVENTS_QUEUE) {
-          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-          eventBus.publish({
-            type: 'user.identity_linked',
-            payload: { userId: user.id, provider: providerKey },
-            metadata: { userId: user.id, source: 'auth' },
-          }).catch(() => {});
-        }
+        emitEvent(c, {
+          type: 'dev.tampa.user.identity_linked',
+          payload: { userId: user.id, provider: providerKey },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      // Create session (skip if link mode — already has session)
+      // Create session (skip if link mode  already has session)
       if (!isLinkMode) {
         const sessionToken = generateSessionToken();
         const expiresAt = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
@@ -1143,9 +1158,19 @@ export function createAuthRoutes() {
           path: '/',
           domain: '.tampa.dev',
         });
+
+        // Emit login event
+        const daysSinceCreation = user.createdAt
+          ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        emitEvent(c, {
+          type: 'dev.tampa.user.login',
+          payload: { userId: user.id, daysSinceCreation },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      const redirectUrl = isLinkMode ? `${origin}/profile` : (stateData?.returnTo || `${origin}/`);
+      const redirectUrl = stateData?.returnTo || (isLinkMode ? `${origin}/profile?tab=accounts` : `${origin}/`);
       return c.redirect(redirectUrl);
     } catch (error) {
       console.error(`${providerConfig.name} OAuth error:`, error instanceof Error ? error.message : 'unknown error');

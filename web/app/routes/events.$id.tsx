@@ -159,9 +159,9 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
               {/* RSVP Count */}
               {event.rsvpCount > 0 && (
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl sm:flex-none">
                   <svg
-                    className="w-6 h-6 text-coral"
+                    className="w-6 h-6 text-coral flex-shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -174,12 +174,12 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                     />
                   </svg>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
                       {event.rsvpCount}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
                       attending
-                    </div>
+                    </span>
                   </div>
                 </div>
               )}

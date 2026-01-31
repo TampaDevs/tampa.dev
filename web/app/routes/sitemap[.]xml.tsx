@@ -1,4 +1,5 @@
 import { fetchEvents, fetchGroups, toLocalGroup, getGroupUrlnames } from "~/lib/api.server";
+import { PAGE_SLUGS } from "~/content/pages";
 
 const SITE_URL = "https://tampa.dev";
 
@@ -18,7 +19,18 @@ export async function loader() {
     { url: "/groups", priority: "0.8", changefreq: "weekly" },
     { url: "/calendar", priority: "0.7", changefreq: "daily" },
     { url: "/map", priority: "0.7", changefreq: "daily" },
+    { url: "/leaderboard", priority: "0.6", changefreq: "daily" },
+    { url: "/members", priority: "0.6", changefreq: "daily" },
+    { url: "/developer/docs", priority: "0.5", changefreq: "weekly" },
+    { url: "/login", priority: "0.3", changefreq: "monthly" },
   ];
+
+  // SEO landing pages from content/pages
+  const landingPages = PAGE_SLUGS.map((slug) => ({
+    url: `/${slug}`,
+    priority: "0.7",
+    changefreq: "weekly",
+  }));
 
   const groupPages = groups.map((group) => ({
     url: `/groups/${group.slug}`,
@@ -32,7 +44,7 @@ export async function loader() {
     changefreq: "daily",
   }));
 
-  const allPages = [...staticPages, ...groupPages, ...eventPages];
+  const allPages = [...staticPages, ...landingPages, ...groupPages, ...eventPages];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

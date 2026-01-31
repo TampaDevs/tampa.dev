@@ -19,6 +19,8 @@ const navLinks = [
   { to: "/calendar", label: "Events" },
   { to: "/groups", label: "Groups" },
   { to: "/map", label: "Map" },
+  { to: "/leaderboard", label: "Leaderboard" },
+  { to: "/members", label: "Members" },
 ];
 
 function LogoutButton({

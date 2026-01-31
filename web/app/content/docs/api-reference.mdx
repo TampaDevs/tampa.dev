@@ -35,8 +35,8 @@ All API endpoints are accessible at `https://api.tampa.dev/v1/` with a valid Bea
 | Method | Endpoint | Scope | Description |
 |--------|----------|-------|-------------|
 | `GET` | `/v1/favorites` | `read:favorites` | List favorite groups |
-| `POST` | `/v1/favorites/:groupId` | `write:favorites` | Add favorite |
-| `DELETE` | `/v1/favorites/:groupId` | `write:favorites` | Remove favorite |
+| `POST` | `/v1/favorites/:groupSlug` | `write:favorites` | Add favorite |
+| `DELETE` | `/v1/favorites/:groupSlug` | `write:favorites` | Remove favorite |
 
 ## Portfolio
 
@@ -46,6 +46,113 @@ All API endpoints are accessible at `https://api.tampa.dev/v1/` with a valid Bea
 | `POST` | `/v1/portfolio` | `write:portfolio` | Create portfolio item |
 | `PATCH` | `/v1/portfolio/:id` | `write:portfolio` | Update portfolio item |
 | `DELETE` | `/v1/portfolio/:id` | `write:portfolio` | Delete portfolio item |
+
+## Entitlements
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/profile/entitlements` | `user` | Get your active entitlements |
+
+Returns a list of your active entitlements with source and expiration info. Entitlements are API-only and never exposed on public profiles.
+
+## Linked Accounts
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/me/linked-accounts` | `user:linked-accounts` | List your connected identity providers |
+
+Returns a list of connected providers (e.g., GitHub, Google, LinkedIn) with provider-specific identifiers.
+
+## Uploads
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `POST` | `/v1/uploads/request` | `user` | Request a presigned upload URL |
+
+Request body:
+```json
+{
+  "category": "avatar",
+  "filename": "avatar.png",
+  "contentType": "image/png",
+  "size": 12345
+}
+```
+
+Allowed content types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Maximum file size: 5MB. Upload paths are scoped to the authenticated user.
+
+Returns a presigned URL for direct upload to R2 storage, plus the final public URL.
+
+## Following
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `POST` | `/v1/users/:username/follow` | `user` | Follow a user |
+| `DELETE` | `/v1/users/:username/follow` | `user` | Unfollow a user |
+| `GET` | `/v1/users/:username/followers` | — | List a user's followers |
+| `GET` | `/v1/users/:username/following` | — | List who a user follows |
+| `GET` | `/v1/me/following/:username` | `read:user` | Check if you follow a user |
+
+## Onboarding
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/me/onboarding` | `user` | Get onboarding steps with completion status |
+| `POST` | `/v1/me/onboarding/:stepKey/dismiss` | `user` | Dismiss an onboarding step |
+| `POST` | `/v1/me/onboarding/dismiss-all` | `user` | Dismiss all onboarding steps |
+
+Onboarding steps are automatically completed when corresponding domain events fire (e.g., setting your username, joining a group, earning XP).
+
+---
+
+## Public Endpoints
+
+The following endpoints are publicly accessible without authentication.
+
+### Public Users
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/users` | List users with public profiles |
+| `GET` | `/users/:username` | Get a user's public profile |
+
+`GET /users` query parameters:
+- `search` — Filter by name or username
+- `badge` — Filter by badge slug (only return users who hold this badge)
+- `limit` — Number of results (default 20, max 100)
+- `offset` — Pagination offset (default 0)
+
+The single-user response includes: profile info (`heroImageUrl`, `themeColor`), location, social links (as an array of URL strings), `githubUsername`, badges (with descriptions, point values, and rarity data), achievements, favorite groups, portfolio items, and `xpScore` (total XP from badges).
+
+### Badges
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/badges` | List all badges |
+| `GET` | `/badges/:slug` | Get badge details |
+
+Badge responses include `points`, `awardedCount`, and a `rarity` object with `tier` and `percentage` fields. Rarity tiers are: `legendary` (under 1%), `epic` (1-5%), `rare` (5-15%), `uncommon` (15-50%), `common` (50%+). Badges with `hideFromDirectory` enabled are excluded from the public listing.
+
+### Badge Claiming
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/claim/:code` | Get badge info for a claim link |
+| `POST` | `/claim/:code` | Claim a badge (requires authentication) |
+
+Claim links are shareable URLs that grant badges. They can have optional use limits and expiration dates.
+
+### Leaderboard
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/leaderboard` | Get the XP leaderboard |
+
+Query parameters:
+- `limit` — Number of entries (default 50, max 100)
+- `offset` — Pagination offset (default 0)
+
+Returns users ranked by XP score (sum of badge point values), with achievement completion counts and `totalAchievements` (number of defined achievements).
 
 ## Response Format
 
@@ -58,11 +165,11 @@ All endpoints return JSON. Successful responses include the data directly. Error
 ```
 
 HTTP status codes follow standard conventions:
-- `200` — Success
-- `201` — Created
-- `400` — Bad request (invalid input)
-- `401` — Unauthorized (missing or invalid token)
-- `403` — Forbidden (insufficient scope)
-- `404` — Not found
-- `409` — Conflict (e.g., duplicate username)
-- `429` — Rate limited
+- `200` - Success
+- `201` - Created
+- `400` - Bad request (invalid input)
+- `401` - Unauthorized (missing or invalid token)
+- `403` - Forbidden (insufficient scope)
+- `404` - Not found
+- `409` - Conflict (e.g., duplicate username)
+- `429` - Rate limited

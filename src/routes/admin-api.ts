@@ -8,12 +8,14 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, like, or } from 'drizzle-orm';
+import { eq, desc, and, like, or, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, EventPlatform, UserRole } from '../db/schema';
+import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, achievements, achievementProgress, webhooks, webhookDeliveries, userEntitlements, badgeClaimLinks, EventPlatform, UserRole } from '../db/schema';
 import { SyncService } from '../services/sync';
 import { providerRegistry } from '../providers';
 import type { Env } from '../../types/worker';
+import { getSessionCookieName } from '../lib/session';
+import { emitEvent } from '../lib/event-bus.js';
 
 // ============== Validation Schemas ==============
 
@@ -371,7 +373,7 @@ export function createAdminApiRoutes() {
     try {
       const db = createDatabase(c.env.DB);
 
-      // Initialize providers (non-fatal — individual group syncs handle missing providers)
+      // Initialize providers (non-fatal - individual group syncs handle missing providers)
       try {
         await providerRegistry.initializeAll(c.env);
       } catch (initError) {
@@ -409,7 +411,7 @@ export function createAdminApiRoutes() {
         return c.json({ error: 'Group not found' }, 404);
       }
 
-      // Initialize providers (non-fatal — sync handles missing providers)
+      // Initialize providers (non-fatal - sync handles missing providers)
       try {
         await providerRegistry.initializeAll(c.env);
       } catch (initError) {
@@ -868,7 +870,7 @@ export function createAdminApiRoutes() {
           .where(eq(userFavorites.id, fav.id));
         transferredFavorites++;
       } catch {
-        // Duplicate — delete instead
+        // Duplicate - delete instead
         await db.delete(userFavorites).where(eq(userFavorites.id, fav.id));
       }
     }
@@ -1084,7 +1086,9 @@ export function createAdminApiRoutes() {
     description: z.string().max(500).optional(),
     icon: z.string().min(1).max(50),
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().default('#E5574F'),
+    points: z.number().int().min(0).optional().default(0),
     sortOrder: z.number().int().min(0).optional().default(0),
+    hideFromDirectory: z.boolean().optional().default(false),
   });
 
   const updateBadgeSchema = z.object({
@@ -1093,7 +1097,9 @@ export function createAdminApiRoutes() {
     description: z.string().max(500).optional().nullable(),
     icon: z.string().min(1).max(50).optional(),
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    points: z.number().int().min(0).optional(),
     sortOrder: z.number().int().min(0).optional(),
+    hideFromDirectory: z.boolean().optional(),
   });
 
   /**
@@ -1144,7 +1150,9 @@ export function createAdminApiRoutes() {
       description: data.description,
       icon: data.icon,
       color: data.color,
+      points: data.points,
       sortOrder: data.sortOrder,
+      hideFromDirectory: data.hideFromDirectory ? 1 : 0,
     });
 
     const created = await db.query.badges.findFirst({
@@ -1180,7 +1188,12 @@ export function createAdminApiRoutes() {
       }
     }
 
-    await db.update(badges).set(data).where(eq(badges.id, id));
+    const updateData = {
+      ...data,
+      ...(data.hideFromDirectory !== undefined ? { hideFromDirectory: data.hideFromDirectory ? 1 : 0 } : {}),
+    };
+
+    await db.update(badges).set(updateData).where(eq(badges.id, id));
 
     const updated = await db.query.badges.findFirst({
       where: eq(badges.id, id),
@@ -1239,6 +1252,27 @@ export function createAdminApiRoutes() {
       id: crypto.randomUUID(),
       userId,
       badgeId,
+    });
+
+    // Emit badge.issued event
+    emitEvent(c, {
+      type: 'dev.tampa.badge.issued',
+      payload: { userId, badgeId: badge.id, badgeSlug: badge.slug, badgeName: badge.name, icon: badge.icon, color: badge.color, points: badge.points },
+      metadata: { userId, source: 'admin' },
+    });
+
+    // Compute total score and emit score_changed event
+    const scoreResult = await db
+      .select({ totalScore: sql<number>`COALESCE(SUM(${badges.points}), 0)` })
+      .from(userBadges)
+      .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+      .where(eq(userBadges.userId, userId));
+    const totalScore = scoreResult[0]?.totalScore ?? 0;
+
+    emitEvent(c, {
+      type: 'dev.tampa.user.score_changed',
+      payload: { userId, totalScore, previousScore: 0 },
+      metadata: { userId, source: 'admin' },
     });
 
     return c.json({ success: true, message: 'Badge awarded' }, 201);
@@ -1569,6 +1603,568 @@ export function createAdminApiRoutes() {
 
     await db.delete(groupFeatureFlags).where(eq(groupFeatureFlags.id, existing.id));
     return c.json({ success: true });
+  });
+
+  // ============== Achievements ==============
+
+  const createAchievementSchema = z.object({
+    key: z.string().min(1).max(100).regex(/^[a-z0-9_]+$/, 'Must be lowercase alphanumeric with underscores'),
+    name: z.string().min(1).max(100),
+    description: z.string().min(1).max(500),
+    icon: z.string().max(10).optional(),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    targetValue: z.number().int().min(1).default(1),
+    points: z.number().int().min(0).optional().default(0),
+    badgeSlug: z.string().optional(),
+    entitlement: z.string().optional(),
+    eventType: z.string().optional(),
+    sortOrder: z.number().int().min(0).optional().default(0),
+  });
+
+  const updateAchievementSchema = z.object({
+    key: z.string().min(1).max(100).regex(/^[a-z0-9_]+$/).optional(),
+    name: z.string().min(1).max(100).optional(),
+    description: z.string().min(1).max(500).optional(),
+    icon: z.string().max(10).optional().nullable(),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+    targetValue: z.number().int().min(1).optional(),
+    points: z.number().int().min(0).optional(),
+    badgeSlug: z.string().optional().nullable(),
+    entitlement: z.string().optional().nullable(),
+    eventType: z.string().optional().nullable(),
+    sortOrder: z.number().int().min(0).optional(),
+  });
+
+  /**
+   * List all achievements
+   * GET /api/admin/achievements
+   */
+  app.get('/achievements', async (c) => {
+    const db = createDatabase(c.env.DB);
+
+    const allAchievements = await db.query.achievements.findMany({
+      orderBy: [achievements.sortOrder],
+    });
+
+    // Get progress counts per achievement
+    const achievementsWithCounts = await Promise.all(
+      allAchievements.map(async (achievement) => {
+        const progress = await db.query.achievementProgress.findMany({
+          where: eq(achievementProgress.achievementKey, achievement.key),
+        });
+        const completedCount = progress.filter((p) => p.completedAt).length;
+        return { ...achievement, userCount: progress.length, completedCount };
+      })
+    );
+
+    return c.json({ achievements: achievementsWithCounts });
+  });
+
+  /**
+   * Create an achievement
+   * POST /api/admin/achievements
+   */
+  app.post('/achievements', zValidator('json', createAchievementSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const data = c.req.valid('json');
+
+    const existing = await db.query.achievements.findFirst({
+      where: eq(achievements.key, data.key),
+    });
+    if (existing) {
+      return c.json({ error: 'An achievement with this key already exists' }, 409);
+    }
+
+    const id = crypto.randomUUID();
+    await db.insert(achievements).values({
+      id,
+      key: data.key,
+      name: data.name,
+      description: data.description,
+      icon: data.icon,
+      color: data.color,
+      targetValue: data.targetValue,
+      points: data.points,
+      badgeSlug: data.badgeSlug,
+      entitlement: data.entitlement,
+      eventType: data.eventType,
+      sortOrder: data.sortOrder,
+    });
+
+    const created = await db.query.achievements.findFirst({
+      where: eq(achievements.id, id),
+    });
+
+    return c.json(created, 201);
+  });
+
+  /**
+   * Update an achievement
+   * PATCH /api/admin/achievements/:id
+   */
+  app.patch('/achievements/:id', zValidator('json', updateAchievementSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+    const data = c.req.valid('json');
+
+    const existing = await db.query.achievements.findFirst({
+      where: eq(achievements.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Achievement not found' }, 404);
+    }
+
+    // Check key uniqueness if changing
+    if (data.key && data.key !== existing.key) {
+      const duplicate = await db.query.achievements.findFirst({
+        where: eq(achievements.key, data.key),
+      });
+      if (duplicate) {
+        return c.json({ error: 'An achievement with this key already exists' }, 409);
+      }
+    }
+
+    const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (data.key !== undefined) updateData.key = data.key;
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.color !== undefined) updateData.color = data.color;
+    if (data.targetValue !== undefined) updateData.targetValue = data.targetValue;
+    if (data.points !== undefined) updateData.points = data.points;
+    if (data.badgeSlug !== undefined) updateData.badgeSlug = data.badgeSlug;
+    if (data.entitlement !== undefined) updateData.entitlement = data.entitlement;
+    if (data.eventType !== undefined) updateData.eventType = data.eventType;
+    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+
+    await db.update(achievements).set(updateData).where(eq(achievements.id, id));
+
+    const updated = await db.query.achievements.findFirst({
+      where: eq(achievements.id, id),
+    });
+
+    return c.json(updated);
+  });
+
+  /**
+   * Delete an achievement
+   * DELETE /api/admin/achievements/:id
+   */
+  app.delete('/achievements/:id', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const existing = await db.query.achievements.findFirst({
+      where: eq(achievements.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Achievement not found' }, 404);
+    }
+
+    // Delete progress rows for this achievement
+    await db.delete(achievementProgress).where(eq(achievementProgress.achievementKey, existing.key));
+
+    // Delete the achievement
+    await db.delete(achievements).where(eq(achievements.id, id));
+
+    return c.json({ success: true });
+  });
+
+  /**
+   * Manually set achievement progress for a user
+   * POST /api/admin/achievements/:achievementKey/users/:userId/progress
+   */
+  app.post('/achievements/:achievementKey/users/:userId/progress', zValidator('json', z.object({ currentValue: z.number().int().min(0) })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const achievementKey = c.req.param('achievementKey');
+    const userId = c.req.param('userId');
+    const { currentValue } = c.req.valid('json');
+
+    const achievement = await db.query.achievements.findFirst({
+      where: eq(achievements.key, achievementKey),
+    });
+    if (!achievement) {
+      return c.json({ error: 'Achievement not found' }, 404);
+    }
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    if (!user) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    const now = new Date().toISOString();
+    const completedAt = currentValue >= achievement.targetValue ? now : null;
+
+    const existing = await db.query.achievementProgress.findFirst({
+      where: and(
+        eq(achievementProgress.userId, userId),
+        eq(achievementProgress.achievementKey, achievementKey),
+      ),
+    });
+
+    if (existing) {
+      await db.update(achievementProgress).set({
+        currentValue,
+        completedAt,
+        updatedAt: now,
+      }).where(eq(achievementProgress.id, existing.id));
+    } else {
+      await db.insert(achievementProgress).values({
+        id: crypto.randomUUID(),
+        userId,
+        achievementKey,
+        currentValue,
+        targetValue: achievement.targetValue,
+        completedAt,
+        updatedAt: now,
+      });
+    }
+
+    return c.json({ success: true, currentValue, completedAt });
+  });
+
+  /**
+   * Reset achievement progress for a user
+   * DELETE /api/admin/achievements/:achievementKey/users/:userId/progress
+   */
+  app.delete('/achievements/:achievementKey/users/:userId/progress', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const achievementKey = c.req.param('achievementKey');
+    const userId = c.req.param('userId');
+
+    await db.delete(achievementProgress).where(
+      and(
+        eq(achievementProgress.userId, userId),
+        eq(achievementProgress.achievementKey, achievementKey),
+      ),
+    );
+
+    return c.json({ success: true });
+  });
+
+  // ============== Webhooks (Admin) ==============
+
+  /**
+   * List all webhooks across all users
+   * GET /api/admin/webhooks
+   */
+  app.get('/webhooks', async (c) => {
+    const db = createDatabase(c.env.DB);
+
+    const allWebhooks = await db.query.webhooks.findMany({
+      orderBy: (w, { desc }) => [desc(w.createdAt)],
+    });
+
+    // Enrich with owner info
+    const userIds = [...new Set(allWebhooks.map((w) => w.userId))];
+    const ownerUsers = userIds.length > 0
+      ? await db.query.users.findMany({
+        where: or(...userIds.map((id) => eq(users.id, id))),
+      })
+      : [];
+    const userMap = new Map(ownerUsers.map((u) => [u.id, u]));
+
+    const enriched = allWebhooks.map((w) => {
+      const owner = userMap.get(w.userId);
+      return {
+        ...w,
+        eventTypes: JSON.parse(w.eventTypes || '["*"]'),
+        ownerName: owner?.name || owner?.email || 'Unknown',
+        ownerEmail: owner?.email || '',
+        ownerUsername: owner?.username || null,
+      };
+    });
+
+    return c.json({ webhooks: enriched });
+  });
+
+  /**
+   * Update any webhook (admin)
+   * PATCH /api/admin/webhooks/:id
+   */
+  app.patch('/webhooks/:id', zValidator('json', z.object({
+    url: z.string().url().optional(),
+    eventTypes: z.array(z.string()).optional(),
+    isActive: z.boolean().optional(),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+    const data = c.req.valid('json');
+
+    const existing = await db.query.webhooks.findFirst({
+      where: eq(webhooks.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Webhook not found' }, 404);
+    }
+
+    const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (data.url !== undefined) updateData.url = data.url;
+    if (data.eventTypes !== undefined) updateData.eventTypes = JSON.stringify(data.eventTypes);
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+    await db.update(webhooks).set(updateData).where(eq(webhooks.id, id));
+
+    return c.json({ success: true });
+  });
+
+  /**
+   * Delete any webhook (admin)
+   * DELETE /api/admin/webhooks/:id
+   */
+  app.delete('/webhooks/:id', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const existing = await db.query.webhooks.findFirst({
+      where: eq(webhooks.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Webhook not found' }, 404);
+    }
+
+    await db.delete(webhooks).where(eq(webhooks.id, id));
+    return c.json({ success: true });
+  });
+
+  // ============== Entitlements ==============
+
+  /**
+   * List all entitlements
+   * GET /api/admin/entitlements
+   */
+  app.get('/entitlements', async (c) => {
+    const db = createDatabase(c.env.DB);
+
+    const allEntitlements = await db.query.userEntitlements.findMany({
+      orderBy: [desc(userEntitlements.grantedAt)],
+    });
+
+    // Enrich with user info
+    const enriched = await Promise.all(
+      allEntitlements.map(async (ent) => {
+        const user = await db.query.users.findFirst({ where: eq(users.id, ent.userId) });
+        return {
+          ...ent,
+          userName: user?.name || user?.email || 'Unknown',
+          userEmail: user?.email || '',
+          userUsername: user?.username || null,
+        };
+      })
+    );
+
+    return c.json({ entitlements: enriched });
+  });
+
+  /**
+   * Create an entitlement assignment
+   * POST /api/admin/entitlements
+   */
+  app.post('/entitlements', zValidator('json', z.object({
+    userId: z.string().min(1),
+    entitlement: z.string().min(1).max(100),
+    expiresAt: z.string().optional(),
+    source: z.string().optional().default('admin'),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const data = c.req.valid('json');
+
+    // Verify user exists
+    const user = await db.query.users.findFirst({ where: eq(users.id, data.userId) });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    // Check for existing entitlement
+    const existing = await db.query.userEntitlements.findFirst({
+      where: and(eq(userEntitlements.userId, data.userId), eq(userEntitlements.entitlement, data.entitlement)),
+    });
+    if (existing) {
+      return c.json({ error: 'User already has this entitlement' }, 409);
+    }
+
+    const id = crypto.randomUUID();
+    await db.insert(userEntitlements).values({
+      id,
+      userId: data.userId,
+      entitlement: data.entitlement,
+      expiresAt: data.expiresAt || null,
+      source: data.source,
+    });
+
+    const created = await db.query.userEntitlements.findFirst({
+      where: eq(userEntitlements.id, id),
+    });
+
+    return c.json(created, 201);
+  });
+
+  /**
+   * Delete an entitlement by ID
+   * DELETE /api/admin/entitlements/:id
+   */
+  app.delete('/entitlements/:id', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const existing = await db.query.userEntitlements.findFirst({
+      where: eq(userEntitlements.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Entitlement not found' }, 404);
+    }
+
+    await db.delete(userEntitlements).where(eq(userEntitlements.id, id));
+    return c.json({ success: true, message: 'Entitlement removed' });
+  });
+
+  /**
+   * Assign entitlement to user (alternative endpoint)
+   * POST /api/admin/entitlements/assign
+   */
+  app.post('/entitlements/assign', zValidator('json', z.object({
+    userId: z.string().min(1),
+    entitlement: z.string().min(1).max(100),
+    expiresAt: z.string().optional(),
+    source: z.string().optional().default('admin'),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const data = c.req.valid('json');
+
+    const user = await db.query.users.findFirst({ where: eq(users.id, data.userId) });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    // Upsert: if already exists, update expiry/source
+    const existing = await db.query.userEntitlements.findFirst({
+      where: and(eq(userEntitlements.userId, data.userId), eq(userEntitlements.entitlement, data.entitlement)),
+    });
+
+    if (existing) {
+      await db.update(userEntitlements).set({
+        expiresAt: data.expiresAt || null,
+        source: data.source,
+      }).where(eq(userEntitlements.id, existing.id));
+      return c.json({ success: true, message: 'Entitlement updated' });
+    }
+
+    const id = crypto.randomUUID();
+    await db.insert(userEntitlements).values({
+      id,
+      userId: data.userId,
+      entitlement: data.entitlement,
+      expiresAt: data.expiresAt || null,
+      source: data.source,
+    });
+
+    return c.json({ success: true, message: 'Entitlement assigned' }, 201);
+  });
+
+  /**
+   * Remove entitlement from user by userId and entitlement name
+   * DELETE /api/admin/entitlements/:userId/:entitlement
+   */
+  app.delete('/entitlements/:userId/:entitlement', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const userId = c.req.param('userId');
+    const entitlement = c.req.param('entitlement');
+
+    const existing = await db.query.userEntitlements.findFirst({
+      where: and(eq(userEntitlements.userId, userId), eq(userEntitlements.entitlement, entitlement)),
+    });
+    if (!existing) {
+      return c.json({ error: 'Entitlement not found for this user' }, 404);
+    }
+
+    await db.delete(userEntitlements).where(eq(userEntitlements.id, existing.id));
+    return c.json({ success: true, message: 'Entitlement removed from user' });
+  });
+
+  // ============== Badge Claim Links (Admin) ==============
+
+  /**
+   * List claim links for a badge
+   * GET /api/admin/badges/:id/claim-links
+   */
+  app.get('/badges/:id/claim-links', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const badgeId = c.req.param('id');
+
+    const badge = await db.query.badges.findFirst({ where: eq(badges.id, badgeId) });
+    if (!badge) return c.json({ error: 'Badge not found' }, 404);
+
+    const links = await db.query.badgeClaimLinks.findMany({
+      where: eq(badgeClaimLinks.badgeId, badgeId),
+    });
+
+    return c.json({ claimLinks: links });
+  });
+
+  /**
+   * Create a claim link for a badge
+   * POST /api/admin/badges/:id/claim-links
+   */
+  app.post('/badges/:id/claim-links', zValidator('json', z.object({
+    maxUses: z.number().int().min(1).optional(),
+    expiresAt: z.string().optional(),
+    achievementId: z.string().optional(),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const badgeId = c.req.param('id');
+    const data = c.req.valid('json');
+
+    const badge = await db.query.badges.findFirst({ where: eq(badges.id, badgeId) });
+    if (!badge) return c.json({ error: 'Badge not found' }, 404);
+
+    // Get admin user from session for createdBy
+    const cookieName = getSessionCookieName(c.env);
+    const cookieHeader = c.req.header('Cookie') || '';
+    const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
+    let createdBy = 'system';
+    if (sessionMatch?.[1]) {
+      const session = await db.query.sessions.findFirst({ where: eq(sessions.id, sessionMatch[1]) });
+      if (session) createdBy = session.userId;
+    }
+
+    // Generate random code
+    const codeBytes = new Uint8Array(16);
+    crypto.getRandomValues(codeBytes);
+    const code = Array.from(codeBytes).map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 24);
+
+    const id = crypto.randomUUID();
+    await db.insert(badgeClaimLinks).values({
+      id,
+      badgeId,
+      code,
+      maxUses: data.maxUses || null,
+      expiresAt: data.expiresAt || null,
+      createdBy,
+      achievementId: data.achievementId || null,
+    });
+
+    const created = await db.query.badgeClaimLinks.findFirst({
+      where: eq(badgeClaimLinks.id, id),
+    });
+
+    return c.json(created, 201);
+  });
+
+  /**
+   * Delete/revoke a claim link
+   * DELETE /api/admin/claim-links/:id
+   */
+  app.delete('/claim-links/:id', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const existing = await db.query.badgeClaimLinks.findFirst({
+      where: eq(badgeClaimLinks.id, id),
+    });
+    if (!existing) {
+      return c.json({ error: 'Claim link not found' }, 404);
+    }
+
+    await db.delete(badgeClaimLinks).where(eq(badgeClaimLinks.id, id));
+    return c.json({ success: true, message: 'Claim link deleted' });
   });
 
   return app;

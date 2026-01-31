@@ -2,10 +2,10 @@
  * SEO utilities for generating meta tags
  */
 
-const SITE_NAME = "Tampa Tech Events";
+const SITE_NAME = "Tampa.dev";
 const SITE_URL = "https://tampa.dev";
 const DEFAULT_DESCRIPTION =
-  "Discover tech meetups, developer events, and communities in Tampa Bay. Find your next networking opportunity.";
+  "The Tampa Bay tech events calendar. Discover developer meetups, startup events, and tech communities across Tampa, St. Petersburg, and Clearwater.";
 const DEFAULT_IMAGE = "/images/hero.webp";
 
 interface MetaTagsOptions {
@@ -42,6 +42,9 @@ export function generateMetaTags({
   const tags: MetaDescriptor[] = [
     { title: fullTitle },
     { name: "description", content: description },
+
+    // Canonical URL
+    { tagName: "link", rel: "canonical", href: fullUrl },
 
     // Open Graph
     { property: "og:title", content: fullTitle },

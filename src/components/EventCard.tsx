@@ -33,7 +33,8 @@ const contentStyles: Record<EventCardVariant, string> = {
 
 export function EventCard({ event, variant = 'default' }: EventCardProps) {
   const photoUrl = getPhotoUrl(event);
-  const eventUrl = addUtm(event.eventUrl);
+  const tampaDevUrl = `https://tampa.dev/events/${event.id}`;
+  const eventUrl = addUtm(tampaDevUrl);
 
   return (
     <div class={containerStyles[variant]}>

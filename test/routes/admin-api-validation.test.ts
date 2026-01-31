@@ -15,7 +15,9 @@ const createBadgeSchema = z.object({
   description: z.string().max(500).optional(),
   icon: z.string().min(1).max(50),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().default('#E5574F'),
+  points: z.number().int().min(0).optional().default(0),
   sortOrder: z.number().int().min(0).optional().default(0),
+  hideFromDirectory: z.boolean().optional().default(false),
 });
 
 const updateBadgeSchema = z.object({
@@ -24,7 +26,9 @@ const updateBadgeSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   icon: z.string().min(1).max(50).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  points: z.number().int().min(0).optional(),
   sortOrder: z.number().int().min(0).optional(),
+  hideFromDirectory: z.boolean().optional(),
 });
 
 const createFlagSchema = z.object({
@@ -155,6 +159,57 @@ describe('Admin API Validation Schemas', () => {
         });
         expect(result.success).to.be.false;
       });
+
+      it('should apply default points of 0', () => {
+        const result = createBadgeSchema.parse({
+          name: 'Test Badge',
+          slug: 'test-badge',
+          icon: '✨',
+        });
+        expect(result.points).to.equal(0);
+      });
+
+      it('should accept custom points value', () => {
+        const result = createBadgeSchema.safeParse({
+          name: 'Test',
+          slug: 'test',
+          icon: '✨',
+          points: 50,
+        });
+        expect(result.success).to.be.true;
+        if (result.success) {
+          expect(result.data.points).to.equal(50);
+        }
+      });
+
+      it('should reject negative points', () => {
+        const result = createBadgeSchema.safeParse({
+          name: 'Test',
+          slug: 'test',
+          icon: '✨',
+          points: -10,
+        });
+        expect(result.success).to.be.false;
+      });
+
+      it('should apply default hideFromDirectory of false', () => {
+        const result = createBadgeSchema.parse({
+          name: 'Test Badge',
+          slug: 'test-badge',
+          icon: '✨',
+        });
+        expect(result.hideFromDirectory).to.be.false;
+      });
+
+      it('should accept hideFromDirectory as true', () => {
+        const result = createBadgeSchema.parse({
+          name: 'Test Badge',
+          slug: 'test-badge',
+          icon: '✨',
+          hideFromDirectory: true,
+        });
+        expect(result.hideFromDirectory).to.be.true;
+      });
     });
 
     describe('updateBadgeSchema', () => {
@@ -176,6 +231,21 @@ describe('Admin API Validation Schemas', () => {
       it('should reject invalid slug on update', () => {
         const result = updateBadgeSchema.safeParse({ slug: 'Bad Slug!' });
         expect(result.success).to.be.false;
+      });
+
+      it('should accept points update', () => {
+        const result = updateBadgeSchema.safeParse({ points: 25 });
+        expect(result.success).to.be.true;
+      });
+
+      it('should reject negative points on update', () => {
+        const result = updateBadgeSchema.safeParse({ points: -5 });
+        expect(result.success).to.be.false;
+      });
+
+      it('should accept hideFromDirectory update', () => {
+        const result = updateBadgeSchema.safeParse({ hideFromDirectory: true });
+        expect(result.success).to.be.true;
       });
     });
   });

@@ -7,14 +7,23 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress } from '../db/schema';
+import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { deleteCookie } from 'hono/cookie';
-import { ACHIEVEMENTS } from '../lib/achievements.js';
-import { EventBus } from '../lib/event-bus.js';
+import { emitEvent } from '../lib/event-bus.js';
+
+// ============== Rarity Helper ==============
+
+function getRarityTierName(percentage: number): string {
+  if (percentage < 1) return 'legendary';
+  if (percentage < 5) return 'epic';
+  if (percentage < 15) return 'rare';
+  if (percentage < 50) return 'uncommon';
+  return 'common';
+}
 
 // ============== Validation Schemas ==============
 
@@ -34,21 +43,19 @@ const usernameSchema = z.string()
   )
   .transform((val) => val.toLowerCase());
 
-const userSocialLinksSchema = z.object({
-  github: z.string().url().optional().or(z.literal('')),
-  twitter: z.string().url().optional().or(z.literal('')),
-  linkedin: z.string().url().optional().or(z.literal('')),
-  website: z.string().url().optional().or(z.literal('')),
-  discord: z.string().url().optional().or(z.literal('')),
-}).optional().nullable();
+const userSocialLinksSchema = z.array(z.string().url()).max(5).optional().nullable();
 
 const updateProfileSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   avatarUrl: z.string().url().optional().nullable(),
+  heroImageUrl: z.string().url().optional().nullable(),
+  themeColor: z.enum(['coral', 'ocean', 'sunset', 'forest', 'violet', 'rose', 'slate', 'sky']).optional().nullable(),
   username: usernameSchema.optional(),
   bio: z.string().max(500).optional().nullable(),
+  location: z.string().max(100).optional().nullable(),
   socialLinks: userSocialLinksSchema,
   showAchievements: z.boolean().optional(),
+  profileVisibility: z.enum(['public', 'private']).optional(),
 });
 
 // ============== Helper Functions ==============
@@ -80,6 +87,21 @@ async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
   });
 }
 
+/**
+ * Normalize social links from DB (handles legacy object format → array)
+ */
+export function normalizeSocialLinks(raw: string | null): string[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    if (typeof parsed === 'object' && parsed !== null) {
+      return Object.values(parsed).filter((v): v is string => typeof v === 'string' && v.length > 0);
+    }
+    return null;
+  } catch { return null; }
+}
+
 function serializeUser(user: typeof users.$inferSelect) {
   return {
     id: user.id,
@@ -87,10 +109,14 @@ function serializeUser(user: typeof users.$inferSelect) {
     name: user.name,
     username: user.username,
     bio: user.bio,
-    socialLinks: user.socialLinks ? JSON.parse(user.socialLinks) : null,
+    location: user.location,
+    socialLinks: normalizeSocialLinks(user.socialLinks),
     avatarUrl: user.avatarUrl,
+    heroImageUrl: user.heroImageUrl,
+    themeColor: user.themeColor,
     role: user.role,
     showAchievements: user.showAchievements,
+    profileVisibility: user.profileVisibility,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -116,14 +142,51 @@ export function createProfileRoutes() {
       where: eq(userBadges.userId, user.id),
     });
 
-    let userBadgeList: Array<{ id: string; name: string; slug: string; description: string | null; icon: string; color: string }> = [];
+    let userBadgeList: Array<{ id: string; name: string; slug: string; description: string | null; icon: string; color: string; points: number; awardedAt: string | null; rarity: { tier: string; percentage: number } }> = [];
     if (ub.length > 0) {
       const badgeResults = await Promise.all(
         ub.map((b) => db.query.badges.findFirst({ where: eq(badges.id, b.badgeId) }))
       );
-      userBadgeList = badgeResults
-        .filter((b): b is NonNullable<typeof b> => b !== null)
-        .map((b) => ({ id: b.id, name: b.name, slug: b.slug, description: b.description, icon: b.icon, color: b.color }));
+
+      // Get total public users count for rarity computation
+      const totalUsersResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(users)
+        .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
+      const totalUsers = totalUsersResult[0]?.count ?? 0;
+
+      // Count holders per badge in a single batch query
+      const badgeIds = ub.map(b => b.badgeId);
+      const holderCounts = await db
+        .select({ badgeId: userBadges.badgeId, count: sql<number>`COUNT(*)` })
+        .from(userBadges)
+        .where(sql`${userBadges.badgeId} IN (${sql.join(badgeIds.map(id => sql`${id}`), sql`, `)})`)
+        .groupBy(userBadges.badgeId);
+
+      const holderCountMap = new Map(holderCounts.map(h => [h.badgeId, h.count]));
+
+      userBadgeList = ub
+        .map((ubEntry) => {
+          const badge = badgeResults.find((b) => b?.id === ubEntry.badgeId);
+          if (!badge) return null;
+          const awardedCount = holderCountMap.get(badge.id) ?? 0;
+          const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
+          return {
+            id: badge.id,
+            name: badge.name,
+            slug: badge.slug,
+            description: badge.description,
+            icon: badge.icon,
+            color: badge.color,
+            points: badge.points,
+            awardedAt: ubEntry.awardedAt,
+            rarity: {
+              tier: getRarityTierName(rarityPercentage),
+              percentage: Math.round(rarityPercentage * 10) / 10,
+            },
+          };
+        })
+        .filter((b): b is NonNullable<typeof b> => b !== null);
     }
 
     return c.json({ ...serializeUser(user), badges: userBadgeList });
@@ -184,19 +247,25 @@ export function createProfileRoutes() {
       updateData.avatarUrl = updates.avatarUrl;
     }
 
+    if (updates.heroImageUrl !== undefined) {
+      updateData.heroImageUrl = updates.heroImageUrl;
+    }
+
+    if (updates.themeColor !== undefined) {
+      updateData.themeColor = updates.themeColor;
+    }
+
     if (updates.bio !== undefined) {
       updateData.bio = updates.bio;
     }
 
+    if (updates.location !== undefined) {
+      updateData.location = updates.location;
+    }
+
     if (updates.socialLinks !== undefined) {
-      if (updates.socialLinks) {
-        // Filter out empty strings
-        const filtered = Object.fromEntries(
-          Object.entries(updates.socialLinks).filter(([, v]) => v && v.length > 0)
-        );
-        updateData.socialLinks = Object.keys(filtered).length > 0
-          ? JSON.stringify(filtered)
-          : null;
+      if (updates.socialLinks && updates.socialLinks.length > 0) {
+        updateData.socialLinks = JSON.stringify(updates.socialLinks);
       } else {
         updateData.socialLinks = null;
       }
@@ -204,6 +273,10 @@ export function createProfileRoutes() {
 
     if (updates.showAchievements !== undefined) {
       updateData.showAchievements = updates.showAchievements;
+    }
+
+    if (updates.profileVisibility !== undefined) {
+      updateData.profileVisibility = updates.profileVisibility;
     }
 
     // Username uniqueness check
@@ -234,6 +307,13 @@ export function createProfileRoutes() {
     if (!updatedUser) {
       return c.json({ error: 'User not found' }, 404);
     }
+
+    // Emit profile_updated event for achievement tracking and onboarding
+    emitEvent(c, {
+      type: 'dev.tampa.user.profile_updated',
+      payload: { userId: user.id, fields: Object.keys(updates) },
+      metadata: { userId: user.id, source: 'profile' },
+    });
 
     return c.json(serializeUser(updatedUser));
   });
@@ -387,14 +467,11 @@ export function createProfileRoutes() {
     });
 
     // Emit event for achievement tracking
-    if (c.env.EVENTS_QUEUE) {
-      const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-      eventBus.publish({
-        type: 'user.portfolio_item_created',
-        payload: { userId: user.id, portfolioItemId: id },
-        metadata: { userId: user.id, source: 'profile' },
-      }).catch(() => {}); // fire-and-forget
-    }
+    emitEvent(c, {
+      type: 'dev.tampa.user.portfolio_item_created',
+      payload: { userId: user.id, portfolioItemId: id },
+      metadata: { userId: user.id, source: 'profile' },
+    });
 
     return c.json(created, 201);
   });
@@ -505,6 +582,11 @@ export function createProfileRoutes() {
     const data = c.req.valid('json');
     const db = createDatabase(c.env.DB);
 
+    // Admin scope requires admin/superadmin role
+    if (data.scopes.includes('admin') && user.role !== 'admin' && user.role !== 'superadmin') {
+      return c.json({ error: 'Admin scope requires admin or superadmin role' }, 403);
+    }
+
     // Generate token: td_pat_ + 40 hex chars
     const randomBytes = new Uint8Array(20);
     crypto.getRandomValues(randomBytes);
@@ -535,6 +617,13 @@ export function createProfileRoutes() {
       scopes: JSON.stringify(data.scopes),
       expiresAt,
       createdAt: now,
+    });
+
+    // Emit event for achievement tracking
+    emitEvent(c, {
+      type: 'dev.tampa.developer.api_token_created',
+      payload: { userId: user.id, tokenId: id, tokenName: data.name },
+      metadata: { userId: user.id, source: 'profile' },
     });
 
     return c.json({
@@ -585,17 +674,25 @@ export function createProfileRoutes() {
     }
 
     const db = createDatabase(c.env.DB);
-    const progress = await db.query.achievementProgress.findMany({
-      where: eq(achievementProgress.userId, user.id),
-    });
+
+    const [allAchievements, progress] = await Promise.all([
+      db.query.achievements.findMany({
+        orderBy: [achievements.sortOrder],
+      }),
+      db.query.achievementProgress.findMany({
+        where: eq(achievementProgress.userId, user.id),
+      }),
+    ]);
 
     // Merge definitions with progress
-    const achievements = ACHIEVEMENTS.map((def) => {
+    const result = allAchievements.map((def) => {
       const p = progress.find((p) => p.achievementKey === def.key);
       return {
         key: def.key,
         name: def.name,
         description: def.description,
+        icon: def.icon,
+        color: def.color,
         targetValue: def.targetValue,
         currentValue: p?.currentValue ?? 0,
         completedAt: p?.completedAt ?? null,
@@ -603,7 +700,41 @@ export function createProfileRoutes() {
       };
     });
 
-    return c.json({ achievements });
+    return c.json({ achievements: result });
+  });
+
+  // ============== Entitlements ==============
+
+  /**
+   * GET /api/profile/entitlements - Get user's active entitlements
+   */
+  app.get('/entitlements', async (c) => {
+    const user = await getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const db = createDatabase(c.env.DB);
+    const now = new Date().toISOString();
+
+    // Get active entitlements: expiresAt is null or > now
+    const allEntitlements = await db.query.userEntitlements.findMany({
+      where: eq(userEntitlements.userId, user.id),
+    });
+
+    const activeEntitlements = allEntitlements.filter(
+      (ent) => !ent.expiresAt || ent.expiresAt > now
+    );
+
+    return c.json({
+      entitlements: activeEntitlements.map((ent) => ({
+        id: ent.id,
+        entitlement: ent.entitlement,
+        grantedAt: ent.grantedAt,
+        expiresAt: ent.expiresAt,
+        source: ent.source,
+      })),
+    });
   });
 
   return app;

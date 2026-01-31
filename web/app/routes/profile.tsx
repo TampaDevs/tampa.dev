@@ -6,12 +6,15 @@
  * edit their profile, and delete their account.
  */
 
-import { redirect, useLoaderData, useFetcher, useRevalidator } from "react-router";
+import { redirect, useLoaderData, useFetcher, useRevalidator, useSearchParams, Link } from "react-router";
 import { Avatar } from "@tampadevs/react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import type { Route } from "./+types/profile";
 import { fetchCurrentUser, fetchAuthProviders, type AuthIdentity, type AuthProvider } from "~/lib/admin-api.server";
 import { ProviderIcon } from "./login";
+import { SocialLinkIcon } from "~/components/SocialLinkIcon";
+import { getTrophyTier, TrophyIcon, type TrophyTier } from "~/lib/trophy-tiers";
+import { getRarityTier } from "~/lib/rarity";
 
 interface OAuthGrant {
   grantId: string;
@@ -30,6 +33,8 @@ interface ProfileBadge {
   description: string | null;
   icon: string;
   color: string;
+  points?: number;
+  rarity?: { tier: string; percentage: number };
 }
 
 interface ProfileUser {
@@ -37,9 +42,14 @@ interface ProfileUser {
   email: string;
   name: string | null;
   username: string | null;
+  bio: string | null;
+  socialLinks: string[] | null;
   avatarUrl: string | null;
+  heroImageUrl: string | null;
+  themeColor: string | null;
   role: string;
   showAchievements?: boolean;
+  profileVisibility?: string;
   githubUsername?: string;
   badges?: ProfileBadge[];
 }
@@ -71,17 +81,26 @@ interface AchievementInfo {
   currentValue: number;
   completedAt: string | null;
   badgeSlug: string | null;
+  icon: string | null;
+  color: string | null;
+}
+
+interface FavoriteGroup {
+  groupSlug: string;
+  groupName: string;
 }
 
 interface ProfileData {
   user: ProfileUser;
   grants: OAuthGrant[];
   host: string;
+  apiBaseUrl: string;
   identities: AuthIdentity[];
   availableProviders: AuthProvider[];
   portfolioItems: PortfolioItem[];
   apiTokens: ApiTokenInfo[];
   achievements: AchievementInfo[];
+  favoriteGroups: FavoriteGroup[];
 }
 
 export const meta: Route.MetaFunction = () => [
@@ -90,7 +109,7 @@ export const meta: Route.MetaFunction = () => [
 
 export async function loader({ request }: Route.LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie") || undefined;
-  const user = await fetchCurrentUser(cookieHeader);
+  let user = await fetchCurrentUser(cookieHeader);
 
   if (!user) {
     throw redirect("/login?returnTo=/profile");
@@ -126,8 +145,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   let portfolioItems: PortfolioItem[] = [];
   let apiTokensList: ApiTokenInfo[] = [];
   let achievements: AchievementInfo[] = [];
+  let favoriteGroups: FavoriteGroup[] = [];
   try {
-    const [profileResponse, portfolioResponse, tokensResponse, achievementsResponse] = await Promise.all([
+    const [profileResponse, portfolioResponse, tokensResponse, achievementsResponse, favoritesResponse] = await Promise.all([
       fetch(`${apiUrl}/profile`, {
         headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
       }),
@@ -140,10 +160,31 @@ export async function loader({ request }: Route.LoaderArgs) {
       fetch(`${apiUrl}/profile/achievements`, {
         headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
       }),
+      fetch(`${apiUrl}/favorites`, {
+        headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
+      }),
     ]);
     if (profileResponse.ok) {
-      const profileData = await profileResponse.json() as { badges?: ProfileBadge[] };
+      const profileData = await profileResponse.json() as { badges?: ProfileBadge[]; profileVisibility?: string; showAchievements?: boolean; heroImageUrl?: string | null; themeColor?: string | null; socialLinks?: string[] | null; bio?: string | null };
       badges = profileData.badges || [];
+      if (profileData.profileVisibility) {
+        user = { ...user, profileVisibility: profileData.profileVisibility } as typeof user;
+      }
+      if (profileData.showAchievements !== undefined) {
+        user = { ...user, showAchievements: profileData.showAchievements } as typeof user;
+      }
+      if (profileData.heroImageUrl !== undefined) {
+        user = { ...user, heroImageUrl: profileData.heroImageUrl } as typeof user;
+      }
+      if (profileData.themeColor !== undefined) {
+        user = { ...user, themeColor: profileData.themeColor } as typeof user;
+      }
+      if (profileData.socialLinks !== undefined) {
+        user = { ...user, socialLinks: profileData.socialLinks } as typeof user;
+      }
+      if (profileData.bio !== undefined) {
+        user = { ...user, bio: profileData.bio } as typeof user;
+      }
     }
     if (portfolioResponse.ok) {
       const portfolioData = await portfolioResponse.json() as { items: PortfolioItem[] };
@@ -157,12 +198,16 @@ export async function loader({ request }: Route.LoaderArgs) {
       const achievementsData = await achievementsResponse.json() as { achievements: AchievementInfo[] };
       achievements = achievementsData.achievements || [];
     }
+    if (favoritesResponse.ok) {
+      const favoritesData = await favoritesResponse.json() as { favorites: FavoriteGroup[] };
+      favoriteGroups = favoritesData.favorites || [];
+    }
   } catch (error) {
     console.error("Failed to fetch profile data:", error);
   }
 
   const userWithBadges = { ...user, badges };
-  return { user: userWithBadges, grants, host, identities, availableProviders: providers, portfolioItems, apiTokens: apiTokensList, achievements } as ProfileData;
+  return { user: userWithBadges, grants, host, apiBaseUrl: apiUrl, identities, availableProviders: providers, portfolioItems, apiTokens: apiTokensList, achievements, favoriteGroups } as ProfileData;
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -218,26 +263,71 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
 
+  if (intent === "updateHeroImage") {
+    const heroImageUrl = formData.get("heroImageUrl") as string | null;
+
+    try {
+      const response = await fetch(`${apiUrl}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+        body: JSON.stringify({ heroImageUrl: heroImageUrl || null }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update hero image");
+      }
+
+      return { success: true, heroUpdated: true };
+    } catch (error) {
+      console.error("Failed to update hero image:", error);
+      return { success: false, error: "Failed to update hero image" };
+    }
+  }
+
+  if (intent === "updateThemeColor") {
+    const themeColor = formData.get("themeColor") as string | null;
+
+    try {
+      const response = await fetch(`${apiUrl}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        },
+        body: JSON.stringify({ themeColor: themeColor || null }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update theme color");
+      }
+
+      return { success: true, themeUpdated: true };
+    } catch (error) {
+      console.error("Failed to update theme color:", error);
+      return { success: false, error: "Failed to update theme color" };
+    }
+  }
+
   if (intent === "updateProfile") {
     const name = formData.get("name") as string;
     const username = formData.get("username") as string;
     const bio = formData.get("bio") as string;
-    const github = formData.get("socialLinks.github") as string;
-    const twitter = formData.get("socialLinks.twitter") as string;
-    const linkedin = formData.get("socialLinks.linkedin") as string;
-    const website = formData.get("socialLinks.website") as string;
 
     const body: Record<string, unknown> = {};
     if (name !== null) body.name = name || undefined;
     if (username) body.username = username;
     body.bio = bio || null;
 
-    const socialLinks: Record<string, string> = {};
-    if (github) socialLinks.github = github;
-    if (twitter) socialLinks.twitter = twitter;
-    if (linkedin) socialLinks.linkedin = linkedin;
-    if (website) socialLinks.website = website;
-    body.socialLinks = Object.keys(socialLinks).length > 0 ? socialLinks : null;
+    const socialLinks: string[] = [];
+    for (const [key, value] of formData.entries()) {
+      if (key === "socialLinks[]" && typeof value === "string" && value.trim()) {
+        socialLinks.push(value.trim());
+      }
+    }
+    body.socialLinks = socialLinks.length > 0 ? socialLinks : null;
 
     try {
       const response = await fetch(`${apiUrl}/profile`, {
@@ -579,6 +669,215 @@ function AvatarUpload({
   );
 }
 
+// Theme color palette and gradient map
+const THEME_PALETTE = [
+  { key: "coral", label: "Coral", hex: "#E85A4F" },
+  { key: "ocean", label: "Ocean", hex: "#0891B2" },
+  { key: "sunset", label: "Sunset", hex: "#F59E0B" },
+  { key: "forest", label: "Forest", hex: "#059669" },
+  { key: "violet", label: "Violet", hex: "#7C3AED" },
+  { key: "rose", label: "Rose", hex: "#E11D48" },
+  { key: "slate", label: "Slate", hex: "#475569" },
+  { key: "sky", label: "Sky", hex: "#0284C7" },
+] as const;
+
+const THEME_GRADIENTS: Record<string, string> = {
+  coral: "linear-gradient(135deg, #C44D44 0%, #E85A4F 40%, #F07167 100%)",
+  ocean: "linear-gradient(135deg, #0E7490 0%, #0891B2 40%, #06B6D4 100%)",
+  sunset: "linear-gradient(135deg, #D97706 0%, #F59E0B 40%, #FBBF24 100%)",
+  forest: "linear-gradient(135deg, #047857 0%, #059669 40%, #10B981 100%)",
+  violet: "linear-gradient(135deg, #6D28D9 0%, #7C3AED 40%, #A78BFA 100%)",
+  rose: "linear-gradient(135deg, #BE123C 0%, #E11D48 40%, #FB7185 100%)",
+  slate: "linear-gradient(135deg, #334155 0%, #475569 40%, #94A3B8 100%)",
+  sky: "linear-gradient(135deg, #0369A1 0%, #0284C7 40%, #38BDF8 100%)",
+};
+
+function getThemeGradient(themeColor: string | null): string {
+  return THEME_GRADIENTS[themeColor || "coral"] || THEME_GRADIENTS.coral;
+}
+
+// Hero image upload component
+function HeroImageUpload({
+  currentHero,
+  themeColor,
+  onUploadComplete,
+  onRemove,
+}: {
+  currentHero: string | null;
+  themeColor: string | null;
+  onUploadComplete: (url: string) => void;
+  onRemove: () => void;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Please select a JPEG, PNG, GIF, or WebP image");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be less than 5MB");
+      return;
+    }
+
+    setError(null);
+    setIsUploading(true);
+
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreviewUrl(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      const requestResponse = await fetch("/api/uploads/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          category: "hero",
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+        }),
+      });
+
+      if (!requestResponse.ok) {
+        const data = await requestResponse.json() as { error?: string };
+        throw new Error(data.error || "Failed to request upload");
+      }
+
+      const { uploadUrl, finalUrl, contentType } = await requestResponse.json() as {
+        uploadUrl: string;
+        finalUrl: string;
+        contentType: string;
+      };
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload to storage");
+      }
+
+      onUploadComplete(finalUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+      setPreviewUrl(null);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const displayUrl = previewUrl || currentHero;
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Cover Image
+      </label>
+      <div className="relative group rounded-xl overflow-hidden h-36 sm:h-44 cursor-pointer" onClick={() => !isUploading && fileInputRef.current?.click()}>
+        {displayUrl ? (
+          <img src={displayUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div
+            className="w-full h-full"
+            style={{ background: getThemeGradient(themeColor) }}
+          />
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+          {isUploading ? (
+            <svg className="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          ) : (
+            <div className="text-center text-white">
+              <svg className="w-6 h-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-sm font-medium">Change Cover</span>
+            </div>
+          )}
+        </div>
+        {currentHero && !isUploading && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="absolute top-2 right-2 px-2.5 py-1 text-xs font-medium bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          >
+            Remove
+          </button>
+        )}
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+        Recommended: 1500 x 500 pixels. Max 5MB.
+      </p>
+      {error && (
+        <p className="mt-1 text-xs text-red-500">{error}</p>
+      )}
+    </div>
+  );
+}
+
+// Theme color picker component
+function ThemeColorPicker({
+  selected,
+  onChange,
+}: {
+  selected: string | null;
+  onChange: (color: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Theme Color
+      </label>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        Sets the accent color for your profile and gradient background.
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {THEME_PALETTE.map((color) => (
+          <button
+            key={color.key}
+            type="button"
+            onClick={() => onChange(color.key)}
+            title={color.label}
+            className={`w-8 h-8 rounded-full transition-all ${(selected || "coral") === color.key
+                ? "ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-gray-800 scale-110"
+                : "hover:scale-105"
+              }`}
+            style={{ backgroundColor: color.hex }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Scope display names
 const SCOPE_LABELS: Record<string, string> = {
   user: "Profile (full)",
@@ -695,14 +994,27 @@ function GrantCard({ grant, userId }: { grant: OAuthGrant; userId: string }) {
 }
 
 // Profile edit form
-function ProfileEditForm({ user, host }: { user: ProfileUser; host: string }) {
+function ProfileEditForm({
+  user,
+  host,
+  onHeroUpload,
+  onHeroRemove,
+  onThemeColorChange,
+}: {
+  user: ProfileUser;
+  host: string;
+  onHeroUpload: (url: string) => void;
+  onHeroRemove: () => void;
+  onThemeColorChange: (color: string) => void;
+}) {
   const fetcher = useFetcher();
   const isSaving = fetcher.state !== "idle";
   const actionData = fetcher.data as { success?: boolean; error?: string; profileUpdated?: boolean } | undefined;
 
   const [username, setUsername] = useState(user.username || "");
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
-  const [bio, setBio] = useState("");
+  const [bio, setBio] = useState(user.bio || "");
+  const [socialLinks, setSocialLinks] = useState<string[]>(user.socialLinks || []);
   const checkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced username availability check
@@ -831,7 +1143,7 @@ function ProfileEditForm({ user, host }: { user: ProfileUser; host: string }) {
             name="bio"
             rows={3}
             maxLength={500}
-            defaultValue={""}
+            defaultValue={user.bio || ""}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Tell us about yourself..."
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral transition-colors resize-none"
@@ -841,51 +1153,68 @@ function ProfileEditForm({ user, host }: { user: ProfileUser; host: string }) {
           </p>
         </div>
 
+        {/* Cover Image */}
+        <HeroImageUpload
+          currentHero={user.heroImageUrl}
+          themeColor={user.themeColor}
+          onUploadComplete={onHeroUpload}
+          onRemove={onHeroRemove}
+        />
+
+        {/* Theme Color */}
+        <ThemeColorPicker
+          selected={user.themeColor}
+          onChange={onThemeColorChange}
+        />
+
         {/* Social Links */}
         <fieldset>
-          <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Social Links</legend>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="social-github" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">GitHub</label>
-              <input
-                id="social-github"
-                name="socialLinks.github"
-                type="url"
-                defaultValue={user.githubUsername ? `https://github.com/${user.githubUsername}` : ""}
-                placeholder="https://github.com/..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral transition-colors"
-              />
-            </div>
-            <div>
-              <label htmlFor="social-twitter" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Twitter / X</label>
-              <input
-                id="social-twitter"
-                name="socialLinks.twitter"
-                type="url"
-                placeholder="https://x.com/..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral transition-colors"
-              />
-            </div>
-            <div>
-              <label htmlFor="social-linkedin" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">LinkedIn</label>
-              <input
-                id="social-linkedin"
-                name="socialLinks.linkedin"
-                type="url"
-                placeholder="https://linkedin.com/in/..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral transition-colors"
-              />
-            </div>
-            <div>
-              <label htmlFor="social-website" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Website</label>
-              <input
-                id="social-website"
-                name="socialLinks.website"
-                type="url"
-                placeholder="https://..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral transition-colors"
-              />
-            </div>
+          <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Social Links</legend>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Add up to 5 links. Icons are inferred automatically from the URL.
+          </p>
+          <div className="space-y-2">
+            {socialLinks.map((link, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <span className="shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500 flex items-center justify-center">
+                  <SocialLinkIcon url={link} />
+                </span>
+                <input
+                  name="socialLinks[]"
+                  type="url"
+                  value={link}
+                  onChange={(e) => {
+                    const updated = [...socialLinks];
+                    updated[index] = e.target.value;
+                    setSocialLinks(updated);
+                  }}
+                  placeholder="https://..."
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setSocialLinks(socialLinks.filter((_, i) => i !== index))}
+                  className="shrink-0 p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
+                  aria-label="Remove link"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            {socialLinks.length < 5 && (
+              <button
+                type="button"
+                onClick={() => setSocialLinks([...socialLinks, ""])}
+                className="inline-flex items-center gap-1.5 text-sm text-coral hover:text-coral-dark transition-colors mt-1"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add link
+              </button>
+            )}
           </div>
         </fieldset>
 
@@ -1310,12 +1639,17 @@ function PortfolioCard({ item }: { item: PortfolioItem }) {
   );
 }
 
-function ApiTokensSection({ tokens }: { tokens: ApiTokenInfo[] }) {
+function ApiTokensSection({ tokens, userRole }: { tokens: ApiTokenInfo[]; userRole: string }) {
   const [showForm, setShowForm] = useState(false);
   const [selectedScopes, setSelectedScopes] = useState<string[]>(["read:user", "read:events", "read:groups"]);
   const fetcher = useFetcher();
   const isCreating = fetcher.state !== "idle";
   const actionData = fetcher.data as { success?: boolean; tokenCreated?: boolean; newToken?: string; error?: string } | undefined;
+
+  const isAdmin = userRole === "admin" || userRole === "superadmin";
+  const availableScopes = isAdmin
+    ? [...PAT_SCOPES, { value: "admin", label: "Admin access" }]
+    : PAT_SCOPES;
 
   const toggleScope = (scope: string) => {
     setSelectedScopes((prev) =>
@@ -1346,7 +1680,7 @@ function ApiTokensSection({ tokens }: { tokens: ApiTokenInfo[] }) {
       {actionData?.newToken && (
         <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
           <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
-            Token created. Copy it now — you won't see it again.
+            Token created. Copy it now - you won't see it again.
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-green-300 dark:border-green-700 rounded-lg text-sm font-mono text-gray-900 dark:text-white break-all">
@@ -1390,14 +1724,13 @@ function ApiTokensSection({ tokens }: { tokens: ApiTokenInfo[] }) {
             <div>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scopes</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {PAT_SCOPES.map((scope) => (
+                {availableScopes.map((scope) => (
                   <label
                     key={scope.value}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${
-                      selectedScopes.includes(scope.value)
-                        ? "border-coral bg-coral/10 text-coral"
-                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
-                    }`}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${selectedScopes.includes(scope.value)
+                      ? "border-coral bg-coral/10 text-coral"
+                      : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -1508,6 +1841,96 @@ function ApiTokenCard({ token }: { token: ApiTokenInfo }) {
   );
 }
 
+function BadgePillWithPopover({ badge }: { badge: ProfileBadge }) {
+  const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [popoverAlign, setPopoverAlign] = useState<"center" | "left" | "right">("center");
+
+  useEffect(() => {
+    if (!pinned) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setPinned(false);
+        setOpen(false);
+      }
+    }
+    document.addEventListener("click", handleClickOutside, true);
+    return () => document.removeEventListener("click", handleClickOutside, true);
+  }, [pinned]);
+
+  useLayoutEffect(() => {
+    if (!open || !popoverRef.current) return;
+    const rect = popoverRef.current.getBoundingClientRect();
+    if (rect.left < 0) {
+      setPopoverAlign("left");
+    } else if (rect.right > window.innerWidth) {
+      setPopoverAlign("right");
+    } else {
+      setPopoverAlign("center");
+    }
+  }, [open]);
+
+  const hasPopoverContent = badge.description || (badge.points != null && badge.points > 0) || badge.rarity;
+
+  const popoverPositionClass =
+    popoverAlign === "left"
+      ? "left-0"
+      : popoverAlign === "right"
+        ? "right-0"
+        : "left-1/2 -translate-x-1/2";
+
+  const arrowPositionClass =
+    popoverAlign === "left"
+      ? "left-4"
+      : popoverAlign === "right"
+        ? "right-4"
+        : "left-1/2 -translate-x-1/2";
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => hasPopoverContent && setOpen(true)}
+      onMouseLeave={() => !pinned && setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          if (!hasPopoverContent) return;
+          setPinned(!pinned);
+          setOpen(!pinned);
+        }}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-white"
+        style={{
+          backgroundColor: badge.color,
+          cursor: hasPopoverContent ? "pointer" : "default",
+        }}
+      >
+        {badge.icon} {badge.name}
+      </button>
+      {open && hasPopoverContent && (
+        <div ref={popoverRef} className={`absolute ${popoverPositionClass} top-full mt-2 z-20 w-52 p-3 rounded-lg bg-gray-900/95 dark:bg-gray-800/95 text-white text-xs shadow-xl backdrop-blur-sm border border-white/10`}>
+          <div className={`absolute ${arrowPositionClass} -top-1 w-2 h-2 rotate-45 bg-gray-900/95 dark:bg-gray-800/95 border-l border-t border-white/10`} />
+          {badge.description && <p className="relative leading-relaxed">{badge.description}</p>}
+          {badge.points != null && badge.points > 0 && (
+            <p className="relative mt-1.5 text-xs font-semibold text-amber-400 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 9l-5 4.09L16.82 20 12 16.54 7.18 20l1.64-6.91L3.82 9l6.09-.74z" /></svg>
+              {badge.points} XP
+            </p>
+          )}
+          {badge.rarity && (
+            <p className="relative mt-1.5 text-xs font-medium flex items-center gap-1" style={{ color: getRarityTier(badge.rarity.percentage).color }}>
+              {getRarityTier(badge.rarity.percentage).label} — {badge.rarity.percentage.toFixed(1)}% of members
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AchievementsSection({
   achievements,
   showAchievements,
@@ -1552,14 +1975,12 @@ function AchievementsSection({
             aria-checked={visible}
             onClick={toggleVisibility}
             disabled={saving}
-            className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-coral focus:ring-offset-2 disabled:opacity-50 ${
-              visible ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
-            }`}
+            className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-coral focus:ring-offset-2 disabled:opacity-50 ${visible ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+              }`}
           >
             <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                visible ? "translate-x-4" : "translate-x-0"
-              }`}
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${visible ? "translate-x-4" : "translate-x-0"
+                }`}
             />
           </button>
         </label>
@@ -1568,23 +1989,27 @@ function AchievementsSection({
         {achievements.map((a) => {
           const pct = Math.min(100, Math.round((a.currentValue / a.targetValue) * 100));
           const isComplete = a.completedAt !== null;
+          const barColor = a.color || (isComplete ? "#22c55e" : undefined);
           return (
             <div
               key={a.key}
-              className={`bg-white dark:bg-gray-800 rounded-xl border p-4 ${
-                isComplete
-                  ? "border-green-200 dark:border-green-800"
-                  : "border-gray-200 dark:border-gray-700"
-              }`}
+              className={`bg-white dark:bg-gray-800 rounded-xl border p-4 ${isComplete
+                ? "border-green-200 dark:border-green-800"
+                : "border-gray-200 dark:border-gray-700"
+                }`}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {a.icon && <span className="mr-1.5">{a.icon}</span>}
                   {a.name}
                 </span>
                 {isComplete && (
-                  <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+                  <span
+                    className="px-2 py-0.5 text-xs font-medium rounded-full text-white"
+                    style={{ backgroundColor: a.color || "#22c55e" }}
+                  >
+                    Done
+                  </span>
                 )}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -1592,10 +2017,11 @@ function AchievementsSection({
               </p>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full transition-all ${
-                    isComplete ? "bg-green-500" : "bg-coral"
-                  }`}
-                  style={{ width: `${pct}%` }}
+                  className="h-2 rounded-full transition-all"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: barColor || "var(--color-coral, #f97066)",
+                  }}
                 />
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -1609,9 +2035,185 @@ function AchievementsSection({
   );
 }
 
+function ProfileVisibilityToggle({
+  currentVisibility,
+  username,
+  host,
+}: {
+  currentVisibility: string;
+  username: string | null;
+  host: string;
+}) {
+  const [visibility, setVisibility] = useState(currentVisibility);
+  const [saving, setSaving] = useState(false);
+
+  const isPublic = visibility === "public";
+
+  const toggleVisibility = async () => {
+    const newValue = isPublic ? "private" : "public";
+    setVisibility(newValue);
+    setSaving(true);
+    try {
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ profileVisibility: newValue }),
+      });
+    } catch {
+      setVisibility(visibility); // revert on error
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <div className="flex items-start sm:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+            Profile Visibility
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {isPublic ? (
+              <>
+                Your profile is visible in the{" "}
+                <Link to="/members" className="text-coral hover:underline">member directory</Link>
+                {username && (
+                  <>
+                    {" "}and at your{" "}
+                    <a href={`https://${host}/p/${username}`} target="_blank" rel="noopener noreferrer" className="text-coral hover:underline">public URL</a>
+                  </>
+                )}
+                .
+              </>
+            ) : (
+              "Your profile is hidden from the member directory."
+            )}
+          </p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer flex-shrink-0">
+          <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
+            {saving ? "Saving..." : isPublic ? "Public" : "Private"}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isPublic}
+            onClick={toggleVisibility}
+            disabled={saving}
+            className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-coral focus:ring-offset-2 disabled:opacity-50 ${isPublic ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isPublic ? "translate-x-4" : "translate-x-0"
+                }`}
+            />
+          </button>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function CopyableUrl({ label, url }: { label: string; url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+        <button
+          onClick={handleCopy}
+          className="text-xs font-medium text-coral hover:text-coral-dark transition-colors"
+        >
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          readOnly
+          value={url}
+          className="flex-1 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-600 dark:text-gray-400 font-mono truncate"
+          onClick={(e) => (e.target as HTMLInputElement).select()}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FeedsSection({ favoriteGroups, apiBaseUrl }: { favoriteGroups: FavoriteGroup[]; apiBaseUrl: string }) {
+  const apiBase = apiBaseUrl;
+  const groupSlugs = favoriteGroups.map((g) => g.groupSlug).join(",");
+  const hasGroups = favoriteGroups.length > 0;
+
+  const allEventsRss = `${apiBase}/rss`;
+  const allEventsIcal = `${apiBase}/ics`;
+  const favoritesRss = hasGroups ? `${apiBase}/rss?groups=${groupSlugs}` : null;
+  const favoritesIcal = hasGroups ? `${apiBase}/ics?groups=${groupSlugs}` : null;
+
+  return (
+    <div className="space-y-6 mt-6">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Event Feeds</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Subscribe to event feeds in your calendar app or RSS reader.
+        </p>
+      </div>
+
+      {hasGroups && (
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+            Your Favorites ({favoriteGroups.length} group{favoriteGroups.length !== 1 ? "s" : ""})
+          </h4>
+          <div className="space-y-3">
+            <CopyableUrl label="RSS Feed (favorites only)" url={favoritesRss!} />
+            <CopyableUrl label="iCalendar Feed (favorites only)" url={favoritesIcal!} />
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+          All Events
+        </h4>
+        <div className="space-y-3">
+          <CopyableUrl label="RSS Feed (all events)" url={allEventsRss} />
+          <CopyableUrl label="iCalendar Feed (all events)" url={allEventsIcal} />
+        </div>
+      </div>
+
+      {!hasGroups && (
+        <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+          Favorite some groups to get a personalized feed with only events from groups you follow.
+        </p>
+      )}
+    </div>
+  );
+}
+
+const PROFILE_TABS = [
+  { id: "profile", label: "Profile", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
+  { id: "accounts", label: "Accounts", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" },
+  { id: "portfolio", label: "Portfolio", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+  { id: "achievements", label: "Achievements", icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" },
+  { id: "settings", label: "Settings", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" },
+  { id: "developer", label: "Developer", icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" },
+  { id: "feeds", label: "Feeds", icon: "M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" },
+] as const;
+
 export default function ProfilePage() {
-  const { user, grants, host, identities, availableProviders, portfolioItems, apiTokens: tokens, achievements } = useLoaderData<typeof loader>();
+  const { user, grants, host, apiBaseUrl, identities, availableProviders, portfolioItems, apiTokens: tokens, achievements, favoriteGroups } = useLoaderData<typeof loader>();
   const { revalidate } = useRevalidator();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "profile";
 
   const handleAvatarUpload = async (url: string) => {
     try {
@@ -1632,10 +2234,75 @@ export default function ProfilePage() {
     revalidate();
   };
 
+  const handleHeroUpload = async (url: string) => {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ heroImageUrl: url }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update hero image");
+      }
+    } catch (error) {
+      console.error("Failed to update hero image:", error);
+    }
+
+    revalidate();
+  };
+
+  const handleHeroRemove = async () => {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ heroImageUrl: null }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to remove hero image");
+      }
+    } catch (error) {
+      console.error("Failed to remove hero image:", error);
+    }
+
+    revalidate();
+  };
+
+  const handleThemeColorChange = async (color: string) => {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ themeColor: color }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update theme color");
+      }
+    } catch (error) {
+      console.error("Failed to update theme color:", error);
+    }
+
+    revalidate();
+  };
+
+  const switchTab = (tabId: string) => {
+    if (tabId === "profile") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab: tabId });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Profile Card */}
+        {/* Profile Card - always visible */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -1674,100 +2341,216 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Badges */}
-        {user.badges && user.badges.length > 0 && (
+        {/* Tab Bar */}
+        <div className="mt-6 border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex gap-1 -mb-px overflow-x-auto scrollbar-hide" aria-label="Profile sections">
+            {PROFILE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => switchTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${currentTab === tab.id
+                  ? "border-coral text-coral"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                  }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
+                </svg>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        {currentTab === "profile" && (
+          <>
+            <ProfileVisibilityToggle currentVisibility={user.profileVisibility || "private"} username={user.username} host={host} />
+
+            <ProfileEditForm
+              user={user}
+              host={host}
+              onHeroUpload={handleHeroUpload}
+              onHeroRemove={handleHeroRemove}
+              onThemeColorChange={handleThemeColorChange}
+            />
+          </>
+        )}
+
+        {currentTab === "accounts" && (
+          <>
+            <ConnectedAccounts
+              identities={identities}
+              availableProviders={availableProviders}
+              userId={user.id}
+              currentEmail={user.email}
+            />
+
+            {/* Authorized Apps */}
+            <section className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Authorized Apps
+              </h2>
+
+              {grants.length > 0 ? (
+                <div className="space-y-3">
+                  {grants.map((grant) => (
+                    <GrantCard key={grant.grantId} grant={grant} userId={user.id} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-1">
+                    No authorized apps
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    When you authorize third-party apps to access your Tampa.dev account, they'll appear here.
+                  </p>
+                </div>
+              )}
+            </section>
+          </>
+        )}
+
+        {currentTab === "portfolio" && (
+          <div className="mt-2">
+            <PortfolioSection items={portfolioItems} />
+          </div>
+        )}
+
+        {currentTab === "achievements" && (
+          <>
+            {achievements.length > 0 && (
+              <AchievementsSection
+                achievements={achievements}
+                showAchievements={user.showAchievements !== false}
+              />
+            )}
+            {user.badges && user.badges.length > 0 && (() => {
+              const tierOrder: TrophyTier[] = ['diamond', 'platinum', 'gold', 'silver'];
+              const badgeTiers: { tier: TrophyTier; label: string; badges: ProfileBadge[] }[] = [];
+
+              for (const t of tierOrder) {
+                const tierBadges = user.badges!.filter((b) => {
+                  const bt = getTrophyTier(b.points || 0);
+                  return bt?.tier === t;
+                });
+                tierBadges.sort((a, b) => (a.rarity?.percentage ?? 100) - (b.rarity?.percentage ?? 100));
+                if (tierBadges.length > 0) {
+                  const info = getTrophyTier(t === 'diamond' ? 100 : t === 'platinum' ? 50 : t === 'gold' ? 25 : 1);
+                  badgeTiers.push({ tier: t, label: info!.label, badges: tierBadges });
+                }
+              }
+
+              const noTier = user.badges!.filter((b) => !getTrophyTier(b.points || 0));
+              noTier.sort((a, b) => (a.rarity?.percentage ?? 100) - (b.rarity?.percentage ?? 100));
+
+              return (
+                <section className="mt-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                    Badges
+                  </h2>
+                  <div className="space-y-4">
+                    {badgeTiers.map(({ tier, label, badges }) => (
+                      <div key={tier}>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <TrophyIcon tier={tier} size={14} />
+                          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            {label}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {badges.map((badge) => (
+                            <BadgePillWithPopover key={badge.id} badge={badge} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {noTier.length > 0 && (
+                      <div>
+                        {badgeTiers.length > 0 && (
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                              Other
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {noTier.map((badge) => (
+                            <BadgePillWithPopover key={badge.id} badge={badge} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+            })()}
+            {achievements.length === 0 && (!user.badges || user.badges.length === 0) && (
+              <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Complete activities to earn achievements and badges.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {currentTab === "settings" && (
           <section className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-              Badges
+            <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+              Danger Zone
             </h2>
-            <div className="flex flex-wrap gap-2">
-              {user.badges.map((badge) => (
-                <span
-                  key={badge.id}
-                  title={badge.description || badge.name}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-white"
-                  style={{ backgroundColor: badge.color }}
-                >
-                  {badge.icon} {badge.name}
-                </span>
-              ))}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-red-200 dark:border-red-900/50 p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">
+                    Delete Account
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Permanently delete your account and all associated data. This cannot be undone.
+                  </p>
+                </div>
+                <DeleteAccountButton />
+              </div>
             </div>
           </section>
         )}
 
-        {/* Achievements */}
-        {achievements.length > 0 && (
-          <AchievementsSection
-            achievements={achievements}
-            showAchievements={user.showAchievements !== false}
-          />
-        )}
-
-        {/* Edit Profile Form */}
-        <ProfileEditForm user={user} host={host} />
-
-        {/* Connected Accounts */}
-        <ConnectedAccounts
-          identities={identities}
-          availableProviders={availableProviders}
-          userId={user.id}
-          currentEmail={user.email}
-        />
-
-        {/* Portfolio */}
-        <PortfolioSection items={portfolioItems} />
-
-        {/* Authorized Apps */}
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Authorized Apps
-          </h2>
-
-          {grants.length > 0 ? (
-            <div className="space-y-3">
-              {grants.map((grant) => (
-                <GrantCard key={grant.grantId} grant={grant} userId={user.id} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+        {currentTab === "developer" && (
+          <div className="mt-2">
+            <ApiTokensSection tokens={tokens} userRole={user.role} />
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <Link
+                to="/developer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-coral hover:text-coral transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-              </div>
-              <h3 className="font-medium text-gray-900 dark:text-white mb-1">
-                No authorized apps
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                When you authorize third-party apps to access your Tampa.dev account, they'll appear here.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* API Tokens */}
-        <ApiTokensSection tokens={tokens} />
-
-        {/* Danger Zone */}
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
-            Danger Zone
-          </h2>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-red-200 dark:border-red-900/50 p-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">
-                  Delete Account
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Permanently delete your account and all associated data. This cannot be undone.
-                </p>
-              </div>
-              <DeleteAccountButton />
+                Developer Portal
+              </Link>
+              <Link
+                to="/developer/docs"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-coral hover:text-coral transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                API Documentation
+              </Link>
             </div>
           </div>
-        </section>
+        )}
+
+        {currentTab === "feeds" && (
+          <FeedsSection favoriteGroups={favoriteGroups} apiBaseUrl={apiBaseUrl} />
+        )}
       </div>
     </div>
   );

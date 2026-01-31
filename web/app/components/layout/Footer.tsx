@@ -5,14 +5,14 @@ export function Footer() {
     <footer className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-2">
+          <div className="md:col-span-1">
             <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white">
               Tampa<span className="text-coral">.dev</span>
             </Link>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 max-w-md">
-              Your hub for discovering tech meetups, developer events, and
-              communities in Tampa Bay. Connect with local technologists and
-              grow your network.
+              The Tampa Bay tech events calendar for developers, founders, and
+              startup builders. Aggregating events from independent communities
+              across Tampa, St.&nbsp;Petersburg, and Clearwater.
             </p>
           </div>
 
@@ -23,10 +23,10 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               <li>
                 <Link
-                  to="/events"
+                  to="/calendar"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
                 >
-                  Upcoming Events
+                  Events Calendar
                 </Link>
               </li>
               <li>
@@ -47,10 +47,50 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/calendar"
+                  to="/tampa-bay-tech-events"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
                 >
-                  Calendar
+                  Tampa Bay Tech Events
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/tampa-startup-events"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  Startup Events
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">
+              Community
+            </h3>
+            <ul className="mt-4 space-y-2">
+              <li>
+                <Link
+                  to="/tampa-developer-meetups"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  Developer Meetups
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/tampa-founder-meetups"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  Founder Meetups
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/tampa-startup-ecosystem"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  Startup Ecosystem
                 </Link>
               </li>
               <li>
@@ -68,9 +108,17 @@ export function Footer() {
 
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">
-              Extras
+              Build
             </h3>
             <ul className="mt-4 space-y-2">
+              <li>
+                <Link
+                  to="/builders"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  For Builders
+                </Link>
+              </li>
               <li>
                 <a
                   href="https://api.tampa.dev"
@@ -91,7 +139,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/tampadevs/events.api.tampa.dev/issues/new"
+                  href="https://github.com/TampaDevs/tampa.dev/issues/new"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
@@ -101,7 +149,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/tampadevs/events.api.tampa.dev"
+                  href="https://github.com/TampaDevs/tampa.dev"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
@@ -114,9 +162,23 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-500 dark:text-gray-500">
-            &copy; {new Date().getFullYear()} Tampa Devs. All rights reserved.
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              &copy; {new Date().getFullYear()} Tampa Devs. All rights reserved.
+            </p>
+            <Link
+              to="/policies/privacy"
+              className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              Privacy
+            </Link>
+            <Link
+              to="/policies/terms"
+              className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              Terms
+            </Link>
+          </div>
           <div className="flex items-center gap-4">
             <a
               href="https://github.com/TampaDevs"

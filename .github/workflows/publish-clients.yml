@@ -52,7 +52,7 @@ jobs:
           mv package.tmp.json package.json
 
           # Add repository info
-          jq '.repository = {"type": "git", "url": "https://github.com/TampaDevs/events.api.tampa.dev.git", "directory": "clients/typescript"}' package.json > package.tmp.json
+          jq '.repository = {"type": "git", "url": "https://github.com/TampaDevs/tampa.dev.git", "directory": "clients/typescript"}' package.json > package.tmp.json
           mv package.tmp.json package.json
 
           cat package.json

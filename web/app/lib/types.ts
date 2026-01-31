@@ -88,6 +88,7 @@ export interface LocalGroupCompat {
   };
   tags: string[];
   featured?: boolean;
+  favoritesCount?: number;
 }
 
 /**

@@ -2,6 +2,8 @@
  * JSON-LD Structured Data generators for SEO
  * https://schema.org/Event
  * https://schema.org/Organization
+ * https://schema.org/WebSite
+ * https://schema.org/FAQPage
  */
 
 import type { Event, LocalGroupCompat } from "./types";
@@ -117,15 +119,69 @@ export function groupToJsonLd(group: LocalGroupCompat): object {
 }
 
 /**
- * Generate JSON-LD for the website
+ * Generate JSON-LD for the Tampa.dev organization
+ */
+export function organizationJsonLd(): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Tampa.dev",
+    url: "https://tampa.dev",
+    description:
+      "Tampa Bay tech events calendar and community index for developers, startup founders, and entrepreneurs.",
+    sameAs: [
+      "https://github.com/TampaDevs",
+      "https://go.tampa.dev/slack",
+      "https://tampadevs.com",
+    ],
+  };
+}
+
+/**
+ * Generate JSON-LD for the website with SearchAction
  */
 export function websiteJsonLd(): object {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Tampa Tech Events",
+    name: "Tampa.dev",
+    alternateName: "Tampa Tech Events",
     description:
-      "Discover tech meetups, developer events, and communities in Tampa Bay",
+      "The Tampa Bay tech events calendar. Discover developer meetups, startup events, and tech communities across Tampa, St. Petersburg, and Clearwater.",
     url: "https://tampa.dev",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://tampa.dev/calendar?view=list&q={search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+/**
+ * FAQ item for FAQPage structured data
+ */
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+/**
+ * Generate JSON-LD for FAQPage structured data
+ */
+export function faqPageJsonLd(faqs: FAQItem[]): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
   };
 }

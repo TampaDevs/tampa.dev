@@ -1,5 +1,5 @@
 /**
- * Developer Docs Index — redirects to the first doc page
+ * Developer Docs Index - redirects to the first doc page
  */
 
 import { redirect } from "react-router";

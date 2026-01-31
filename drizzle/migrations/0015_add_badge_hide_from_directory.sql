@@ -1,0 +1,1 @@
+ALTER TABLE badges ADD COLUMN hide_from_directory INTEGER NOT NULL DEFAULT 0;

@@ -12,7 +12,7 @@ import { createDatabase } from '../db';
 import { users, sessions, groups, userFavorites } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
-import { EventBus } from '../lib/event-bus.js';
+import { emitEvent, emitEvents } from '../lib/event-bus.js';
 
 /**
  * Helper to get the current user from session
@@ -126,14 +126,11 @@ export function createFavoritesRoutes() {
     });
 
     // Emit event for achievement tracking
-    if (c.env.EVENTS_QUEUE) {
-      const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-      eventBus.publish({
-        type: 'user.favorite_added',
-        payload: { userId: user.id, groupId: group.id },
-        metadata: { userId: user.id, source: 'favorites' },
-      }).catch(() => {}); // fire-and-forget
-    }
+    emitEvent(c, {
+      type: 'dev.tampa.user.favorite_added',
+      payload: { userId: user.id, groupId: group.id },
+      metadata: { userId: user.id, source: 'favorites' },
+    });
 
     return c.json({ success: true });
   });
@@ -170,6 +167,13 @@ export function createFavoritesRoutes() {
         )
       );
 
+    // Emit event for broadcast favorite count update
+    emitEvent(c, {
+      type: 'dev.tampa.user.favorite_removed',
+      payload: { userId: user.id, groupId: group.id },
+      metadata: { userId: user.id, source: 'favorites' },
+    });
+
     return c.json({ success: true });
   });
 
@@ -195,8 +199,8 @@ export function createFavoritesRoutes() {
     const groupsToAdd =
       localSlugs.length > 0
         ? await db.query.groups.findMany({
-            where: inArray(groups.urlname, localSlugs),
-          })
+          where: inArray(groups.urlname, localSlugs),
+        })
         : [];
 
     // Get existing favorites
@@ -220,16 +224,11 @@ export function createFavoritesRoutes() {
       );
 
       // Emit events for achievement tracking (one per new favorite)
-      if (c.env.EVENTS_QUEUE) {
-        const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-        eventBus.publishBatch(
-          newFavorites.map((g) => ({
-            type: 'user.favorite_added',
-            payload: { userId: user.id, groupId: g.id },
-            metadata: { userId: user.id, source: 'favorites-sync' },
-          }))
-        ).catch(() => {}); // fire-and-forget
-      }
+      emitEvents(c, newFavorites.map((g) => ({
+        type: 'dev.tampa.user.favorite_added',
+        payload: { userId: user.id, groupId: g.id },
+        metadata: { userId: user.id, source: 'favorites-sync' },
+      })));
     }
 
     // Return complete list of favorites

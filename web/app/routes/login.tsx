@@ -152,7 +152,7 @@ export default function Login() {
         {/* Login card */}
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
           <h1 className="text-2xl font-bold text-white text-center mb-2">
-            Welcome Back
+            Welcome Back 👋
           </h1>
           <p className="text-white/60 text-center mb-8">
             Sign in to access your favorites, RSVPs, and more
@@ -168,9 +168,8 @@ export default function Login() {
                 <a
                   key={p.provider}
                   href={authUrl}
-                  className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold transition-colors ${
-                    providerStyles[p.provider] || "bg-white text-gray-900 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold transition-colors ${providerStyles[p.provider] || "bg-white text-gray-900 hover:bg-gray-100"
+                    }`}
                 >
                   <ProviderIcon provider={p.provider} />
                   Continue with {p.name}

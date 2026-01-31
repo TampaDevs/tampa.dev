@@ -168,8 +168,12 @@ export const users = sqliteTable('users', {
   bio: text('bio'), // Short bio/description (max 500 chars enforced at app layer)
   socialLinks: text('social_links'), // JSON: { github?, twitter?, linkedin?, website?, discord? }
   avatarUrl: text('avatar_url'),
+  heroImageUrl: text('hero_image_url'),
+  themeColor: text('theme_color'),
+  location: text('location'), // Freeform location (e.g., "Tampa, FL")
   role: text('role').notNull().default('user'), // user, admin, superadmin
   showAchievements: integer('show_achievements', { mode: 'boolean' }).notNull().default(true),
+  profileVisibility: text('profile_visibility').notNull().default('private'), // 'public' | 'private'
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
   updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
 }, (table) => [
@@ -241,7 +245,9 @@ export const badges = sqliteTable('badges', {
   description: text('description'),
   icon: text('icon').notNull(), // Emoji or icon identifier
   color: text('color').notNull().default('#E5574F'), // Hex color
+  points: integer('points').notNull().default(0), // XP value for scoring
   sortOrder: integer('sort_order').notNull().default(0),
+  hideFromDirectory: integer('hide_from_directory').notNull().default(0),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 }, (table) => [
   uniqueIndex('badges_slug_idx').on(table.slug),
@@ -447,3 +453,88 @@ export const achievementProgress = sqliteTable('achievement_progress', {
 
 export type AchievementProgress = typeof achievementProgress.$inferSelect;
 export type NewAchievementProgress = typeof achievementProgress.$inferInsert;
+
+// ============== ACHIEVEMENTS (definitions) ==============
+
+export const achievements = sqliteTable('achievements', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  icon: text('icon'), // Emoji (e.g. "🔍")
+  color: text('color'), // Hex color (e.g. "#4CAF50")
+  targetValue: integer('target_value').notNull().default(1),
+  badgeSlug: text('badge_slug'), // Auto-award this badge on completion
+  points: integer('points').notNull().default(0), // XP value awarded on completion
+  entitlement: text('entitlement'), // Auto-grant this entitlement on completion
+  eventType: text('event_type'), // Domain event that increments this achievement
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex('achievements_key_idx').on(table.key),
+  index('achievements_event_type_idx').on(table.eventType),
+]);
+
+export type Achievement = typeof achievements.$inferSelect;
+export type NewAchievement = typeof achievements.$inferInsert;
+
+// ============== BADGE CLAIM LINKS ==============
+
+export const badgeClaimLinks = sqliteTable('badge_claim_links', {
+  id: text('id').primaryKey(),
+  badgeId: text('badge_id').notNull().references(() => badges.id),
+  code: text('code').notNull(),
+  maxUses: integer('max_uses'), // NULL = unlimited
+  currentUses: integer('current_uses').notNull().default(0),
+  expiresAt: text('expires_at'),
+  createdBy: text('created_by').notNull().references(() => users.id),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  achievementId: text('achievement_id').references(() => achievements.id), // Optional: complete this achievement on claim
+}, (table) => [
+  uniqueIndex('badge_claim_links_code_idx').on(table.code),
+  index('badge_claim_links_badge_idx').on(table.badgeId),
+]);
+
+export type BadgeClaimLink = typeof badgeClaimLinks.$inferSelect;
+export type NewBadgeClaimLink = typeof badgeClaimLinks.$inferInsert;
+
+// ============== USER FOLLOWS ==============
+
+export const userFollows = sqliteTable('user_follows', {
+  followerId: text('follower_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  followedId: text('followed_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index('user_follows_followed_idx').on(table.followedId),
+]);
+
+export type UserFollow = typeof userFollows.$inferSelect;
+export type NewUserFollow = typeof userFollows.$inferInsert;
+
+// ============== ONBOARDING STEPS ==============
+
+export const onboardingSteps = sqliteTable('onboarding_steps', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull(),
+  title: text('title').notNull(),
+  description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  eventKey: text('event_key'), // Domain event that auto-completes this step
+}, (table) => [
+  uniqueIndex('onboarding_steps_key_idx').on(table.key),
+]);
+
+export type OnboardingStep = typeof onboardingSteps.$inferSelect;
+export type NewOnboardingStep = typeof onboardingSteps.$inferInsert;
+
+// ============== USER ONBOARDING ==============
+
+export const userOnboarding = sqliteTable('user_onboarding', {
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  stepKey: text('step_key').notNull(),
+  completedAt: text('completed_at'),
+  dismissed: integer('dismissed').notNull().default(0),
+}, (table) => [
+  uniqueIndex('user_onboarding_user_step_idx').on(table.userId, table.stepKey),
+]);
