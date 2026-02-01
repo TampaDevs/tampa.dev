@@ -183,20 +183,22 @@ defineTool({
       }),
     ]);
 
-    const result = allAchievements.map((def) => {
-      const p = progress.find((prog) => prog.achievementKey === def.key);
-      return {
-        key: def.key,
-        name: def.name,
-        description: def.description,
-        icon: def.icon,
-        xpReward: def.points,
-        targetValue: def.targetValue,
-        currentValue: p?.currentValue ?? 0,
-        completedAt: p?.completedAt ?? null,
-        hidden: def.hidden === 1,
-      };
-    });
+    const result = allAchievements
+      .filter((def) => def.enabled !== 0)
+      .map((def) => {
+        const p = progress.find((prog) => prog.achievementKey === def.key);
+        return {
+          key: def.key,
+          name: def.name,
+          description: def.description,
+          icon: def.icon,
+          xpReward: def.points,
+          targetValue: def.targetValue,
+          currentValue: p?.currentValue ?? 0,
+          completedAt: p?.completedAt ?? null,
+          hidden: def.hidden === 1,
+        };
+      });
 
     return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
   },
