@@ -526,6 +526,24 @@ Perform a security-focused review when changes involve:
 
 ## 9. Code Quality
 
+### Feature Surface Checklist
+
+Domain features in this codebase are exposed through multiple layers. When adding or modifying a field, resource, or behavior, audit **every surface** that touches the affected domain. Forgetting one creates inconsistencies that are harder to catch later.
+
+| Surface | Location | What to update |
+|---------|----------|----------------|
+| **Database schema** | `src/db/schema.ts` | Column definition, defaults, indexes |
+| **Migration** | `drizzle/migrations/` | Incremental ALTER TABLE or new table |
+| **Queue handlers** | `src/queue/` | Filtering, event processing logic |
+| **Admin API** | `src/routes/admin-api.ts` | Zod create/update schemas, handler insert/update logic |
+| **Admin UI** | `web/app/routes/admin.*.tsx` | Form fields, card display, create/update actions |
+| **MCP tools** | `src/mcp/tools/*.ts` | Tool input schemas, handler logic, user-facing filtering |
+| **`/v1/` API** | `src/routes/v1.ts`, `v1-admin.ts`, `v1-manage.ts` | Endpoint schemas, response shapes |
+| **OpenAPI spec** | `src/routes/v1-schemas.ts` | Request/response Zod schemas |
+| **Integration tests** | `test/integration/` | Coverage for each affected surface |
+
+**How to use this:** When planning a schema or feature change, enumerate which surfaces are affected before writing code. Include all surfaces in the task plan. A field added to the schema but missing from the MCP tools or `/v1/` API is an incomplete feature.
+
 ### TypeScript
 
 - TypeScript strict mode is enabled. Respect all strict checks.
