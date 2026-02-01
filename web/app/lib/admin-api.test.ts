@@ -47,7 +47,7 @@ afterEach(() => {
 
 describe("fetchClaimRequests", () => {
   const mockResponse = {
-    requests: [
+    data: [
       {
         id: "cr-1",
         groupId: "g-1",
@@ -77,8 +77,8 @@ describe("fetchClaimRequests", () => {
     const [url, init] = mockFetch.mock.calls[0];
     expect(url).toBe(`${ADMIN_BASE}/claim-requests`);
     expect(init.headers.Accept).toBe("application/json");
-    expect(result.requests).toHaveLength(1);
-    expect(result.requests[0].id).toBe("cr-1");
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].id).toBe("cr-1");
   });
 
   it("appends query params for status, limit, and offset", async () => {
@@ -251,7 +251,7 @@ describe("createClaimInvite", () => {
 
 describe("fetchGroupCreationRequests", () => {
   const mockResponse = {
-    requests: [
+    data: [
       {
         id: "gcr-1",
         userId: "u-1",
@@ -277,8 +277,8 @@ describe("fetchGroupCreationRequests", () => {
 
     const [url] = mockFetch.mock.calls[0];
     expect(url).toBe(`${ADMIN_BASE}/group-creation-requests`);
-    expect(result.requests).toHaveLength(1);
-    expect(result.requests[0].groupName).toBe("New Group");
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].groupName).toBe("New Group");
   });
 
   it("appends status, limit, and offset query params", async () => {

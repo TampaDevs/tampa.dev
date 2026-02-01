@@ -413,7 +413,7 @@ describe("createEvent", () => {
     startTime: "2025-07-01T18:00:00Z",
     eventType: "physical" as const,
   };
-  const mockCreated = { id: "e-new", title: "New Meetup" };
+  const mockCreated = { event: { id: "e-new", title: "New Meetup" } };
 
   it("sends POST with JSON body to the correct URL", async () => {
     mockFetch.mockResolvedValue(jsonResponse(mockCreated));
@@ -426,7 +426,7 @@ describe("createEvent", () => {
     expect(init.headers["Content-Type"]).toBe("application/json");
     expect(init.headers.Cookie).toBe("session=abc");
     expect(JSON.parse(init.body)).toEqual(eventData);
-    expect(result.id).toBe("e-new");
+    expect(result.event.id).toBe("e-new");
   });
 
   it("throws with error body on failure", async () => {

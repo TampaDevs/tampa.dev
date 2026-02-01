@@ -27,7 +27,7 @@ interface OutletContext {
 
 export const meta: Route.MetaFunction = ({ matches }) => {
   const parentData = matches.find(
-    (m) => m.id === "routes/groups.$slug.manage"
+    (m): m is NonNullable<typeof m> => m?.id === "routes/groups.$slug.manage"
   )?.data as { group?: ManagedGroup } | undefined;
   const groupName = parentData?.group?.name ?? "Group";
   return [{ title: `Dashboard - ${groupName} | Tampa.dev` }];
