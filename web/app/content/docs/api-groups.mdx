@@ -1,0 +1,347 @@
+---
+title: "Groups & Badges"
+description: API endpoints for groups, favorites, badges, leaderboard, and claims
+order: 13
+category: API Reference
+---
+
+# Groups & Badges
+
+## Groups
+
+### GET /v1/groups
+
+List groups. Scope: `read:groups`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/groups?featured=1&limit=10"
+```
+
+Query parameters:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `featured` | `0` \| `1` | Filter to featured groups |
+| `search` | string | Search by group name |
+| `limit` | integer | Max 100, default 20 |
+| `offset` | integer | Pagination offset |
+
+```json
+{
+  "data": [
+    {
+      "id": "grp_react",
+      "urlname": "react-tampa",
+      "name": "React Tampa",
+      "description": "Tampa's React developer community",
+      "link": "https://meetup.com/react-tampa",
+      "website": "https://react-tampa.dev",
+      "memberCount": 450,
+      "photoUrl": "https://cdn.tampa.dev/groups/react-tampa.jpg",
+      "tags": ["react", "javascript", "frontend"],
+      "socialLinks": ["https://twitter.com/reacttampa"]
+    }
+  ],
+  "pagination": {
+    "total": 25,
+    "limit": 10,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+### GET /v1/groups/:slug
+
+Get group details with upcoming events. Scope: `read:groups`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/groups/react-tampa
+```
+
+```json
+{
+  "data": {
+    "id": "grp_react",
+    "urlname": "react-tampa",
+    "name": "React Tampa",
+    "description": "Tampa's React developer community",
+    "link": "https://meetup.com/react-tampa",
+    "website": "https://react-tampa.dev",
+    "memberCount": 450,
+    "photoUrl": "https://cdn.tampa.dev/groups/react-tampa.jpg",
+    "tags": ["react", "javascript", "frontend"],
+    "socialLinks": ["https://twitter.com/reacttampa"],
+    "upcomingEvents": [
+      {
+        "id": "evt_abc123",
+        "title": "React Tampa Monthly Meetup",
+        "startTime": "2026-02-15T18:30:00-05:00",
+        "eventUrl": "https://meetup.com/react-tampa/events/123"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Favorites
+
+### GET /v1/favorites
+
+List the authenticated user's favorite groups. Scope: `read:favorites`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/favorites
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "grp_react",
+      "urlname": "react-tampa",
+      "name": "React Tampa",
+      "description": "Tampa's React developer community",
+      "photoUrl": "https://cdn.tampa.dev/groups/react-tampa.jpg",
+      "memberCount": 450
+    }
+  ],
+  "pagination": {
+    "total": 3,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+### POST /v1/favorites/:groupSlug
+
+Add a group to favorites. Scope: `write:favorites`.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/favorites/react-tampa
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### DELETE /v1/favorites/:groupSlug
+
+Remove a group from favorites. Scope: `write:favorites`.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/favorites/react-tampa
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+## Badges
+
+These endpoints are public and do not require authentication.
+
+### GET /badges
+
+List all badges.
+
+```bash
+curl https://api.tampa.dev/badges
+```
+
+Badge responses include `points`, `awardedCount`, and a `rarity` object with `tier` and `percentage` fields. Rarity tiers: `legendary` (under 1%), `epic` (1-5%), `rare` (5-15%), `uncommon` (15-50%), `common` (50%+). Badges with `hideFromDirectory` enabled are excluded from the public listing.
+
+### GET /badges/:slug
+
+Get badge details.
+
+```bash
+curl https://api.tampa.dev/badges/first-event
+```
+
+---
+
+## Badge Claiming
+
+### GET /v1/claim/:code
+
+Get badge info for a claim link. No authentication required.
+
+```bash
+curl https://api.tampa.dev/v1/claim/BADGE-CODE-123
+```
+
+```json
+{
+  "data": {
+    "badge": {
+      "name": "Workshop Attendee",
+      "slug": "workshop-attendee",
+      "description": "Attended a Tampa Devs workshop",
+      "icon": "award",
+      "color": "#FF6B6B",
+      "points": 50
+    },
+    "group": {
+      "name": "Tampa Devs",
+      "urlname": "tampadevs",
+      "photoUrl": "https://cdn.tampa.dev/groups/tampadevs.jpg"
+    },
+    "claimable": true
+  }
+}
+```
+
+If the link is expired or exhausted, `claimable` is `false` and a `reason` field explains why.
+
+### POST /v1/claim/:code
+
+Claim a badge. Scope: `read:user`.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/claim/BADGE-CODE-123
+```
+
+```json
+{
+  "data": {
+    "success": true,
+    "badge": {
+      "name": "Workshop Attendee",
+      "slug": "workshop-attendee"
+    }
+  }
+}
+```
+
+Possible errors:
+- `409 Conflict` -- Badge already claimed
+- `410 Gone` -- Claim link expired or uses exhausted
+
+---
+
+## Leaderboard
+
+These endpoints are public and do not require authentication.
+
+### GET /leaderboard
+
+Get the platform XP leaderboard.
+
+```bash
+curl "https://api.tampa.dev/leaderboard?limit=10"
+```
+
+Query parameters:
+- `limit` -- Number of entries (default 50, max 100)
+- `offset` -- Pagination offset (default 0)
+
+Returns users ranked by platform XP score (sum of badge point values, excluding group-scoped badges), with achievement completion counts and `totalAchievements`.
+
+### GET /groups/:slug/leaderboard
+
+Get a group's XP leaderboard.
+
+```bash
+curl "https://api.tampa.dev/groups/tampadevs/leaderboard?limit=10"
+```
+
+Returns users ranked by group XP (sum of badge points for badges scoped to this group). Only public users with usernames are included.
+
+---
+
+## User Group Badges
+
+### GET /users/:username/group-badges
+
+Get a user's group-scoped badges, organized by group.
+
+```bash
+curl https://api.tampa.dev/users/janedev/group-badges
+```
+
+```json
+{
+  "groups": [
+    {
+      "groupId": "grp_td",
+      "groupName": "Tampa Devs",
+      "groupSlug": "tampadevs",
+      "groupPhotoUrl": "https://cdn.tampa.dev/groups/tampadevs.jpg",
+      "totalXp": 150,
+      "badges": [
+        {
+          "name": "Workshop Attendee",
+          "slug": "workshop-attendee",
+          "points": 50,
+          "awardedAt": "2025-11-15T19:00:00Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Group Claims
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/groups/claim/:token` | Get group info for a claim invite |
+| `POST` | `/groups/claim/:token` | Accept a claim invite (requires authentication) |
+| `POST` | `/groups/:groupId/claim` | Submit a claim request (requires authentication) |
+
+Claim invites can be configured with `autoApprove` -- if enabled, accepting the invite immediately grants ownership. Otherwise, a claim request is created for admin review.
+
+---
+
+## Scopes Discovery
+
+### GET /v1/scopes
+
+List all available OAuth scopes. No authentication required.
+
+```bash
+curl https://api.tampa.dev/v1/scopes
+```
+
+```json
+{
+  "data": [
+    {
+      "name": "user",
+      "description": "Read/write access to profile info (includes user:email and read:user)",
+      "implies": ["read:user", "user:email"]
+    },
+    {
+      "name": "read:events",
+      "description": "Read events and event details",
+      "implies": []
+    }
+  ]
+}
+```

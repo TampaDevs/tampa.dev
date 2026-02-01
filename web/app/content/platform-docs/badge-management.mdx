@@ -1,0 +1,69 @@
+---
+title: Managing Badges
+description: How to create, award, and manage badges for your group on Tampa.dev.
+order: 22
+category: For Group Managers
+---
+
+# Managing Badges
+
+Badges let you recognize and reward participation in your group. As a group owner or manager, you can create custom badges, award them to members, and share claim links.
+
+**Prerequisite:** Badge management requires the `badge_issuer` feature flag to be enabled on your group. If you don't see the Badges tab in your management dashboard, contact a platform admin to request this feature.
+
+## Creating Group Badges
+
+From the **Badges** tab in your group management dashboard, click **Create Badge**. Configure the following:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| **Name** | Yes | The badge name (e.g., "Hackathon Champion", "January Meetup") |
+| **Description** | Yes | What the badge represents and how it's earned |
+| **Icon** | Yes | An emoji or icon for the badge |
+| **Color** | Yes | The badge's accent color, displayed on the badge card |
+| **Points** | Yes | XP points awarded when a user earns this badge |
+
+### Badge Governance Limits
+
+To keep the badge ecosystem balanced, groups have governance limits:
+
+| Limit | Description |
+|-------|-------------|
+| **Max badges per group** | The maximum number of badge types a group can create. This limit is set by platform admins. |
+| **Max badge points** | The maximum XP value a single badge can award. This prevents any one badge from disproportionately affecting leaderboard rankings. |
+
+If you need higher limits for your group, reach out to a platform admin.
+
+## Awarding Badges
+
+You can award a badge directly to a user from the badge management interface. Search for the user by username and select the badge to award. The badge and its XP are added to the user's profile immediately.
+
+## Revoking Badges
+
+If a badge was awarded in error, you can revoke it from a user. Revoking a badge removes it from the user's profile and deducts the associated XP from their score.
+
+## Creating Claim Links
+
+Claim links are shareable URLs that let users claim a badge on their own. This is useful for:
+
+- Distributing badges at events (share the link on a screen or in chat)
+- Rewarding participation in online activities
+- Running promotions or challenges
+
+### Claim Link Options
+
+When creating a claim link, you can configure:
+
+| Option | Description |
+|--------|-------------|
+| **Use limit** | The maximum number of times the link can be used. Once the limit is reached, the link stops working. Leave blank for unlimited uses. |
+| **Expiration date** | When the link expires. After this date, the link can no longer be used to claim the badge. Leave blank for no expiration. |
+
+### How Claim Links Work
+
+1. You create a claim link for a specific badge.
+2. Share the link URL with your audience (at an event, in a message, on social media, etc.).
+3. Users visit the link and, if they're logged in, the badge is automatically added to their profile.
+4. If the link has a use limit, the remaining uses decrease with each claim.
+
+Each user can only claim a badge once through a given claim link — duplicate claims are prevented automatically.

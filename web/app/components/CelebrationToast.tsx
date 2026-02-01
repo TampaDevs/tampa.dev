@@ -11,6 +11,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useWS } from '../hooks/WebSocketProvider';
 import { getTrophyTier, TrophyIcon } from '../lib/trophy-tiers';
+import { Emoji } from '~/components/Emoji';
 
 interface CelebrationItem {
   id: string;
@@ -181,7 +182,7 @@ export function CelebrationToast() {
                     background: `radial-gradient(circle, ${toast.color}33 0%, transparent 70%)`,
                   } as React.CSSProperties}
                 >
-                  <span className="text-2xl leading-none">{toast.icon}</span>
+                  <Emoji emoji={toast.icon} size={28} />
                 </div>
 
                 {/* Center text */}

@@ -26,6 +26,25 @@ export const ALL_WEBHOOK_EVENT_TYPES = [
   'dev.tampa.developer.application_registered',
   'dev.tampa.onboarding.step_completed',
   'dev.tampa.onboarding.completed',
+  // Group management events
+  'dev.tampa.group.created',
+  'dev.tampa.group.updated',
+  'dev.tampa.group.member_added',
+  'dev.tampa.group.member_removed',
+  'dev.tampa.group.member_role_changed',
+  'dev.tampa.group.claimed',
+  'dev.tampa.group.creation_requested',
+  // Group badge events
+  'dev.tampa.group.badge_created',
+  'dev.tampa.group.badge_updated',
+  'dev.tampa.group.badge_deleted',
+  // Event management events
+  'dev.tampa.event.created',
+  'dev.tampa.event.updated',
+  'dev.tampa.event.cancelled',
+  'dev.tampa.event.rsvp',
+  'dev.tampa.event.rsvp_cancelled',
+  'dev.tampa.event.checkin',
   'test.ping',
 ] as const;
 
@@ -43,6 +62,13 @@ export const ADMIN_RESTRICTED_EVENTS = new Set<string>([
   'dev.tampa.badge.issued',
   'dev.tampa.user.score_changed',
   'dev.tampa.onboarding.completed',
+  // Group management events are admin-restricted
+  'dev.tampa.group.created',
+  'dev.tampa.group.updated',
+  'dev.tampa.group.claimed',
+  'dev.tampa.group.creation_requested',
+  'dev.tampa.group.badge_created',
+  'dev.tampa.group.badge_deleted',
 ]);
 
 /** Check if any event types in the list are admin-restricted */

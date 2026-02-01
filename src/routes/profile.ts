@@ -9,11 +9,13 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, and, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements } from '../db/schema';
+import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements, groups } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { deleteCookie } from 'hono/cookie';
+import { getCurrentUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
+import { ok, created, success, unauthorized, forbidden, notFound, badRequest, conflict } from '../lib/responses.js';
 
 // ============== Rarity Helper ==============
 
@@ -61,33 +63,6 @@ const updateProfileSchema = z.object({
 // ============== Helper Functions ==============
 
 /**
- * Get current user from session cookie
- */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  return await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-}
-
-/**
  * Normalize social links from DB (handles legacy object format → array)
  */
 export function normalizeSocialLinks(raw: string | null): string[] | null {
@@ -131,10 +106,9 @@ export function createProfileRoutes() {
    * GET /api/profile - Get current user's profile
    */
   app.get('/', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     // Fetch user's badges
     const db = createDatabase(c.env.DB);
@@ -142,7 +116,8 @@ export function createProfileRoutes() {
       where: eq(userBadges.userId, user.id),
     });
 
-    let userBadgeList: Array<{ id: string; name: string; slug: string; description: string | null; icon: string; color: string; points: number; awardedAt: string | null; rarity: { tier: string; percentage: number } }> = [];
+    type BadgeWithRarity = { id: string; name: string; slug: string; description: string | null; icon: string; color: string; points: number; awardedAt: string | null; groupId: string | null; rarity: { tier: string; percentage: number } };
+    let allBadges: BadgeWithRarity[] = [];
     if (ub.length > 0) {
       const badgeResults = await Promise.all(
         ub.map((b) => db.query.badges.findFirst({ where: eq(badges.id, b.badgeId) }))
@@ -165,7 +140,7 @@ export function createProfileRoutes() {
 
       const holderCountMap = new Map(holderCounts.map(h => [h.badgeId, h.count]));
 
-      userBadgeList = ub
+      allBadges = ub
         .map((ubEntry) => {
           const badge = badgeResults.find((b) => b?.id === ubEntry.badgeId);
           if (!badge) return null;
@@ -180,6 +155,7 @@ export function createProfileRoutes() {
             color: badge.color,
             points: badge.points,
             awardedAt: ubEntry.awardedAt,
+            groupId: badge.groupId,
             rarity: {
               tier: getRarityTierName(rarityPercentage),
               percentage: Math.round(rarityPercentage * 10) / 10,
@@ -189,7 +165,37 @@ export function createProfileRoutes() {
         .filter((b): b is NonNullable<typeof b> => b !== null);
     }
 
-    return c.json({ ...serializeUser(user), badges: userBadgeList });
+    // Separate platform badges (no groupId) from group badges
+    const platformBadges = allBadges.filter(b => !b.groupId).map(({ groupId, ...rest }) => rest);
+    const groupBadgeEntries = allBadges.filter(b => b.groupId);
+
+    // Group badges by group with XP subtotals
+    const groupBadgeMap = new Map<string, BadgeWithRarity[]>();
+    for (const b of groupBadgeEntries) {
+      const existing = groupBadgeMap.get(b.groupId!) || [];
+      existing.push(b);
+      groupBadgeMap.set(b.groupId!, existing);
+    }
+
+    // Fetch group info for all groups
+    const groupIds = [...groupBadgeMap.keys()];
+    let groupBadges: Array<{ group: { id: string; name: string; urlname: string; photoUrl: string | null }; badges: Array<Omit<BadgeWithRarity, 'groupId'>>; xpSubtotal: number }> = [];
+    if (groupIds.length > 0) {
+      const groupResults = await Promise.all(
+        groupIds.map((gid) => db.query.groups.findFirst({ where: eq(groups.id, gid) }))
+      );
+      groupBadges = groupIds.map((gid, idx) => {
+        const g = groupResults[idx];
+        const badgesInGroup = groupBadgeMap.get(gid) || [];
+        return {
+          group: g ? { id: g.id, name: g.name, urlname: g.urlname, photoUrl: g.photoUrl } : { id: gid, name: 'Unknown Group', urlname: '', photoUrl: null },
+          badges: badgesInGroup.map(({ groupId, ...rest }) => rest),
+          xpSubtotal: badgesInGroup.reduce((sum, b) => sum + b.points, 0),
+        };
+      });
+    }
+
+    return ok(c, { ...serializeUser(user), badges: platformBadges, groupBadges });
   });
 
   /**
@@ -201,11 +207,11 @@ export function createProfileRoutes() {
 
     // Basic validation
     if (username.length < 3 || username.length > 30 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(username)) {
-      return c.json({ available: false, reason: 'Invalid username format' });
+      return ok(c, { available: false, reason: 'Invalid username format' });
     }
 
     if (RESERVED_USERNAMES.includes(username)) {
-      return c.json({ available: false, reason: 'This username is reserved' });
+      return ok(c, { available: false, reason: 'This username is reserved' });
     }
 
     const db = createDatabase(c.env.DB);
@@ -214,22 +220,22 @@ export function createProfileRoutes() {
     });
 
     // If the requester is logged in, allow their own current username
-    const currentUser = await getCurrentUser(c);
+    const currentAuth = await getCurrentUser(c);
+    const currentUser = currentAuth?.user ?? null;
     if (existing && currentUser && existing.id === currentUser.id) {
-      return c.json({ available: true });
+      return ok(c, { available: true });
     }
 
-    return c.json({ available: !existing });
+    return ok(c, { available: !existing });
   });
 
   /**
    * PATCH /api/profile - Update current user's profile
    */
   app.patch('/', zValidator('json', updateProfileSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const updates = c.req.valid('json');
     const db = createDatabase(c.env.DB);
@@ -282,14 +288,14 @@ export function createProfileRoutes() {
     // Username uniqueness check
     if (updates.username !== undefined) {
       if (RESERVED_USERNAMES.includes(updates.username)) {
-        return c.json({ error: 'This username is reserved' }, 409);
+        return conflict(c, 'This username is reserved');
       }
 
       const existing = await db.query.users.findFirst({
         where: eq(users.username, updates.username),
       });
       if (existing && existing.id !== user.id) {
-        return c.json({ error: 'Username is already taken' }, 409);
+        return conflict(c, 'Username is already taken');
       }
       updateData.username = updates.username;
     }
@@ -304,9 +310,7 @@ export function createProfileRoutes() {
       where: eq(users.id, user.id),
     });
 
-    if (!updatedUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!updatedUser) return notFound(c, 'User not found');
 
     // Emit profile_updated event for achievement tracking and onboarding
     emitEvent(c, {
@@ -315,7 +319,7 @@ export function createProfileRoutes() {
       metadata: { userId: user.id, source: 'profile' },
     });
 
-    return c.json(serializeUser(updatedUser));
+    return ok(c, serializeUser(updatedUser));
   });
 
   /**
@@ -324,10 +328,9 @@ export function createProfileRoutes() {
   app.patch('/primary-email', zValidator('json', z.object({
     provider: z.string().min(1),
   })), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const { provider } = c.req.valid('json');
     const db = createDatabase(c.env.DB);
@@ -340,12 +343,10 @@ export function createProfileRoutes() {
       ),
     });
 
-    if (!identity) {
-      return c.json({ error: 'No linked identity for this provider' }, 404);
-    }
+    if (!identity) return notFound(c, 'No linked identity for this provider');
 
     if (!identity.providerEmail) {
-      return c.json({ error: 'No email available from this provider' }, 400);
+      return badRequest(c, 'No email available from this provider');
     }
 
     // Update the user's primary email
@@ -360,21 +361,18 @@ export function createProfileRoutes() {
       where: eq(users.id, user.id),
     });
 
-    if (!updatedUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!updatedUser) return notFound(c, 'User not found');
 
-    return c.json(serializeUser(updatedUser));
+    return ok(c, serializeUser(updatedUser));
   });
 
   /**
    * DELETE /api/profile - Delete current user's account and all data
    */
   app.delete('/', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
 
@@ -405,7 +403,7 @@ export function createProfileRoutes() {
     // 6. Clear session cookie
     deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
 
-    return c.json({ success: true, message: 'Account deleted' });
+    return success(c, { message: 'Account deleted' });
   });
 
   // ============== Portfolio ==============
@@ -422,10 +420,9 @@ export function createProfileRoutes() {
    * GET /api/profile/portfolio - List user's portfolio items
    */
   app.get('/portfolio', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
     const items = await db.query.userPortfolioItems.findMany({
@@ -433,17 +430,16 @@ export function createProfileRoutes() {
       orderBy: [userPortfolioItems.sortOrder],
     });
 
-    return c.json({ items });
+    return ok(c, items);
   });
 
   /**
    * POST /api/profile/portfolio - Create a portfolio item
    */
   app.post('/portfolio', zValidator('json', portfolioItemSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const data = c.req.valid('json');
     const db = createDatabase(c.env.DB);
@@ -462,7 +458,7 @@ export function createProfileRoutes() {
       updatedAt: now,
     });
 
-    const created = await db.query.userPortfolioItems.findFirst({
+    const createdItem = await db.query.userPortfolioItems.findFirst({
       where: eq(userPortfolioItems.id, id),
     });
 
@@ -473,17 +469,16 @@ export function createProfileRoutes() {
       metadata: { userId: user.id, source: 'profile' },
     });
 
-    return c.json(created, 201);
+    return created(c, createdItem);
   });
 
   /**
    * PATCH /api/profile/portfolio/:id - Update a portfolio item
    */
   app.patch('/portfolio/:id', zValidator('json', portfolioItemSchema.partial()), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const itemId = c.req.param('id');
     const data = c.req.valid('json');
@@ -493,9 +488,7 @@ export function createProfileRoutes() {
       where: and(eq(userPortfolioItems.id, itemId), eq(userPortfolioItems.userId, user.id)),
     });
 
-    if (!existing) {
-      return c.json({ error: 'Portfolio item not found' }, 404);
-    }
+    if (!existing) return notFound(c, 'Portfolio item not found');
 
     await db.update(userPortfolioItems)
       .set({ ...data, updatedAt: new Date().toISOString() })
@@ -505,17 +498,16 @@ export function createProfileRoutes() {
       where: eq(userPortfolioItems.id, itemId),
     });
 
-    return c.json(updated);
+    return ok(c, updated);
   });
 
   /**
    * DELETE /api/profile/portfolio/:id - Delete a portfolio item
    */
   app.delete('/portfolio/:id', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const itemId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -524,13 +516,11 @@ export function createProfileRoutes() {
       where: and(eq(userPortfolioItems.id, itemId), eq(userPortfolioItems.userId, user.id)),
     });
 
-    if (!existing) {
-      return c.json({ error: 'Portfolio item not found' }, 404);
-    }
+    if (!existing) return notFound(c, 'Portfolio item not found');
 
     await db.delete(userPortfolioItems).where(eq(userPortfolioItems.id, itemId));
 
-    return c.json({ success: true, message: 'Portfolio item deleted' });
+    return success(c, { message: 'Portfolio item deleted' });
   });
 
   // ============== API Tokens (Personal Access Tokens) ==============
@@ -545,10 +535,9 @@ export function createProfileRoutes() {
    * GET /api/profile/tokens - List user's API tokens
    */
   app.get('/tokens', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
     const tokens = await db.query.apiTokens.findMany({
@@ -556,17 +545,15 @@ export function createProfileRoutes() {
       orderBy: [apiTokens.createdAt],
     });
 
-    return c.json({
-      tokens: tokens.map((t) => ({
-        id: t.id,
-        name: t.name,
-        tokenPrefix: t.tokenPrefix,
-        scopes: JSON.parse(t.scopes),
-        lastUsedAt: t.lastUsedAt,
-        expiresAt: t.expiresAt,
-        createdAt: t.createdAt,
-      })),
-    });
+    return ok(c, tokens.map((t) => ({
+      id: t.id,
+      name: t.name,
+      tokenPrefix: t.tokenPrefix,
+      scopes: JSON.parse(t.scopes),
+      lastUsedAt: t.lastUsedAt,
+      expiresAt: t.expiresAt,
+      createdAt: t.createdAt,
+    })));
   });
 
   /**
@@ -574,17 +561,16 @@ export function createProfileRoutes() {
    * Returns the full token ONCE in the response.
    */
   app.post('/tokens', zValidator('json', createTokenSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const data = c.req.valid('json');
     const db = createDatabase(c.env.DB);
 
     // Admin scope requires admin/superadmin role
     if (data.scopes.includes('admin') && user.role !== 'admin' && user.role !== 'superadmin') {
-      return c.json({ error: 'Admin scope requires admin or superadmin role' }, 403);
+      return forbidden(c, 'Admin scope requires admin or superadmin role');
     }
 
     // Generate token: td_pat_ + 40 hex chars
@@ -626,7 +612,7 @@ export function createProfileRoutes() {
       metadata: { userId: user.id, source: 'profile' },
     });
 
-    return c.json({
+    return created(c, {
       id,
       name: data.name,
       token: fullToken, // Only shown once!
@@ -634,17 +620,16 @@ export function createProfileRoutes() {
       scopes: data.scopes,
       expiresAt,
       createdAt: now,
-    }, 201);
+    });
   });
 
   /**
    * DELETE /api/profile/tokens/:id - Revoke an API token
    */
   app.delete('/tokens/:id', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const tokenId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -653,13 +638,11 @@ export function createProfileRoutes() {
       where: and(eq(apiTokens.id, tokenId), eq(apiTokens.userId, user.id)),
     });
 
-    if (!existing) {
-      return c.json({ error: 'Token not found' }, 404);
-    }
+    if (!existing) return notFound(c, 'Token not found');
 
     await db.delete(apiTokens).where(eq(apiTokens.id, tokenId));
 
-    return c.json({ success: true, message: 'Token revoked' });
+    return success(c, { message: 'Token revoked' });
   });
 
   // ============== Achievements ==============
@@ -668,10 +651,9 @@ export function createProfileRoutes() {
    * GET /api/profile/achievements - Get user's achievement progress
    */
   app.get('/achievements', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
 
@@ -697,10 +679,11 @@ export function createProfileRoutes() {
         currentValue: p?.currentValue ?? 0,
         completedAt: p?.completedAt ?? null,
         badgeSlug: def.badgeSlug ?? null,
+        hidden: def.hidden === 1,
       };
     });
 
-    return c.json({ achievements: result });
+    return ok(c, result);
   });
 
   // ============== Entitlements ==============
@@ -709,10 +692,9 @@ export function createProfileRoutes() {
    * GET /api/profile/entitlements - Get user's active entitlements
    */
   app.get('/entitlements', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
     const now = new Date().toISOString();
@@ -726,15 +708,13 @@ export function createProfileRoutes() {
       (ent) => !ent.expiresAt || ent.expiresAt > now
     );
 
-    return c.json({
-      entitlements: activeEntitlements.map((ent) => ({
-        id: ent.id,
-        entitlement: ent.entitlement,
-        grantedAt: ent.grantedAt,
-        expiresAt: ent.expiresAt,
-        source: ent.source,
-      })),
-    });
+    return ok(c, activeEntitlements.map((ent) => ({
+      id: ent.id,
+      entitlement: ent.entitlement,
+      grantedAt: ent.grantedAt,
+      expiresAt: ent.expiresAt,
+      source: ent.source,
+    })));
   });
 
   return app;

@@ -9,6 +9,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useWS } from '../hooks/WebSocketProvider';
+import { Emoji } from '~/components/Emoji';
 
 interface Toast {
   id: string;
@@ -108,8 +109,8 @@ export function NotificationToast() {
             >
               <div className="flex items-start gap-3">
                 {/* Icon */}
-                <div className="text-2xl flex-shrink-0">
-                  {toast.icon}
+                <div className="flex-shrink-0">
+                  <Emoji emoji={toast.icon} size={28} />
                 </div>
 
                 {/* Content */}

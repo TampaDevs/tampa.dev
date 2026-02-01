@@ -8,7 +8,7 @@
 import { lt, sql } from 'drizzle-orm';
 import type { Env } from '../../types/worker.js';
 import { createDatabase } from '../db/index.js';
-import { syncLogs, badgeClaimLinks } from '../db/schema.js';
+import { syncLogs, badgeClaimLinks, eventCheckinCodes, eventCheckins } from '../db/schema.js';
 import { SyncService } from '../services/sync.js';
 import { providerRegistry } from '../providers/index.js';
 
@@ -96,4 +96,20 @@ async function handleTruncation(env: Env): Promise<void> {
     .where(sql`${badgeClaimLinks.expiresAt} IS NOT NULL AND ${badgeClaimLinks.expiresAt} < ${now}`);
 
   console.log('Truncation complete: expired badge claim links deleted');
+
+  // Truncate checkin codes and checkins for events that ended > 1 hour ago.
+  // We DELETE (not just expire) to keep the database clean over time.
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  await db
+    .delete(eventCheckins)
+    .where(sql`${eventCheckins.eventId} IN (
+      SELECT id FROM events WHERE end_time IS NOT NULL AND end_time < ${oneHourAgo}
+    )`);
+  await db
+    .delete(eventCheckinCodes)
+    .where(sql`${eventCheckinCodes.eventId} IN (
+      SELECT id FROM events WHERE end_time IS NOT NULL AND end_time < ${oneHourAgo}
+    )`);
+
+  console.log('Truncation complete: expired checkin data deleted');
 }

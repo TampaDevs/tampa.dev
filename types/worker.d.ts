@@ -85,6 +85,9 @@ export interface Env {
   // Environment identifier (e.g., "staging")
   ENVIRONMENT?: string;
 
+  // Encryption key for sensitive data at rest (base64-encoded 32-byte key)
+  ENCRYPTION_KEY?: string;
+
   // R2 uploads
   UPLOADS_PUBLIC_URL?: string; // e.g., https://uploads.tampa.dev or R2 public bucket URL
   UPLOADS_PUBLIC_BUCKET_NAME?: string; // R2 bucket name (defaults to 'tampa-dev-uploads-public')

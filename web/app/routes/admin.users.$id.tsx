@@ -9,6 +9,8 @@
 import { useLoaderData, useFetcher, Link, redirect } from "react-router";
 import { Avatar } from "@tampadevs/react";
 import type { Route } from "./+types/admin.users.$id";
+import { Emoji } from "~/components/Emoji";
+import { EmojiSelect } from "~/components/EmojiSelect";
 import {
   fetchAdminUser,
   fetchBadges,
@@ -296,10 +298,10 @@ export default function AdminUserDetailPage() {
               <div key={badge.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <span
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
                     style={{ backgroundColor: badge.color }}
                   >
-                    {badge.icon}
+                    <Emoji emoji={badge.icon} size={18} />
                   </span>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white text-sm">{badge.name}</p>
@@ -341,16 +343,17 @@ export default function AdminUserDetailPage() {
         {availableBadges.length > 0 && (
           <fetcher.Form method="post" className="flex items-center gap-2">
             <input type="hidden" name="intent" value="awardBadge" />
-            <select
+            <EmojiSelect
               name="badgeId"
-              className="flex-1 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-            >
-              {availableBadges.map((badge) => (
-                <option key={badge.id} value={badge.id}>
-                  {badge.icon} {badge.name}
-                </option>
-              ))}
-            </select>
+              defaultValue={availableBadges[0]?.id}
+              placeholder="Select badge\u2026"
+              className="flex-1 flex items-center gap-2 text-sm text-left border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+              options={availableBadges.map((badge) => ({
+                value: badge.id,
+                label: badge.name,
+                emoji: badge.icon,
+              }))}
+            />
             <button
               type="submit"
               className="px-4 py-2 bg-coral text-white rounded-lg text-sm font-medium hover:bg-coral-dark transition-colors"

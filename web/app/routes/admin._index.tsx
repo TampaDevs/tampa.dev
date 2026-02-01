@@ -12,9 +12,10 @@ export const meta: Route.MetaFunction = () => [
   { title: "Admin Dashboard | Tampa.dev" },
 ];
 
-export async function loader(): Promise<{ status: SyncStatusResponse | null; error: string | null }> {
+export async function loader({ request }: Route.LoaderArgs): Promise<{ status: SyncStatusResponse | null; error: string | null }> {
+  const cookieHeader = request.headers.get("Cookie") || undefined;
   try {
-    const status = await fetchSyncStatus();
+    const status = await fetchSyncStatus(cookieHeader);
     return { status, error: null };
   } catch (error) {
     console.error("Failed to fetch sync status:", error);

@@ -1,7 +1,8 @@
 ---
 title: Webhooks
 description: Real-time event notifications via HTTP POST
-order: 4
+order: 20
+category: Webhooks
 ---
 
 # Webhooks
@@ -11,11 +12,14 @@ Register webhooks in the [Developer Portal](/developer).
 
 ## Event Types
 
+### Platform Events
+
 | Event Type | Description | Access |
 |------------|-------------|--------|
 | `dev.tampa.events.synced` | Events were synced from an upstream source | Public |
 | `dev.tampa.sync.completed` | A full platform sync completed | Public |
 | `dev.tampa.user.favorite_added` | A user favorited a group | Public |
+| `dev.tampa.user.favorite_removed` | A user unfavorited a group | Public |
 | `dev.tampa.user.profile_updated` | A user updated their profile | Public |
 | `dev.tampa.user.portfolio_item_created` | A user added a portfolio item | Public |
 | `dev.tampa.user.identity_linked` | A user linked an identity provider | **Admin only** |
@@ -26,10 +30,43 @@ Register webhooks in the [Developer Portal](/developer).
 | `dev.tampa.user.score_changed` | A user's XP score changed | **Admin only** |
 | `dev.tampa.user.login` | A user logged in | Public |
 | `dev.tampa.user.followed` | A user followed another user | Public |
+| `dev.tampa.onboarding.step_completed` | A user completed an onboarding step | Public |
+| `dev.tampa.onboarding.completed` | A user completed all onboarding | **Admin only** |
 | `dev.tampa.developer.api_token_created` | A developer created an API token | Public |
 | `dev.tampa.developer.webhook_created` | A developer created a webhook | Public |
 | `dev.tampa.developer.application_registered` | A developer registered an OAuth app | Public |
 | `test.ping` | Test webhook delivery | Public |
+
+### Group Management Events
+
+| Event Type | Description | Access |
+|------------|-------------|--------|
+| `dev.tampa.group.created` | A new group was created | **Admin only** |
+| `dev.tampa.group.updated` | A group's settings were updated | **Admin only** |
+| `dev.tampa.group.member_added` | A user was added to a group | Public |
+| `dev.tampa.group.member_removed` | A user was removed from a group | Public |
+| `dev.tampa.group.member_role_changed` | A member's role was changed | Public |
+| `dev.tampa.group.claimed` | A group was claimed by a user | **Admin only** |
+| `dev.tampa.group.creation_requested` | A group creation request was submitted | **Admin only** |
+
+### Group Badge Events
+
+| Event Type | Description | Access |
+|------------|-------------|--------|
+| `dev.tampa.group.badge_created` | A group badge was created | **Admin only** |
+| `dev.tampa.group.badge_updated` | A group badge was updated | Public |
+| `dev.tampa.group.badge_deleted` | A group badge was deleted | **Admin only** |
+
+### Event Management Events
+
+| Event Type | Description | Access |
+|------------|-------------|--------|
+| `dev.tampa.event.created` | A native event was created | Public |
+| `dev.tampa.event.updated` | An event was updated | Public |
+| `dev.tampa.event.cancelled` | An event was cancelled | Public |
+| `dev.tampa.event.rsvp` | A user RSVP'd to an event | Public |
+| `dev.tampa.event.rsvp_cancelled` | A user cancelled their RSVP | Public |
+| `dev.tampa.event.checkin` | A user checked in to an event | Public |
 
 > **Admin-restricted events** require an admin or superadmin role to subscribe. Regular users will receive a 403 error if they attempt to create webhooks for these event types.
 
@@ -135,6 +172,265 @@ Fired when a user adds a portfolio item.
 #### Admin-Restricted Events
 
 Payload schemas for admin-restricted event types (`dev.tampa.user.identity_linked`, `dev.tampa.user.registered`, `dev.tampa.user.deleted`, `dev.tampa.achievement.unlocked`, `dev.tampa.badge.issued`, `dev.tampa.user.score_changed`) are documented in the admin panel under Admin Docs.
+
+#### Group Management Events
+
+##### `dev.tampa.group.created`
+
+Fired when a new native group is created.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.created",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "groupId": "group-uuid",
+    "groupName": "My Group",
+    "createdBy": "user-uuid"
+  }
+}
+```
+
+##### `dev.tampa.group.updated`
+
+Fired when a group's settings are updated.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.updated",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "groupId": "group-uuid",
+    "fields": ["name", "description", "tags"]
+  }
+}
+```
+
+##### `dev.tampa.group.member_added`
+
+Fired when a user is added to a group.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.member_added",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "groupId": "group-uuid",
+    "userId": "user-uuid",
+    "role": "member",
+    "addedBy": "manager-uuid"
+  }
+}
+```
+
+##### `dev.tampa.group.member_removed`
+
+Fired when a user is removed from a group (or leaves voluntarily).
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.member_removed",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "groupId": "group-uuid",
+    "userId": "user-uuid",
+    "removedBy": "manager-uuid"
+  }
+}
+```
+
+##### `dev.tampa.group.member_role_changed`
+
+Fired when a member's role is updated.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.member_role_changed",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "groupId": "group-uuid",
+    "userId": "user-uuid",
+    "oldRole": "member",
+    "newRole": "manager",
+    "changedBy": "owner-uuid"
+  }
+}
+```
+
+##### `dev.tampa.group.claimed`
+
+Fired when a group is claimed via an invite link.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.claimed",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "groupId": "group-uuid",
+    "userId": "user-uuid",
+    "method": "invite",
+    "autoApproved": true
+  }
+}
+```
+
+##### `dev.tampa.group.creation_requested`
+
+Fired when a user submits a group creation or claim request.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.creation_requested",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "requestId": "request-uuid",
+    "userId": "user-uuid",
+    "groupName": "My New Group",
+    "type": "creation"
+  }
+}
+```
+
+The `type` field is `"creation"` for new group requests or `"claim"` for ownership claim requests.
+
+##### `dev.tampa.group.badge_created`
+
+Fired when a group badge is created.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.group.badge_created",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "groupId": "group-uuid",
+    "badgeId": "badge-uuid",
+    "badgeSlug": "contributor",
+    "badgeName": "Contributor"
+  }
+}
+```
+
+#### Event Management Events
+
+##### `dev.tampa.event.created`
+
+Fired when a native event is created.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.event.created",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "eventId": "event-uuid",
+    "groupId": "group-uuid",
+    "title": "Monthly Meetup",
+    "startTime": "2026-02-15T18:30:00-05:00",
+    "createdBy": "user-uuid"
+  }
+}
+```
+
+##### `dev.tampa.event.updated`
+
+Fired when an event is updated.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.event.updated",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "eventId": "event-uuid",
+    "groupId": "group-uuid",
+    "fields": ["title", "description"],
+    "updatedBy": "user-uuid"
+  }
+}
+```
+
+##### `dev.tampa.event.cancelled`
+
+Fired when an event is cancelled.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.event.cancelled",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "eventId": "event-uuid",
+    "groupId": "group-uuid",
+    "title": "Monthly Meetup",
+    "cancelledBy": "user-uuid"
+  }
+}
+```
+
+##### `dev.tampa.event.rsvp`
+
+Fired when a user RSVPs to an event, or when a waitlisted user is promoted.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.event.rsvp",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "eventId": "event-uuid",
+    "userId": "user-uuid",
+    "status": "confirmed",
+    "waitlistPosition": null
+  }
+}
+```
+
+When a waitlisted user is automatically promoted (because a confirmed user cancelled), the payload includes `"promotedFromWaitlist": true`.
+
+##### `dev.tampa.event.rsvp_cancelled`
+
+Fired when a user cancels their RSVP.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.event.rsvp_cancelled",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "eventId": "event-uuid",
+    "userId": "user-uuid",
+    "previousStatus": "confirmed"
+  }
+}
+```
+
+##### `dev.tampa.event.checkin`
+
+Fired when a user checks in to an event.
+
+```json
+{
+  "id": "d1e2f3a4-...",
+  "type": "dev.tampa.event.checkin",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "eventId": "event-uuid",
+    "userId": "user-uuid",
+    "checkinCodeId": "code-uuid",
+    "method": "link"
+  }
+}
+```
+
+The `method` field indicates how the user checked in: `link` (clicked a URL), `qr` (scanned a QR code), or `nfc` (tapped an NFC tag).
 
 #### `dev.tampa.user.login`
 

@@ -148,6 +148,34 @@
       "when": 1769654400000,
       "tag": "0015_add_badge_hide_from_directory",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1769654500000,
+      "tag": "0021_achievement_conditions_and_claim_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1769654600000,
+      "tag": "0022_first_party_groups_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1769654700000,
+      "tag": "0023_populate_platform_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1769654800000,
+      "tag": "0024_add_missing_indexes",
+      "breakpoints": true
     }
   ]
 }

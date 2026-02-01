@@ -16,6 +16,7 @@ import { SocialLinkIcon } from "~/components/SocialLinkIcon";
 import { getTrophyTier, TrophyIcon, type TrophyTier } from "~/lib/trophy-tiers";
 import { getRarityTier } from "~/lib/rarity";
 import { BadgeDetailModal } from "~/components/BadgeDetailModal";
+import { Emoji } from "~/components/Emoji";
 
 interface OAuthGrant {
   grantId: string;
@@ -84,6 +85,7 @@ interface AchievementInfo {
   badgeSlug: string | null;
   icon: string | null;
   color: string | null;
+  hidden?: boolean;
 }
 
 interface FavoriteGroup {
@@ -166,7 +168,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       }),
     ]);
     if (profileResponse.ok) {
-      const profileData = await profileResponse.json() as { badges?: ProfileBadge[]; profileVisibility?: string; showAchievements?: boolean; heroImageUrl?: string | null; themeColor?: string | null; socialLinks?: string[] | null; bio?: string | null };
+      const profileJson = await profileResponse.json() as { data: { badges?: ProfileBadge[]; profileVisibility?: string; showAchievements?: boolean; heroImageUrl?: string | null; themeColor?: string | null; socialLinks?: string[] | null; bio?: string | null } };
+      const profileData = profileJson.data;
       badges = profileData.badges || [];
       if (profileData.profileVisibility) {
         user = { ...user, profileVisibility: profileData.profileVisibility } as typeof user;
@@ -188,20 +191,20 @@ export async function loader({ request }: Route.LoaderArgs) {
       }
     }
     if (portfolioResponse.ok) {
-      const portfolioData = await portfolioResponse.json() as { items: PortfolioItem[] };
-      portfolioItems = portfolioData.items || [];
+      const portfolioJson = await portfolioResponse.json() as { data: PortfolioItem[] };
+      portfolioItems = portfolioJson.data || [];
     }
     if (tokensResponse.ok) {
-      const tokensData = await tokensResponse.json() as { tokens: ApiTokenInfo[] };
-      apiTokensList = tokensData.tokens || [];
+      const tokensJson = await tokensResponse.json() as { data: ApiTokenInfo[] };
+      apiTokensList = tokensJson.data || [];
     }
     if (achievementsResponse.ok) {
-      const achievementsData = await achievementsResponse.json() as { achievements: AchievementInfo[] };
-      achievements = achievementsData.achievements || [];
+      const achievementsJson = await achievementsResponse.json() as { data: AchievementInfo[] };
+      achievements = achievementsJson.data || [];
     }
     if (favoritesResponse.ok) {
-      const favoritesData = await favoritesResponse.json() as { favorites: FavoriteGroup[] };
-      favoriteGroups = favoritesData.favorites || [];
+      const favoritesJson = await favoritesResponse.json() as { data: FavoriteGroup[] };
+      favoriteGroups = favoritesJson.data || [];
     }
   } catch (error) {
     console.error("Failed to fetch profile data:", error);
@@ -473,8 +476,8 @@ export async function action({ request }: Route.ActionArgs) {
         return { success: false, error: errorData.error || "Failed to create token" };
       }
 
-      const data = await response.json() as { token: string; id: string };
-      return { success: true, tokenCreated: true, newToken: data.token };
+      const json = await response.json() as { data: { token: string; id: string } };
+      return { success: true, tokenCreated: true, newToken: json.data.token };
     } catch (error) {
       console.error("Failed to create token:", error);
       return { success: false, error: "Failed to create token" };
@@ -890,6 +893,10 @@ const SCOPE_LABELS: Record<string, string> = {
   "write:favorites": "Favorites (write)",
   "read:portfolio": "Portfolio (read)",
   "write:portfolio": "Portfolio (write)",
+  "manage:groups": "Manage groups",
+  "manage:events": "Manage events",
+  "manage:checkins": "Manage checkins",
+  "manage:badges": "Manage badges",
   admin: "Admin",
   // Legacy
   profile: "Profile",
@@ -912,6 +919,10 @@ const PAT_SCOPES = [
   { value: "write:favorites", label: "Write favorites" },
   { value: "read:portfolio", label: "Read portfolio" },
   { value: "write:portfolio", label: "Write portfolio" },
+  { value: "manage:groups", label: "Manage groups" },
+  { value: "manage:events", label: "Manage events" },
+  { value: "manage:checkins", label: "Manage checkins" },
+  { value: "manage:badges", label: "Manage badges" },
 ];
 
 function GrantCard({ grant, userId }: { grant: OAuthGrant; userId: string }) {
@@ -1040,8 +1051,8 @@ function ProfileEditForm({
         const response = await fetch(`/api/profile/check-username/${encodeURIComponent(value)}`, {
           credentials: "include",
         });
-        const data = await response.json() as { available: boolean; reason?: string };
-        setUsernameStatus(data.available ? "available" : "taken");
+        const json = await response.json() as { data: { available: boolean; reason?: string } };
+        setUsernameStatus(json.data.available ? "available" : "taken");
       } catch {
         setUsernameStatus("idle");
       }
@@ -1953,7 +1964,7 @@ function BadgePillWithPopover({ badge, onSelect }: { badge: ProfileBadge; onSele
             backgroundColor: `${badge.color}dd`,
           }}
         >
-          {badge.icon} {badge.name}
+          <Emoji emoji={badge.icon} size={16} /> {badge.name}
         </button>
       </ProfileTiltCard>
       {open && (badge.description || (badge.points && badge.points > 0) || badge.rarity) && (
@@ -2031,52 +2042,70 @@ function AchievementsSection({
           </button>
         </label>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {achievements.map((a) => {
-          const pct = Math.min(100, Math.round((a.currentValue / a.targetValue) * 100));
-          const isComplete = a.completedAt !== null;
-          const barColor = a.color || (isComplete ? "#22c55e" : undefined);
-          return (
-            <div
-              key={a.key}
-              className={`bg-white dark:bg-gray-800 rounded-xl border p-4 ${isComplete
-                ? "border-green-200 dark:border-green-800"
-                : "border-gray-200 dark:border-gray-700"
-                }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {a.icon && <span className="mr-1.5">{a.icon}</span>}
-                  {a.name}
-                </span>
-                {isComplete && (
-                  <span
-                    className="px-2 py-0.5 text-xs font-medium rounded-full text-white"
-                    style={{ backgroundColor: a.color || "#22c55e" }}
-                  >
-                    Done
-                  </span>
-                )}
+      {(() => {
+        // Sort: in-progress first (by completion % descending), then completed (by completion date descending)
+        const inProgress = achievements
+          .filter((a) => a.completedAt === null)
+          .sort((a, b) => {
+            const pctA = a.targetValue > 0 ? a.currentValue / a.targetValue : 0;
+            const pctB = b.targetValue > 0 ? b.currentValue / b.targetValue : 0;
+            return pctB - pctA;
+          });
+
+        return (
+          <div className="space-y-4">
+            {/* In Progress Section */}
+            {inProgress.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                  In Progress
+                  <span className="ml-1.5 text-gray-400 dark:text-gray-500">({inProgress.length})</span>
+                </h3>
+                <div className="space-y-1">
+                  {inProgress.map((a) => {
+                    const pct = Math.min(100, Math.round((a.currentValue / a.targetValue) * 100));
+                    const barColor = a.color || "var(--color-coral, #f97066)";
+                    return (
+                      <div
+                        key={a.key}
+                        className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                        title={a.description}
+                      >
+                        {a.icon && <Emoji emoji={a.icon} size={16} />}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
+                            {a.name}
+                            {a.hidden && (
+                              <span title="Hidden achievement">
+                                <svg className="w-3 h-3 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                                </svg>
+                              </span>
+                            )}
+                          </span>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-1">
+                            <div
+                              className="h-1.5 rounded-full transition-all"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor: barColor,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums shrink-0">
+                          {a.currentValue}/{a.targetValue}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                {a.description}
-              </p>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  className="h-2 rounded-full transition-all"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: barColor || "var(--color-coral, #f97066)",
-                  }}
-                />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {a.currentValue} / {a.targetValue}
-              </p>
-            </div>
-          );
-        })}
-      </div>
+            )}
+
+          </div>
+        );
+      })()}
     </section>
   );
 }

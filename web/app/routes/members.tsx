@@ -3,6 +3,7 @@ import { useLoaderData, Link, useSearchParams, Form } from "react-router";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Avatar } from "@tampadevs/react";
 import { generateMetaTags } from "~/lib/seo";
+import { Emoji } from "~/components/Emoji";
 
 interface Badge {
   name: string;
@@ -106,13 +107,13 @@ export async function loader({ request }: Route.LoaderArgs) {
     };
   }
 
-  const data = (await response.json()) as MembersResponse;
+  const json = (await response.json()) as { data: Member[]; pagination: { total: number; limit: number; offset: number; hasMore: boolean } };
 
   return {
-    users: data.users ?? [],
-    total: data.total ?? 0,
-    limit: data.limit ?? PAGE_SIZE,
-    offset: data.offset ?? offset,
+    users: json.data ?? [],
+    total: json.pagination?.total ?? 0,
+    limit: json.pagination?.limit ?? PAGE_SIZE,
+    offset: json.pagination?.offset ?? offset,
     search,
     badge,
     availableBadges,
@@ -145,7 +146,7 @@ function BadgePill({ badge }: { badge: Badge }) {
         color: badge.color,
       }}
     >
-      <span>{badge.icon}</span>
+      <Emoji emoji={badge.icon} size={14} />
       {badge.name}
     </span>
   );
@@ -234,7 +235,7 @@ function BadgeFilterDropdown({
                 color: b.color,
               }}
             >
-              <span>{b.icon}</span>
+              <Emoji emoji={b.icon} size={14} />
               {b.name}
               <button
                 type="button"
@@ -330,10 +331,10 @@ function BadgeFilterDropdown({
                         )}
                       </span>
                       <span
-                        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+                        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: `${b.color}20` }}
                       >
-                        {b.icon}
+                        <Emoji emoji={b.icon} size={20} />
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -411,7 +412,7 @@ export default function MembersPage() {
                   <span key={b.slug}>
                     {i > 0 && " + "}
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-medium" style={{ backgroundColor: `${b.color}20`, color: b.color }}>
-                      {b.icon} {b.name}
+                      <Emoji emoji={b.icon} size={14} /> {b.name}
                     </span>
                   </span>
                 ))}

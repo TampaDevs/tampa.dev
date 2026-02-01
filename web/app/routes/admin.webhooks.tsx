@@ -44,8 +44,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  const data = (await response.json()) as { webhooks: Webhook[] };
-  return { webhooks: data.webhooks };
+  const json = (await response.json()) as { data: Webhook[] };
+  return { webhooks: json.data };
 }
 
 export async function action({ request }: Route.ActionArgs) {

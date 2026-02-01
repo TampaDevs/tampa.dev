@@ -7,6 +7,18 @@ export default [
   route("groups", "routes/groups._index.tsx"),
   route("groups/:slug", "routes/groups.$slug.tsx"),
   route("groups/:slug/members", "routes/groups.$slug.members.tsx"),
+
+  // Group management dashboard (auth-gated layout with sidebar)
+  layout("routes/groups.$slug.manage.tsx", [
+    route("groups/:slug/manage", "routes/groups.$slug.manage._index.tsx", { index: true }),
+    route("groups/:slug/manage/settings", "routes/groups.$slug.manage.settings.tsx"),
+    route("groups/:slug/manage/members", "routes/groups.$slug.manage.members.tsx"),
+    route("groups/:slug/manage/events", "routes/groups.$slug.manage.events.tsx"),
+    route("groups/:slug/manage/events/new", "routes/groups.$slug.manage.events.new.tsx"),
+    route("groups/:slug/manage/events/:eventId", "routes/groups.$slug.manage.events.$eventId.tsx"),
+    route("groups/:slug/manage/badges", "routes/groups.$slug.manage.badges.tsx"),
+    route("groups/:slug/manage/checkins", "routes/groups.$slug.manage.checkins.tsx"),
+  ]),
   route("map", "routes/map.tsx"),
   route("calendar", "routes/calendar.tsx"),
   route("favorites", "routes/favorites.tsx"),
@@ -16,6 +28,10 @@ export default [
   route("leaderboard", "routes/leaderboard.tsx"),
   route("members", "routes/members.tsx"),
   route("claim/:code", "routes/claim.$code.tsx"),
+  route("checkin/:code", "routes/checkin.$code.tsx"),
+  route("groups/create", "routes/groups.create.tsx"),
+  route("groups/claim/:token", "routes/groups.claim.$token.tsx"),
+  route("groups/:slug/leaderboard", "routes/groups.$slug.leaderboard.tsx"),
 
   // Public login
   route("login", "routes/login.tsx"),
@@ -37,6 +53,15 @@ export default [
   layout("routes/developer.docs.tsx", [
     route("developer/docs", "routes/developer.docs._index.tsx", { index: true }),
     route("developer/docs/:slug", "routes/developer.docs.$slug.tsx"),
+  ]),
+
+  // Documentation hub
+  route("docs", "routes/docs._index.tsx"),
+
+  // Platform guide documentation (MDX mini-docsite)
+  layout("routes/docs.platform.tsx", [
+    route("docs/platform", "routes/docs.platform._index.tsx", { index: true }),
+    route("docs/platform/:slug", "routes/docs.platform.$slug.tsx"),
   ]),
 
   // OAuth authorization (consent screen for "Sign in with Tampa.dev")
@@ -75,11 +100,9 @@ export default [
     route("admin/achievements", "routes/admin.achievements.tsx"),
     route("admin/webhooks", "routes/admin.webhooks.tsx"),
     route("admin/entitlements", "routes/admin.entitlements.tsx"),
+    route("admin/claims", "routes/admin.claims.tsx"),
+    route("admin/group-requests", "routes/admin.group-requests.tsx"),
     route("admin/flags", "routes/admin.flags.tsx"),
-    layout("routes/admin.docs.tsx", [
-      route("admin/docs", "routes/admin.docs._index.tsx", { index: true }),
-      route("admin/docs/:slug", "routes/admin.docs.$slug.tsx"),
-    ]),
   ]),
 
   // Development-only routes (blocked in production by loaders)

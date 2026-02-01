@@ -2,6 +2,7 @@
 title: Authentication
 description: OAuth 2.1 with PKCE authorization flow for Tampa.dev
 order: 1
+category: Getting Started
 ---
 
 # Authentication
@@ -45,3 +46,15 @@ curl -X POST https://tampa.dev/oauth/token \
 ```
 
 The response includes an `access_token` and `refresh_token`.
+
+## Authentication Methods
+
+All API endpoints accept three authentication methods:
+
+| Method | Header | Use Case |
+|--------|--------|----------|
+| **OAuth Bearer Token** | `Authorization: Bearer <access_token>` | Third-party apps, integrations |
+| **Personal Access Token** | `Authorization: Bearer td_pat_...` | CLI tools, scripts, CI/CD |
+| **Session Cookie** | `Cookie: session=...` | Tampa.dev web application |
+
+This includes management endpoints (group settings, event creation, badge management, etc.) which require the appropriate `manage:*` scope when using OAuth or PAT authentication. See [Scopes](/developer/docs/scopes) for details.

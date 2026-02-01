@@ -4,7 +4,15 @@
  * For local development, set EVENTS_API_URL=http://localhost:8787
  */
 
-import type { Event, LocalGroupCompat } from "./types";
+import type {
+  Event,
+  LocalGroupCompat,
+  RsvpSummary,
+  CheckinInfo,
+  GroupLeaderboardEntry,
+  GroupBadgeGroup,
+  GroupClaimInfo,
+} from "./types";
 import { findGroupByUrlname } from "./types";
 
 // Re-export shared types for server-side code
@@ -23,7 +31,7 @@ export interface ApiGroup {
   description: string | null;
   link: string;
   website: string | null;
-  platform: "meetup" | "eventbrite" | "luma";
+  platform: "meetup" | "eventbrite" | "luma" | "tampa.dev";
   memberCount: number | null;
   photoUrl: string | null;
   isFeatured: boolean | null;
@@ -235,4 +243,110 @@ export async function fetchNextEvents(
 export async function fetchEventById(id: string): Promise<Event | null> {
   const events = await fetchEvents({ withinDays: 90 });
   return events.find((event) => event.id === id) ?? null;
+}
+
+// ============== RSVP API ==============
+
+export async function fetchEventRsvpSummary(
+  eventId: string,
+  cookieHeader?: string | null
+): Promise<RsvpSummary | null> {
+  const h: Record<string, string> = { Accept: "application/json" };
+  if (cookieHeader) h.Cookie = cookieHeader;
+
+  const response = await fetch(
+    `${API_HOST}/events/${encodeURIComponent(eventId)}/rsvp-summary`,
+    { headers: h }
+  );
+  if (!response.ok) return null;
+  const json = (await response.json()) as { data: RsvpSummary };
+  return json.data;
+}
+
+// ============== Checkin API ==============
+
+export async function fetchCheckinInfo(code: string): Promise<CheckinInfo | null> {
+  const response = await fetch(
+    `${API_HOST}/checkin/${encodeURIComponent(code)}`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!response.ok) return null;
+  const json = (await response.json()) as { data: CheckinInfo };
+  return json.data;
+}
+
+// ============== Group Leaderboard API ==============
+
+export async function fetchGroupLeaderboard(
+  slug: string,
+  limit = 50
+): Promise<GroupLeaderboardEntry[]> {
+  const response = await fetch(
+    `${API_HOST}/groups/${encodeURIComponent(slug)}/leaderboard?limit=${limit}`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!response.ok) return [];
+  const json = (await response.json()) as { data: { entries?: GroupLeaderboardEntry[] } };
+  return json.data.entries ?? [];
+}
+
+// ============== Group Claims API ==============
+
+export async function fetchGroupClaimInfo(token: string): Promise<GroupClaimInfo | null> {
+  const response = await fetch(
+    `${API_HOST}/groups/claim/${encodeURIComponent(token)}`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!response.ok) return null;
+  return (await response.json()) as GroupClaimInfo;
+}
+
+// ============== User Auth ==============
+
+export interface CurrentUser {
+  id: string;
+  name: string | null;
+  username: string | null;
+  avatarUrl: string | null;
+  email: string;
+  role: string;
+}
+
+export async function fetchCurrentUser(
+  cookieHeader?: string | null
+): Promise<CurrentUser | null> {
+  if (!cookieHeader) return null;
+  const response = await fetch(`${API_HOST}/me`, {
+    headers: { Accept: "application/json", Cookie: cookieHeader },
+  });
+  if (!response.ok) return null;
+  return (await response.json()) as CurrentUser;
+}
+
+// ============== User Group Badges API ==============
+
+export async function fetchUserGroupBadges(
+  username: string
+): Promise<GroupBadgeGroup[]> {
+  const response = await fetch(
+    `${API_HOST}/users/${encodeURIComponent(username)}/group-badges`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!response.ok) return [];
+  const data = (await response.json()) as { groups?: GroupBadgeGroup[] };
+  return data.groups ?? [];
+}
+
+// ============== Group Creation Requests API ==============
+
+export async function fetchMyCreationRequests(
+  cookieHeader?: string | null
+): Promise<{ id: string; groupName: string; status: string; createdAt: string }[]> {
+  if (!cookieHeader) return [];
+  const response = await fetch(`${API_HOST}/groups/my-creation-requests`, {
+    headers: { Accept: "application/json", Cookie: cookieHeader },
+  });
+  if (!response.ok) return [];
+  const data = (await response.json()) as { requests?: { id: string; groupName: string; status: string; createdAt: string }[] };
+  return data.requests ?? [];
 }

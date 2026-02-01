@@ -2,7 +2,7 @@
  * Admin API Routes
  *
  * Endpoints for managing groups, triggering syncs, and viewing logs.
- * These will eventually be protected by authentication.
+ * Protected by requireAdmin middleware — all endpoints require admin role.
  */
 
 import { Hono } from 'hono';
@@ -10,12 +10,13 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and, like, or, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, achievements, achievementProgress, webhooks, webhookDeliveries, userEntitlements, badgeClaimLinks, EventPlatform, UserRole } from '../db/schema';
+import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, achievements, achievementProgress, webhooks, webhookDeliveries, userEntitlements, badgeClaimLinks, groupPlatformConnections, groupClaimRequests, groupClaimInvites, groupCreationRequests, EventPlatform, UserRole, GroupMemberRole } from '../db/schema';
 import { SyncService } from '../services/sync';
 import { providerRegistry } from '../providers';
 import type { Env } from '../../types/worker';
-import { getSessionCookieName } from '../lib/session';
 import { emitEvent } from '../lib/event-bus.js';
+import { requireAdmin, type AuthUser } from '../middleware/auth.js';
+import { ok, created, list, success, notFound, conflict, badRequest, internalError } from '../lib/responses.js';
 
 // ============== Validation Schemas ==============
 
@@ -31,7 +32,7 @@ const socialLinksSchema = z.object({
 const createGroupSchema = z.object({
   urlname: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
   name: z.string().min(1).max(200),
-  platform: z.enum(['meetup', 'eventbrite', 'luma']),
+  platform: z.enum(['meetup', 'eventbrite', 'luma', 'tampa.dev']),
   platformId: z.string().min(1).max(200),
   description: z.string().optional(),
   link: z.string().url().optional(),
@@ -58,10 +59,13 @@ const updateGroupSchema = z.object({
   isFeatured: z.boolean().optional(),
   tags: z.array(z.string()).optional().nullable(),
   socialLinks: socialLinksSchema.nullable(),
+  // Badge governance
+  maxBadges: z.number().int().min(0).max(1000).optional(),
+  maxBadgePoints: z.number().int().min(0).max(10000).optional(),
 });
 
 const listGroupsSchema = z.object({
-  platform: z.enum(['meetup', 'eventbrite', 'luma']).optional(),
+  platform: z.enum(['meetup', 'eventbrite', 'luma', 'tampa.dev']).optional(),
   active: z.enum(['true', 'false']).optional(),
   displayOnSite: z.enum(['true', 'false']).optional(),
   featured: z.enum(['true', 'false']).optional(),
@@ -90,6 +94,15 @@ const syncLogsSchema = z.object({
 
 export function createAdminApiRoutes() {
   const app = new Hono<{ Bindings: Env }>();
+
+  // Require admin role for all admin API endpoints
+  app.use('*', requireAdmin);
+
+  // Global error handler: sanitize internal errors so they are not leaked to clients
+  app.onError((err, c) => {
+    console.error('Admin API error:', err instanceof Error ? err.message : 'unknown error');
+    return c.json({ error: 'Internal server error' }, 500);
+  });
 
   // ============== Groups ==============
 
@@ -132,15 +145,7 @@ export function createAdminApiRoutes() {
     const allGroups = await db.query.groups.findMany({ where });
     const total = allGroups.length;
 
-    return c.json({
-      groups: results.map(parseGroupJsonFields),
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + results.length < total,
-      },
-    });
+    return list(c, results.map(parseGroupJsonFields), { total, limit, offset });
   });
 
   /**
@@ -156,7 +161,7 @@ export function createAdminApiRoutes() {
     });
 
     if (!group) {
-      return c.json({ error: 'Group not found' }, 404);
+      return notFound(c, 'Group not found');
     }
 
     // Get event count for this group
@@ -164,7 +169,7 @@ export function createAdminApiRoutes() {
       where: eq(events.groupId, id),
     });
 
-    return c.json({
+    return ok(c, {
       ...parseGroupJsonFields(group),
       eventCount: groupEvents.length,
     });
@@ -184,7 +189,7 @@ export function createAdminApiRoutes() {
     });
 
     if (existing) {
-      return c.json({ error: 'A group with this urlname already exists' }, 409);
+      return conflict(c, 'A group with this urlname already exists');
     }
 
     // Check if platformId already exists for this platform
@@ -196,9 +201,7 @@ export function createAdminApiRoutes() {
     });
 
     if (existingPlatformId) {
-      return c.json({
-        error: `A group with this platform ID already exists: ${existingPlatformId.urlname}`
-      }, 409);
+      return conflict(c, `A group with this platform ID already exists: ${existingPlatformId.urlname}`);
     }
 
     const now = new Date().toISOString();
@@ -222,11 +225,24 @@ export function createAdminApiRoutes() {
       updatedAt: now,
     });
 
-    const created = await db.query.groups.findFirst({
+    // For non-tampa.dev groups, also create a platform connection
+    if (data.platform !== 'tampa.dev') {
+      await db.insert(groupPlatformConnections).values({
+        id: crypto.randomUUID(),
+        groupId: id,
+        platform: data.platform,
+        platformId: data.platformId,
+        platformUrlname: data.urlname,
+        platformLink: data.link || `https://${data.platform}.com/${data.platformId}`,
+        isActive: data.isActive ?? true,
+      });
+    }
+
+    const createdGroup = await db.query.groups.findFirst({
       where: eq(groups.id, id),
     });
 
-    return c.json(created ? parseGroupJsonFields(created) : null, 201);
+    return created(c, createdGroup ? parseGroupJsonFields(createdGroup) : null);
   });
 
   /**
@@ -243,7 +259,7 @@ export function createAdminApiRoutes() {
     });
 
     if (!existing) {
-      return c.json({ error: 'Group not found' }, 404);
+      return notFound(c, 'Group not found');
     }
 
     // Check urlname uniqueness if changing
@@ -252,7 +268,7 @@ export function createAdminApiRoutes() {
         where: eq(groups.urlname, data.urlname),
       });
       if (urlnameExists) {
-        return c.json({ error: 'A group with this urlname already exists' }, 409);
+        return conflict(c, 'A group with this urlname already exists');
       }
     }
 
@@ -279,7 +295,7 @@ export function createAdminApiRoutes() {
       where: eq(groups.id, id),
     });
 
-    return c.json(updated ? parseGroupJsonFields(updated) : null);
+    return ok(c, updated ? parseGroupJsonFields(updated) : null);
   });
 
   /**
@@ -295,7 +311,7 @@ export function createAdminApiRoutes() {
     });
 
     if (!existing) {
-      return c.json({ error: 'Group not found' }, 404);
+      return notFound(c, 'Group not found');
     }
 
     // Soft delete - just mark as inactive
@@ -307,7 +323,7 @@ export function createAdminApiRoutes() {
       })
       .where(eq(groups.id, id));
 
-    return c.json({ success: true, message: 'Group deactivated' });
+    return success(c, { message: 'Group deactivated' });
   });
 
   // ============== Sync ==============
@@ -330,7 +346,7 @@ export function createAdminApiRoutes() {
     });
 
     // Get last successful sync per platform
-    const platforms = ['meetup', 'eventbrite', 'luma'];
+    const platforms = ['meetup', 'eventbrite', 'luma', 'tampa.dev'];
     const platformStatus: Record<string, { lastSync?: string; status?: string }> = {};
 
     for (const platform of platforms) {
@@ -347,7 +363,7 @@ export function createAdminApiRoutes() {
     // Get configured providers
     const configuredProviders = providerRegistry.getConfiguredAdapters(c.env);
 
-    return c.json({
+    return ok(c, {
       groups: {
         total: allGroups.length,
         active: activeGroups.length,
@@ -383,13 +399,10 @@ export function createAdminApiRoutes() {
       const syncService = new SyncService(db, providerRegistry, c.env);
       const result = await syncService.syncAllGroups();
 
-      return c.json(result);
+      return ok(c, result);
     } catch (error) {
       console.error('Sync all failed:', error);
-      return c.json({
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      }, 500);
+      return internalError(c);
     }
   });
 
@@ -408,7 +421,7 @@ export function createAdminApiRoutes() {
       });
 
       if (!group) {
-        return c.json({ error: 'Group not found' }, 404);
+        return notFound(c, 'Group not found');
       }
 
       // Initialize providers (non-fatal - sync handles missing providers)
@@ -421,13 +434,10 @@ export function createAdminApiRoutes() {
       const syncService = new SyncService(db, providerRegistry, c.env);
       const result = await syncService.syncGroup(id);
 
-      return c.json(result);
+      return ok(c, result);
     } catch (error) {
       console.error('Sync group failed:', error);
-      return c.json({
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      }, 500);
+      return internalError(c);
     }
   });
 
@@ -442,7 +452,7 @@ export function createAdminApiRoutes() {
     const syncService = new SyncService(db, providerRegistry, c.env);
     const logs = await syncService.getSyncLogs({ groupId, limit });
 
-    return c.json({ logs });
+    return ok(c, logs);
   });
 
   // ============== Events (read-only for admin) ==============
@@ -460,7 +470,7 @@ export function createAdminApiRoutes() {
     });
 
     if (!group) {
-      return c.json({ error: 'Group not found' }, 404);
+      return notFound(c, 'Group not found');
     }
 
     const groupEvents = await db.query.events.findMany({
@@ -469,21 +479,110 @@ export function createAdminApiRoutes() {
       limit: 50,
     });
 
-    return c.json({
+    return ok(c, {
       group: parseGroupJsonFields(group),
       events: groupEvents,
     });
+  });
+
+  // ============== Group Platform Connections ==============
+
+  const addConnectionSchema = z.object({
+    platform: z.enum(['meetup', 'eventbrite', 'luma']),
+    platformId: z.string().min(1).max(200),
+    platformUrlname: z.string().optional(),
+    platformLink: z.string().url().optional(),
+    isActive: z.boolean().optional().default(true),
+  });
+
+  /**
+   * List platform connections for a group
+   * GET /api/admin/groups/:groupId/connections
+   */
+  app.get('/groups/:groupId/connections', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
+    if (!group) return notFound(c, 'Group not found');
+
+    const connections = await db.query.groupPlatformConnections.findMany({
+      where: eq(groupPlatformConnections.groupId, groupId),
+    });
+
+    return ok(c, connections);
+  });
+
+  /**
+   * Add a platform connection to a group
+   * POST /api/admin/groups/:groupId/connections
+   */
+  app.post('/groups/:groupId/connections', zValidator('json', addConnectionSchema), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+    const data = c.req.valid('json');
+
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
+    if (!group) return notFound(c, 'Group not found');
+
+    // Check if this platform+platformId connection already exists
+    const existing = await db.query.groupPlatformConnections.findFirst({
+      where: and(
+        eq(groupPlatformConnections.platform, data.platform),
+        eq(groupPlatformConnections.platformId, data.platformId),
+      ),
+    });
+    if (existing) {
+      return conflict(c, `A connection for ${data.platform}/${data.platformId} already exists`);
+    }
+
+    const id = crypto.randomUUID();
+    await db.insert(groupPlatformConnections).values({
+      id,
+      groupId,
+      platform: data.platform,
+      platformId: data.platformId,
+      platformUrlname: data.platformUrlname || null,
+      platformLink: data.platformLink || `https://${data.platform}.com/${data.platformId}`,
+      isActive: data.isActive ?? true,
+    });
+
+    const createdConnection = await db.query.groupPlatformConnections.findFirst({
+      where: eq(groupPlatformConnections.id, id),
+    });
+
+    return created(c, createdConnection);
+  });
+
+  /**
+   * Delete a platform connection
+   * DELETE /api/admin/connections/:connectionId
+   */
+  app.delete('/connections/:connectionId', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const connectionId = c.req.param('connectionId');
+
+    const existing = await db.query.groupPlatformConnections.findFirst({
+      where: eq(groupPlatformConnections.id, connectionId),
+    });
+    if (!existing) {
+      return notFound(c, 'Connection not found');
+    }
+
+    await db.delete(groupPlatformConnections).where(eq(groupPlatformConnections.id, connectionId));
+
+    return success(c, { message: 'Connection deleted' });
   });
 
   // ============== Group Members ==============
 
   const addGroupMemberSchema = z.object({
     userId: z.string().min(1),
-    role: z.enum(['owner', 'admin', 'member']).optional().default('member'),
+    role: z.enum(['owner', 'manager', 'volunteer', 'member']).optional().default('member'),
   });
 
   const updateGroupMemberSchema = z.object({
-    role: z.enum(['owner', 'admin', 'member']),
+    role: z.enum(['owner', 'manager', 'volunteer', 'member']),
   });
 
   /**
@@ -495,7 +594,7 @@ export function createAdminApiRoutes() {
     const groupId = c.req.param('groupId');
 
     const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
-    if (!group) return c.json({ error: 'Group not found' }, 404);
+    if (!group) return notFound(c, 'Group not found');
 
     const members = await db.query.groupMembers.findMany({
       where: eq(groupMembers.groupId, groupId),
@@ -520,7 +619,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({ members: membersWithUsers });
+    return ok(c, membersWithUsers);
   });
 
   /**
@@ -533,16 +632,16 @@ export function createAdminApiRoutes() {
     const { userId, role } = c.req.valid('json');
 
     const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
-    if (!group) return c.json({ error: 'Group not found' }, 404);
+    if (!group) return notFound(c, 'Group not found');
 
     const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
-    if (!user) return c.json({ error: 'User not found' }, 404);
+    if (!user) return notFound(c, 'User not found');
 
     // Check if already a member
     const existing = await db.query.groupMembers.findFirst({
       where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)),
     });
-    if (existing) return c.json({ error: 'User is already a member of this group' }, 409);
+    if (existing) return conflict(c, 'User is already a member of this group');
 
     await db.insert(groupMembers).values({
       id: crypto.randomUUID(),
@@ -551,7 +650,7 @@ export function createAdminApiRoutes() {
       role,
     });
 
-    return c.json({ success: true, message: 'Member added' }, 201);
+    return created(c, { success: true, message: 'Member added' });
   });
 
   /**
@@ -567,7 +666,7 @@ export function createAdminApiRoutes() {
     const member = await db.query.groupMembers.findFirst({
       where: and(eq(groupMembers.id, memberId), eq(groupMembers.groupId, groupId)),
     });
-    if (!member) return c.json({ error: 'Member not found' }, 404);
+    if (!member) return notFound(c, 'Member not found');
 
     // If demoting the last owner, prevent it
     if (member.role === 'owner' && role !== 'owner') {
@@ -575,13 +674,13 @@ export function createAdminApiRoutes() {
         where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.role, 'owner')),
       });
       if (owners.length <= 1) {
-        return c.json({ error: 'Cannot remove the last owner' }, 400);
+        return badRequest(c, 'Cannot remove the last owner');
       }
     }
 
     await db.update(groupMembers).set({ role }).where(eq(groupMembers.id, memberId));
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
@@ -596,7 +695,7 @@ export function createAdminApiRoutes() {
     const member = await db.query.groupMembers.findFirst({
       where: and(eq(groupMembers.id, memberId), eq(groupMembers.groupId, groupId)),
     });
-    if (!member) return c.json({ error: 'Member not found' }, 404);
+    if (!member) return notFound(c, 'Member not found');
 
     // Prevent removing the last owner
     if (member.role === 'owner') {
@@ -604,13 +703,13 @@ export function createAdminApiRoutes() {
         where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.role, 'owner')),
       });
       if (owners.length <= 1) {
-        return c.json({ error: 'Cannot remove the last owner' }, 400);
+        return badRequest(c, 'Cannot remove the last owner');
       }
     }
 
     await db.delete(groupMembers).where(eq(groupMembers.id, memberId));
 
-    return c.json({ success: true, message: 'Member removed' });
+    return success(c, { message: 'Member removed' });
   });
 
   // ============== Users ==============
@@ -632,7 +731,7 @@ export function createAdminApiRoutes() {
    */
   app.get('/users', zValidator('query', listUsersSchema), async (c) => {
     const db = createDatabase(c.env.DB);
-    const { role, search, limit, offset } = c.req.valid('query');
+    const { role, search, limit: queryLimit, offset: queryOffset } = c.req.valid('query');
 
     // Build query conditions
     const conditions = [];
@@ -654,8 +753,8 @@ export function createAdminApiRoutes() {
     const results = await db.query.users.findMany({
       where,
       orderBy: [desc(users.createdAt)],
-      limit,
-      offset,
+      limit: queryLimit,
+      offset: queryOffset,
     });
 
     // Get total count
@@ -678,15 +777,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({
-      users: usersWithIdentities,
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + results.length < total,
-      },
-    });
+    return list(c, usersWithIdentities, { total, limit: queryLimit, offset: queryOffset });
   });
 
   /**
@@ -702,7 +793,7 @@ export function createAdminApiRoutes() {
     });
 
     if (!user) {
-      return c.json({ error: 'User not found' }, 404);
+      return notFound(c, 'User not found');
     }
 
     // Fetch identities, badges, and feature flag overrides in parallel
@@ -728,7 +819,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({
+    return ok(c, {
       ...user,
       identities: identities.map((i) => ({
         provider: i.provider,
@@ -754,7 +845,7 @@ export function createAdminApiRoutes() {
     });
 
     if (!existing) {
-      return c.json({ error: 'User not found' }, 404);
+      return notFound(c, 'User not found');
     }
 
     await db
@@ -769,7 +860,7 @@ export function createAdminApiRoutes() {
       where: eq(users.id, id),
     });
 
-    return c.json(updated);
+    return ok(c, updated);
   });
 
   /**
@@ -785,7 +876,7 @@ export function createAdminApiRoutes() {
     });
 
     if (!existing) {
-      return c.json({ error: 'User not found' }, 404);
+      return notFound(c, 'User not found');
     }
 
     // Delete sessions first (cascade should handle this, but be explicit)
@@ -797,7 +888,7 @@ export function createAdminApiRoutes() {
     // Delete user
     await db.delete(users).where(eq(users.id, id));
 
-    return c.json({ success: true, message: 'User deleted' });
+    return success(c, { message: 'User deleted' });
   });
 
   /**
@@ -815,7 +906,7 @@ export function createAdminApiRoutes() {
     const { keepUserId, mergeUserId } = c.req.valid('json');
 
     if (keepUserId === mergeUserId) {
-      return c.json({ error: 'Cannot merge a user with themselves' }, 400);
+      return badRequest(c, 'Cannot merge a user with themselves');
     }
 
     // Verify both users exist
@@ -827,10 +918,10 @@ export function createAdminApiRoutes() {
     });
 
     if (!keepUser) {
-      return c.json({ error: 'Keep user not found' }, 404);
+      return notFound(c, 'Keep user not found');
     }
     if (!mergeUser) {
-      return c.json({ error: 'Merge user not found' }, 404);
+      return notFound(c, 'Merge user not found');
     }
 
     // Get identities for both users
@@ -887,8 +978,7 @@ export function createAdminApiRoutes() {
     // Delete the merge user
     await db.delete(users).where(eq(users.id, mergeUserId));
 
-    return c.json({
-      success: true,
+    return success(c, {
       message: 'Users merged successfully',
       transferredIdentities,
       skippedIdentities,
@@ -906,7 +996,7 @@ export function createAdminApiRoutes() {
     const kv = c.env.OAUTH_KV;
 
     if (!kv) {
-      return c.json({ error: 'OAuth KV not configured' }, 500);
+      return internalError(c);
     }
 
     // List all client keys from KV
@@ -939,10 +1029,7 @@ export function createAdminApiRoutes() {
     // Filter out nulls
     const validClients = clients.filter((c): c is NonNullable<typeof c> => c !== null);
 
-    return c.json({
-      clients: validClients,
-      total: validClients.length,
-    });
+    return ok(c, validClients);
   });
 
   /**
@@ -954,7 +1041,7 @@ export function createAdminApiRoutes() {
     const clientId = c.req.param('id');
 
     if (!kv) {
-      return c.json({ error: 'OAuth KV not configured' }, 500);
+      return internalError(c);
     }
 
     const clientData = await kv.get(`client:${clientId}`, 'json') as {
@@ -970,7 +1057,7 @@ export function createAdminApiRoutes() {
     } | null;
 
     if (!clientData) {
-      return c.json({ error: 'Client not found' }, 404);
+      return notFound(c, 'Client not found');
     }
 
     // Get grant count for this client
@@ -984,7 +1071,7 @@ export function createAdminApiRoutes() {
       }
     }
 
-    return c.json({
+    return ok(c, {
       ...clientData,
       grantCount,
     });
@@ -999,13 +1086,13 @@ export function createAdminApiRoutes() {
     const clientId = c.req.param('id');
 
     if (!kv) {
-      return c.json({ error: 'OAuth KV not configured' }, 500);
+      return internalError(c);
     }
 
     // Check client exists
     const clientData = await kv.get(`client:${clientId}`, 'json');
     if (!clientData) {
-      return c.json({ error: 'Client not found' }, 404);
+      return notFound(c, 'Client not found');
     }
 
     // Delete all grants for this client
@@ -1035,8 +1122,7 @@ export function createAdminApiRoutes() {
     // Delete the client
     await kv.delete(`client:${clientId}`);
 
-    return c.json({
-      success: true,
+    return success(c, {
       message: 'Client deleted',
       deletedGrants,
       deletedTokens,
@@ -1051,7 +1137,7 @@ export function createAdminApiRoutes() {
     const kv = c.env.OAUTH_KV;
 
     if (!kv) {
-      return c.json({ error: 'OAuth KV not configured' }, 500);
+      return internalError(c);
     }
 
     // Count clients
@@ -1070,7 +1156,7 @@ export function createAdminApiRoutes() {
     const codeList = await kv.list({ prefix: 'code:' });
     const pendingCodeCount = codeList.keys.length;
 
-    return c.json({
+    return ok(c, {
       clients: clientCount,
       grants: grantCount,
       activeTokens: tokenCount,
@@ -1123,7 +1209,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({ badges: badgesWithCounts });
+    return ok(c, badgesWithCounts);
   });
 
   /**
@@ -1139,7 +1225,7 @@ export function createAdminApiRoutes() {
       where: eq(badges.slug, data.slug),
     });
     if (existing) {
-      return c.json({ error: 'A badge with this slug already exists' }, 409);
+      return conflict(c, 'A badge with this slug already exists');
     }
 
     const id = crypto.randomUUID();
@@ -1155,11 +1241,11 @@ export function createAdminApiRoutes() {
       hideFromDirectory: data.hideFromDirectory ? 1 : 0,
     });
 
-    const created = await db.query.badges.findFirst({
+    const createdBadge = await db.query.badges.findFirst({
       where: eq(badges.id, id),
     });
 
-    return c.json(created, 201);
+    return created(c, createdBadge);
   });
 
   /**
@@ -1175,7 +1261,7 @@ export function createAdminApiRoutes() {
       where: eq(badges.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Badge not found' }, 404);
+      return notFound(c, 'Badge not found');
     }
 
     // Check slug uniqueness if changing
@@ -1184,7 +1270,7 @@ export function createAdminApiRoutes() {
         where: eq(badges.slug, data.slug),
       });
       if (slugExists) {
-        return c.json({ error: 'A badge with this slug already exists' }, 409);
+        return conflict(c, 'A badge with this slug already exists');
       }
     }
 
@@ -1199,7 +1285,7 @@ export function createAdminApiRoutes() {
       where: eq(badges.id, id),
     });
 
-    return c.json(updated);
+    return ok(c, updated);
   });
 
   /**
@@ -1214,14 +1300,14 @@ export function createAdminApiRoutes() {
       where: eq(badges.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Badge not found' }, 404);
+      return notFound(c, 'Badge not found');
     }
 
     // Delete user_badges first (cascade should handle, but be explicit)
     await db.delete(userBadges).where(eq(userBadges.badgeId, id));
     await db.delete(badges).where(eq(badges.id, id));
 
-    return c.json({ success: true, message: 'Badge deleted' });
+    return success(c, { message: 'Badge deleted' });
   });
 
   /**
@@ -1235,17 +1321,17 @@ export function createAdminApiRoutes() {
 
     // Verify user and badge exist
     const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
-    if (!user) return c.json({ error: 'User not found' }, 404);
+    if (!user) return notFound(c, 'User not found');
 
     const badge = await db.query.badges.findFirst({ where: eq(badges.id, badgeId) });
-    if (!badge) return c.json({ error: 'Badge not found' }, 404);
+    if (!badge) return notFound(c, 'Badge not found');
 
     // Check if already awarded
     const existing = await db.query.userBadges.findFirst({
       where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)),
     });
     if (existing) {
-      return c.json({ error: 'Badge already awarded to this user' }, 409);
+      return conflict(c, 'Badge already awarded to this user');
     }
 
     await db.insert(userBadges).values({
@@ -1261,12 +1347,12 @@ export function createAdminApiRoutes() {
       metadata: { userId, source: 'admin' },
     });
 
-    // Compute total score and emit score_changed event
+    // Compute total platform score (exclude group-scoped badges) and emit score_changed event
     const scoreResult = await db
       .select({ totalScore: sql<number>`COALESCE(SUM(${badges.points}), 0)` })
       .from(userBadges)
       .innerJoin(badges, eq(userBadges.badgeId, badges.id))
-      .where(eq(userBadges.userId, userId));
+      .where(sql`${userBadges.userId} = ${userId} AND ${badges.groupId} IS NULL`);
     const totalScore = scoreResult[0]?.totalScore ?? 0;
 
     emitEvent(c, {
@@ -1275,7 +1361,7 @@ export function createAdminApiRoutes() {
       metadata: { userId, source: 'admin' },
     });
 
-    return c.json({ success: true, message: 'Badge awarded' }, 201);
+    return created(c, { success: true, message: 'Badge awarded' });
   });
 
   /**
@@ -1291,12 +1377,12 @@ export function createAdminApiRoutes() {
       where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)),
     });
     if (!existing) {
-      return c.json({ error: 'User does not have this badge' }, 404);
+      return notFound(c, 'User does not have this badge');
     }
 
     await db.delete(userBadges).where(eq(userBadges.id, existing.id));
 
-    return c.json({ success: true, message: 'Badge revoked' });
+    return success(c, { message: 'Badge revoked' });
   });
 
   // ============== Feature Flags ==============
@@ -1343,7 +1429,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({ flags: flagsWithCounts });
+    return ok(c, flagsWithCounts);
   });
 
   /**
@@ -1358,7 +1444,7 @@ export function createAdminApiRoutes() {
       where: eq(featureFlags.slug, data.slug),
     });
     if (existing) {
-      return c.json({ error: 'A flag with this slug already exists' }, 409);
+      return conflict(c, 'A flag with this slug already exists');
     }
 
     const id = crypto.randomUUID();
@@ -1370,11 +1456,11 @@ export function createAdminApiRoutes() {
       enabledByDefault: data.enabledByDefault,
     });
 
-    const created = await db.query.featureFlags.findFirst({
+    const createdFlag = await db.query.featureFlags.findFirst({
       where: eq(featureFlags.id, id),
     });
 
-    return c.json(created, 201);
+    return created(c, createdFlag);
   });
 
   /**
@@ -1390,7 +1476,7 @@ export function createAdminApiRoutes() {
       where: eq(featureFlags.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Flag not found' }, 404);
+      return notFound(c, 'Flag not found');
     }
 
     // Check slug uniqueness if changing
@@ -1399,7 +1485,7 @@ export function createAdminApiRoutes() {
         where: eq(featureFlags.slug, data.slug),
       });
       if (slugExists) {
-        return c.json({ error: 'A flag with this slug already exists' }, 409);
+        return conflict(c, 'A flag with this slug already exists');
       }
     }
 
@@ -1409,7 +1495,7 @@ export function createAdminApiRoutes() {
       where: eq(featureFlags.id, id),
     });
 
-    return c.json(updated);
+    return ok(c, updated);
   });
 
   /**
@@ -1424,7 +1510,7 @@ export function createAdminApiRoutes() {
       where: eq(featureFlags.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Flag not found' }, 404);
+      return notFound(c, 'Flag not found');
     }
 
     // Delete overrides first
@@ -1432,7 +1518,7 @@ export function createAdminApiRoutes() {
     await db.delete(groupFeatureFlags).where(eq(groupFeatureFlags.flagId, id));
     await db.delete(featureFlags).where(eq(featureFlags.id, id));
 
-    return c.json({ success: true, message: 'Flag deleted' });
+    return success(c, { message: 'Flag deleted' });
   });
 
   /**
@@ -1447,7 +1533,7 @@ export function createAdminApiRoutes() {
       where: eq(featureFlags.id, id),
     });
     if (!flag) {
-      return c.json({ error: 'Flag not found' }, 404);
+      return notFound(c, 'Flag not found');
     }
 
     // Get user overrides with user info
@@ -1484,7 +1570,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({
+    return ok(c, {
       ...flag,
       userOverrides: userOverridesWithInfo,
       groupOverrides: groupOverridesWithInfo,
@@ -1505,10 +1591,10 @@ export function createAdminApiRoutes() {
 
     // Verify flag and user exist
     const flag = await db.query.featureFlags.findFirst({ where: eq(featureFlags.id, flagId) });
-    if (!flag) return c.json({ error: 'Flag not found' }, 404);
+    if (!flag) return notFound(c, 'Flag not found');
 
     const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
-    if (!user) return c.json({ error: 'User not found' }, 404);
+    if (!user) return notFound(c, 'User not found');
 
     // Check if override already exists
     const existing = await db.query.userFeatureFlags.findFirst({
@@ -1526,7 +1612,7 @@ export function createAdminApiRoutes() {
       });
     }
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
@@ -1542,11 +1628,11 @@ export function createAdminApiRoutes() {
       where: and(eq(userFeatureFlags.userId, userId), eq(userFeatureFlags.flagId, flagId)),
     });
     if (!existing) {
-      return c.json({ error: 'Override not found' }, 404);
+      return notFound(c, 'Override not found');
     }
 
     await db.delete(userFeatureFlags).where(eq(userFeatureFlags.id, existing.id));
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
@@ -1562,10 +1648,10 @@ export function createAdminApiRoutes() {
     const { enabled } = c.req.valid('json');
 
     const flag = await db.query.featureFlags.findFirst({ where: eq(featureFlags.id, flagId) });
-    if (!flag) return c.json({ error: 'Flag not found' }, 404);
+    if (!flag) return notFound(c, 'Flag not found');
 
     const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
-    if (!group) return c.json({ error: 'Group not found' }, 404);
+    if (!group) return notFound(c, 'Group not found');
 
     const existing = await db.query.groupFeatureFlags.findFirst({
       where: and(eq(groupFeatureFlags.groupId, groupId), eq(groupFeatureFlags.flagId, flagId)),
@@ -1582,7 +1668,7 @@ export function createAdminApiRoutes() {
       });
     }
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
@@ -1598,11 +1684,11 @@ export function createAdminApiRoutes() {
       where: and(eq(groupFeatureFlags.groupId, groupId), eq(groupFeatureFlags.flagId, flagId)),
     });
     if (!existing) {
-      return c.json({ error: 'Override not found' }, 404);
+      return notFound(c, 'Override not found');
     }
 
     await db.delete(groupFeatureFlags).where(eq(groupFeatureFlags.id, existing.id));
-    return c.json({ success: true });
+    return success(c);
   });
 
   // ============== Achievements ==============
@@ -1619,6 +1705,10 @@ export function createAdminApiRoutes() {
     entitlement: z.string().optional(),
     eventType: z.string().optional(),
     sortOrder: z.number().int().min(0).optional().default(0),
+    conditions: z.string().optional(),
+    progressMode: z.enum(['counter', 'gauge']).optional().default('counter'),
+    gaugeField: z.string().optional(),
+    hidden: z.boolean().optional().default(false),
   });
 
   const updateAchievementSchema = z.object({
@@ -1633,6 +1723,10 @@ export function createAdminApiRoutes() {
     entitlement: z.string().optional().nullable(),
     eventType: z.string().optional().nullable(),
     sortOrder: z.number().int().min(0).optional(),
+    conditions: z.string().optional().nullable(),
+    progressMode: z.enum(['counter', 'gauge']).optional().nullable(),
+    gaugeField: z.string().optional().nullable(),
+    hidden: z.boolean().optional(),
   });
 
   /**
@@ -1657,7 +1751,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({ achievements: achievementsWithCounts });
+    return ok(c, achievementsWithCounts);
   });
 
   /**
@@ -1672,7 +1766,7 @@ export function createAdminApiRoutes() {
       where: eq(achievements.key, data.key),
     });
     if (existing) {
-      return c.json({ error: 'An achievement with this key already exists' }, 409);
+      return conflict(c, 'An achievement with this key already exists');
     }
 
     const id = crypto.randomUUID();
@@ -1689,13 +1783,17 @@ export function createAdminApiRoutes() {
       entitlement: data.entitlement,
       eventType: data.eventType,
       sortOrder: data.sortOrder,
+      conditions: data.conditions || null,
+      progressMode: data.progressMode || 'counter',
+      gaugeField: data.gaugeField || null,
+      hidden: data.hidden ? 1 : 0,
     });
 
-    const created = await db.query.achievements.findFirst({
+    const createdAchievement = await db.query.achievements.findFirst({
       where: eq(achievements.id, id),
     });
 
-    return c.json(created, 201);
+    return created(c, createdAchievement);
   });
 
   /**
@@ -1711,7 +1809,7 @@ export function createAdminApiRoutes() {
       where: eq(achievements.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Achievement not found' }, 404);
+      return notFound(c, 'Achievement not found');
     }
 
     // Check key uniqueness if changing
@@ -1720,7 +1818,7 @@ export function createAdminApiRoutes() {
         where: eq(achievements.key, data.key),
       });
       if (duplicate) {
-        return c.json({ error: 'An achievement with this key already exists' }, 409);
+        return conflict(c, 'An achievement with this key already exists');
       }
     }
 
@@ -1736,6 +1834,10 @@ export function createAdminApiRoutes() {
     if (data.entitlement !== undefined) updateData.entitlement = data.entitlement;
     if (data.eventType !== undefined) updateData.eventType = data.eventType;
     if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+    if (data.conditions !== undefined) updateData.conditions = data.conditions;
+    if (data.progressMode !== undefined) updateData.progressMode = data.progressMode;
+    if (data.gaugeField !== undefined) updateData.gaugeField = data.gaugeField;
+    if (data.hidden !== undefined) updateData.hidden = data.hidden ? 1 : 0;
 
     await db.update(achievements).set(updateData).where(eq(achievements.id, id));
 
@@ -1743,7 +1845,7 @@ export function createAdminApiRoutes() {
       where: eq(achievements.id, id),
     });
 
-    return c.json(updated);
+    return ok(c, updated);
   });
 
   /**
@@ -1758,7 +1860,7 @@ export function createAdminApiRoutes() {
       where: eq(achievements.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Achievement not found' }, 404);
+      return notFound(c, 'Achievement not found');
     }
 
     // Delete progress rows for this achievement
@@ -1767,7 +1869,7 @@ export function createAdminApiRoutes() {
     // Delete the achievement
     await db.delete(achievements).where(eq(achievements.id, id));
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
@@ -1784,14 +1886,14 @@ export function createAdminApiRoutes() {
       where: eq(achievements.key, achievementKey),
     });
     if (!achievement) {
-      return c.json({ error: 'Achievement not found' }, 404);
+      return notFound(c, 'Achievement not found');
     }
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
     });
     if (!user) {
-      return c.json({ error: 'User not found' }, 404);
+      return notFound(c, 'User not found');
     }
 
     const now = new Date().toISOString();
@@ -1822,7 +1924,7 @@ export function createAdminApiRoutes() {
       });
     }
 
-    return c.json({ success: true, currentValue, completedAt });
+    return success(c, { currentValue, completedAt });
   });
 
   /**
@@ -1841,7 +1943,7 @@ export function createAdminApiRoutes() {
       ),
     );
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   // ============== Webhooks (Admin) ==============
@@ -1877,7 +1979,7 @@ export function createAdminApiRoutes() {
       };
     });
 
-    return c.json({ webhooks: enriched });
+    return ok(c, enriched);
   });
 
   /**
@@ -1897,7 +1999,7 @@ export function createAdminApiRoutes() {
       where: eq(webhooks.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Webhook not found' }, 404);
+      return notFound(c, 'Webhook not found');
     }
 
     const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() };
@@ -1907,7 +2009,7 @@ export function createAdminApiRoutes() {
 
     await db.update(webhooks).set(updateData).where(eq(webhooks.id, id));
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
@@ -1922,11 +2024,11 @@ export function createAdminApiRoutes() {
       where: eq(webhooks.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Webhook not found' }, 404);
+      return notFound(c, 'Webhook not found');
     }
 
     await db.delete(webhooks).where(eq(webhooks.id, id));
-    return c.json({ success: true });
+    return success(c);
   });
 
   // ============== Entitlements ==============
@@ -1955,7 +2057,7 @@ export function createAdminApiRoutes() {
       })
     );
 
-    return c.json({ entitlements: enriched });
+    return ok(c, enriched);
   });
 
   /**
@@ -1973,14 +2075,14 @@ export function createAdminApiRoutes() {
 
     // Verify user exists
     const user = await db.query.users.findFirst({ where: eq(users.id, data.userId) });
-    if (!user) return c.json({ error: 'User not found' }, 404);
+    if (!user) return notFound(c, 'User not found');
 
     // Check for existing entitlement
     const existing = await db.query.userEntitlements.findFirst({
       where: and(eq(userEntitlements.userId, data.userId), eq(userEntitlements.entitlement, data.entitlement)),
     });
     if (existing) {
-      return c.json({ error: 'User already has this entitlement' }, 409);
+      return conflict(c, 'User already has this entitlement');
     }
 
     const id = crypto.randomUUID();
@@ -1992,11 +2094,11 @@ export function createAdminApiRoutes() {
       source: data.source,
     });
 
-    const created = await db.query.userEntitlements.findFirst({
+    const createdEntitlement = await db.query.userEntitlements.findFirst({
       where: eq(userEntitlements.id, id),
     });
 
-    return c.json(created, 201);
+    return created(c, createdEntitlement);
   });
 
   /**
@@ -2011,11 +2113,11 @@ export function createAdminApiRoutes() {
       where: eq(userEntitlements.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Entitlement not found' }, 404);
+      return notFound(c, 'Entitlement not found');
     }
 
     await db.delete(userEntitlements).where(eq(userEntitlements.id, id));
-    return c.json({ success: true, message: 'Entitlement removed' });
+    return success(c, { message: 'Entitlement removed' });
   });
 
   /**
@@ -2032,7 +2134,7 @@ export function createAdminApiRoutes() {
     const data = c.req.valid('json');
 
     const user = await db.query.users.findFirst({ where: eq(users.id, data.userId) });
-    if (!user) return c.json({ error: 'User not found' }, 404);
+    if (!user) return notFound(c, 'User not found');
 
     // Upsert: if already exists, update expiry/source
     const existing = await db.query.userEntitlements.findFirst({
@@ -2044,7 +2146,7 @@ export function createAdminApiRoutes() {
         expiresAt: data.expiresAt || null,
         source: data.source,
       }).where(eq(userEntitlements.id, existing.id));
-      return c.json({ success: true, message: 'Entitlement updated' });
+      return success(c, { message: 'Entitlement updated' });
     }
 
     const id = crypto.randomUUID();
@@ -2056,7 +2158,7 @@ export function createAdminApiRoutes() {
       source: data.source,
     });
 
-    return c.json({ success: true, message: 'Entitlement assigned' }, 201);
+    return created(c, { success: true, message: 'Entitlement assigned' });
   });
 
   /**
@@ -2072,11 +2174,11 @@ export function createAdminApiRoutes() {
       where: and(eq(userEntitlements.userId, userId), eq(userEntitlements.entitlement, entitlement)),
     });
     if (!existing) {
-      return c.json({ error: 'Entitlement not found for this user' }, 404);
+      return notFound(c, 'Entitlement not found for this user');
     }
 
     await db.delete(userEntitlements).where(eq(userEntitlements.id, existing.id));
-    return c.json({ success: true, message: 'Entitlement removed from user' });
+    return success(c, { message: 'Entitlement removed from user' });
   });
 
   // ============== Badge Claim Links (Admin) ==============
@@ -2090,13 +2192,13 @@ export function createAdminApiRoutes() {
     const badgeId = c.req.param('id');
 
     const badge = await db.query.badges.findFirst({ where: eq(badges.id, badgeId) });
-    if (!badge) return c.json({ error: 'Badge not found' }, 404);
+    if (!badge) return notFound(c, 'Badge not found');
 
     const links = await db.query.badgeClaimLinks.findMany({
       where: eq(badgeClaimLinks.badgeId, badgeId),
     });
 
-    return c.json({ claimLinks: links });
+    return ok(c, links);
   });
 
   /**
@@ -2107,23 +2209,17 @@ export function createAdminApiRoutes() {
     maxUses: z.number().int().min(1).optional(),
     expiresAt: z.string().optional(),
     achievementId: z.string().optional(),
+    emitEventType: z.string().optional(),
+    emitEventPayload: z.string().optional(),
   })), async (c) => {
     const db = createDatabase(c.env.DB);
     const badgeId = c.req.param('id');
     const data = c.req.valid('json');
 
     const badge = await db.query.badges.findFirst({ where: eq(badges.id, badgeId) });
-    if (!badge) return c.json({ error: 'Badge not found' }, 404);
+    if (!badge) return notFound(c, 'Badge not found');
 
-    // Get admin user from session for createdBy
-    const cookieName = getSessionCookieName(c.env);
-    const cookieHeader = c.req.header('Cookie') || '';
-    const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-    let createdBy = 'system';
-    if (sessionMatch?.[1]) {
-      const session = await db.query.sessions.findFirst({ where: eq(sessions.id, sessionMatch[1]) });
-      if (session) createdBy = session.userId;
-    }
+    const createdBy = (c.get('user') as AuthUser).id;
 
     // Generate random code
     const codeBytes = new Uint8Array(16);
@@ -2139,13 +2235,15 @@ export function createAdminApiRoutes() {
       expiresAt: data.expiresAt || null,
       createdBy,
       achievementId: data.achievementId || null,
+      emitEventType: data.emitEventType || null,
+      emitEventPayload: data.emitEventPayload || null,
     });
 
-    const created = await db.query.badgeClaimLinks.findFirst({
+    const createdLink = await db.query.badgeClaimLinks.findFirst({
       where: eq(badgeClaimLinks.id, id),
     });
 
-    return c.json(created, 201);
+    return created(c, createdLink);
   });
 
   /**
@@ -2160,11 +2258,398 @@ export function createAdminApiRoutes() {
       where: eq(badgeClaimLinks.id, id),
     });
     if (!existing) {
-      return c.json({ error: 'Claim link not found' }, 404);
+      return notFound(c, 'Claim link not found');
     }
 
     await db.delete(badgeClaimLinks).where(eq(badgeClaimLinks.id, id));
-    return c.json({ success: true, message: 'Claim link deleted' });
+    return success(c, { message: 'Claim link deleted' });
+  });
+
+  // ============== Group Claim Requests ==============
+
+  /**
+   * List group claim requests
+   * GET /api/admin/claim-requests
+   */
+  app.get('/claim-requests', zValidator('query', z.object({
+    status: z.enum(['pending', 'approved', 'rejected']).optional(),
+    limit: z.coerce.number().min(1).max(100).optional().default(50),
+    offset: z.coerce.number().min(0).optional().default(0),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const { status, limit: queryLimit, offset: queryOffset } = c.req.valid('query');
+
+    const conditions = [];
+    if (status) {
+      conditions.push(eq(groupClaimRequests.status, status));
+    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const requests = await db.query.groupClaimRequests.findMany({
+      where,
+      orderBy: [desc(groupClaimRequests.createdAt)],
+      limit: queryLimit,
+      offset: queryOffset,
+    });
+
+    // Enrich with user and group info
+    const enriched = await Promise.all(
+      requests.map(async (req) => {
+        const [reqUser, group] = await Promise.all([
+          db.query.users.findFirst({ where: eq(users.id, req.userId) }),
+          db.query.groups.findFirst({ where: eq(groups.id, req.groupId) }),
+        ]);
+        return {
+          ...req,
+          userName: reqUser?.name || reqUser?.email || 'Unknown',
+          userEmail: reqUser?.email || '',
+          userUsername: reqUser?.username || null,
+          groupName: group?.name || 'Unknown',
+          groupUrlname: group?.urlname || null,
+          groupPlatform: group?.platform || null,
+        };
+      }),
+    );
+
+    const allRequests = await db.query.groupClaimRequests.findMany({ where });
+
+    return list(c, enriched, { total: allRequests.length, limit: queryLimit, offset: queryOffset });
+  });
+
+  /**
+   * Approve a group claim request
+   * POST /api/admin/claim-requests/:id/approve
+   * Adds the requesting user as owner of the group.
+   */
+  app.post('/claim-requests/:id/approve', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const reviewerId = (c.get('user') as AuthUser).id;
+
+    const request = await db.query.groupClaimRequests.findFirst({
+      where: eq(groupClaimRequests.id, id),
+    });
+    if (!request) return notFound(c, 'Claim request not found');
+
+    if (request.status !== 'pending') {
+      return badRequest(c, `Request is already ${request.status}`);
+    }
+
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, request.groupId),
+    });
+    if (!group) return notFound(c, 'Group not found');
+
+    const now = new Date().toISOString();
+
+    // Update request status
+    await db.update(groupClaimRequests).set({
+      status: 'approved',
+      reviewedBy: reviewerId,
+      reviewedAt: now,
+    }).where(eq(groupClaimRequests.id, id));
+
+    // Add user as owner (if not already a member, or upgrade role)
+    const existingMember = await db.query.groupMembers.findFirst({
+      where: and(
+        eq(groupMembers.groupId, request.groupId),
+        eq(groupMembers.userId, request.userId),
+      ),
+    });
+
+    if (!existingMember) {
+      await db.insert(groupMembers).values({
+        id: crypto.randomUUID(),
+        groupId: request.groupId,
+        userId: request.userId,
+        role: GroupMemberRole.OWNER,
+      });
+    } else if (existingMember.role !== GroupMemberRole.OWNER) {
+      await db.update(groupMembers).set({
+        role: GroupMemberRole.OWNER,
+      }).where(eq(groupMembers.id, existingMember.id));
+    }
+
+    emitEvent(c, {
+      type: 'dev.tampa.group.claimed',
+      payload: {
+        groupId: request.groupId,
+        userId: request.userId,
+        method: 'request',
+        autoApproved: false,
+        reviewedBy: reviewerId,
+      },
+      metadata: { userId: request.userId, source: 'admin' },
+    });
+
+    return success(c, { message: 'Claim request approved' });
+  });
+
+  /**
+   * Reject a group claim request
+   * POST /api/admin/claim-requests/:id/reject
+   */
+  app.post('/claim-requests/:id/reject', zValidator('json', z.object({
+    notes: z.string().max(1000).optional(),
+  }).optional()), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const reviewerId = (c.get('user') as AuthUser).id;
+
+    const request = await db.query.groupClaimRequests.findFirst({
+      where: eq(groupClaimRequests.id, id),
+    });
+    if (!request) return notFound(c, 'Claim request not found');
+
+    if (request.status !== 'pending') {
+      return badRequest(c, `Request is already ${request.status}`);
+    }
+
+    let notes: string | null = null;
+    try {
+      const body = await c.req.json();
+      if (body?.notes) notes = body.notes;
+    } catch {
+      // No body
+    }
+
+    await db.update(groupClaimRequests).set({
+      status: 'rejected',
+      reviewedBy: reviewerId,
+      reviewedAt: new Date().toISOString(),
+      notes: notes || request.notes,
+    }).where(eq(groupClaimRequests.id, id));
+
+    return success(c, { message: 'Claim request rejected' });
+  });
+
+  // ============== Group Claim Invites ==============
+
+  /**
+   * List claim invites for a group
+   * GET /api/admin/groups/:groupId/claim-invites
+   */
+  app.get('/groups/:groupId/claim-invites', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
+    if (!group) return notFound(c, 'Group not found');
+
+    const invites = await db.query.groupClaimInvites.findMany({
+      where: eq(groupClaimInvites.groupId, groupId),
+    });
+
+    return ok(c, invites);
+  });
+
+  /**
+   * Generate a claim invite for a group
+   * POST /api/admin/groups/:groupId/claim-invites
+   */
+  app.post('/groups/:groupId/claim-invites', zValidator('json', z.object({
+    autoApprove: z.boolean().optional().default(false),
+    expiresAt: z.string().optional(),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const groupId = c.req.param('groupId');
+    const data = c.req.valid('json');
+
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) });
+    if (!group) return notFound(c, 'Group not found');
+
+    const createdBy = (c.get('user') as AuthUser).id;
+
+    // Generate random token
+    const tokenBytes = new Uint8Array(16);
+    crypto.getRandomValues(tokenBytes);
+    const token = Array.from(tokenBytes).map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 24);
+
+    const id = crypto.randomUUID();
+    await db.insert(groupClaimInvites).values({
+      id,
+      groupId,
+      token,
+      autoApprove: data.autoApprove,
+      expiresAt: data.expiresAt || null,
+      createdBy,
+    });
+
+    const createdInvite = await db.query.groupClaimInvites.findFirst({
+      where: eq(groupClaimInvites.id, id),
+    });
+
+    return created(c, createdInvite);
+  });
+
+  // ============== Group Creation Requests ==============
+
+  /**
+   * List group creation requests
+   * GET /api/admin/group-creation-requests
+   */
+  app.get('/group-creation-requests', zValidator('query', z.object({
+    status: z.enum(['pending', 'approved', 'rejected']).optional(),
+    limit: z.coerce.number().min(1).max(100).optional().default(50),
+    offset: z.coerce.number().min(0).optional().default(0),
+  })), async (c) => {
+    const db = createDatabase(c.env.DB);
+    const { status, limit: queryLimit, offset: queryOffset } = c.req.valid('query');
+
+    const conditions = [];
+    if (status) {
+      conditions.push(eq(groupCreationRequests.status, status));
+    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const requests = await db.query.groupCreationRequests.findMany({
+      where,
+      orderBy: [desc(groupCreationRequests.createdAt)],
+      limit: queryLimit,
+      offset: queryOffset,
+    });
+
+    // Enrich with user info
+    const enriched = await Promise.all(
+      requests.map(async (req) => {
+        const reqUser = await db.query.users.findFirst({ where: eq(users.id, req.userId) });
+        return {
+          ...req,
+          userName: reqUser?.name || reqUser?.email || 'Unknown',
+          userEmail: reqUser?.email || '',
+          userUsername: reqUser?.username || null,
+        };
+      }),
+    );
+
+    const allRequests = await db.query.groupCreationRequests.findMany({ where });
+
+    return list(c, enriched, { total: allRequests.length, limit: queryLimit, offset: queryOffset });
+  });
+
+  /**
+   * Approve a group creation request
+   * POST /api/admin/group-creation-requests/:id/approve
+   * Creates the group and sets the requester as owner.
+   */
+  app.post('/group-creation-requests/:id/approve', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const reviewerId = (c.get('user') as AuthUser).id;
+
+    const request = await db.query.groupCreationRequests.findFirst({
+      where: eq(groupCreationRequests.id, id),
+    });
+    if (!request) return notFound(c, 'Creation request not found');
+
+    if (request.status !== 'pending') {
+      return badRequest(c, `Request is already ${request.status}`);
+    }
+
+    const now = new Date().toISOString();
+
+    // Generate urlname from group name
+    const urlname = request.groupName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .slice(0, 100);
+
+    // Check uniqueness
+    const existingGroup = await db.query.groups.findFirst({
+      where: eq(groups.urlname, urlname),
+    });
+    // If urlname is taken, append a random suffix
+    const finalUrlname = existingGroup ? `${urlname}-${Date.now().toString(36)}` : urlname;
+
+    // Create the group
+    const groupId = crypto.randomUUID();
+    await db.insert(groups).values({
+      id: groupId,
+      platform: EventPlatform.TAMPA_DEV,
+      platformId: groupId,
+      urlname: finalUrlname,
+      name: request.groupName,
+      description: request.description,
+      link: `https://events.tampa.dev/groups/${finalUrlname}`,
+      displayOnSite: true,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Set requester as owner
+    await db.insert(groupMembers).values({
+      id: crypto.randomUUID(),
+      groupId,
+      userId: request.userId,
+      role: GroupMemberRole.OWNER,
+    });
+
+    // Update request status and link to created group
+    await db.update(groupCreationRequests).set({
+      status: 'approved',
+      reviewedBy: reviewerId,
+      reviewedAt: now,
+      groupId,
+    }).where(eq(groupCreationRequests.id, id));
+
+    emitEvent(c, {
+      type: 'dev.tampa.group.created',
+      payload: {
+        groupId,
+        groupName: request.groupName,
+        createdBy: request.userId,
+        approvedBy: reviewerId,
+        source: 'creation-request',
+      },
+      metadata: { userId: request.userId, source: 'admin' },
+    });
+
+    return success(c, {
+      message: 'Creation request approved',
+      groupId,
+      urlname: finalUrlname,
+    });
+  });
+
+  /**
+   * Reject a group creation request
+   * POST /api/admin/group-creation-requests/:id/reject
+   */
+  app.post('/group-creation-requests/:id/reject', async (c) => {
+    const db = createDatabase(c.env.DB);
+    const id = c.req.param('id');
+
+    const reviewerId = (c.get('user') as AuthUser).id;
+
+    const request = await db.query.groupCreationRequests.findFirst({
+      where: eq(groupCreationRequests.id, id),
+    });
+    if (!request) return notFound(c, 'Creation request not found');
+
+    if (request.status !== 'pending') {
+      return badRequest(c, `Request is already ${request.status}`);
+    }
+
+    let notes: string | null = null;
+    try {
+      const body = await c.req.json();
+      if (body?.notes) notes = body.notes;
+    } catch {
+      // No body
+    }
+
+    await db.update(groupCreationRequests).set({
+      status: 'rejected',
+      reviewedBy: reviewerId,
+      reviewedAt: new Date().toISOString(),
+    }).where(eq(groupCreationRequests.id, id));
+
+    return success(c, { message: 'Creation request rejected' });
   });
 
   return app;

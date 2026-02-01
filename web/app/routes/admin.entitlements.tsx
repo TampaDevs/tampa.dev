@@ -35,8 +35,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  const data = (await response.json()) as { entitlements: Entitlement[] };
-  return { entitlements: data.entitlements };
+  const json = (await response.json()) as { data: Entitlement[] };
+  return { entitlements: json.data };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -146,8 +146,8 @@ function UserSearchPicker({
         }
       );
       if (response.ok) {
-        const data = (await response.json()) as { users: UserSearchResult[] };
-        setResults(data.users || []);
+        const json = (await response.json()) as { data: UserSearchResult[] };
+        setResults(json.data || []);
         setShowDropdown(true);
       }
     } catch {

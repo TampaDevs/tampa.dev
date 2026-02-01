@@ -7,6 +7,8 @@
 import { useLoaderData, useFetcher } from "react-router";
 import { useState } from "react";
 import type { Route } from "./+types/admin.achievements";
+import { Emoji } from "~/components/Emoji";
+import { EmojiSelect } from "~/components/EmojiSelect";
 
 interface Achievement {
   id: string;
@@ -21,9 +23,19 @@ interface Achievement {
   entitlement: string | null;
   eventType: string;
   sortOrder: number;
+  conditions: string | null;
+  progressMode: string | null;
+  gaugeField: string | null;
+  hidden: number;
   createdAt: string;
   userCount?: number;
   completedCount?: number;
+}
+
+interface Condition {
+  field: string;
+  op: string;
+  value: string;
 }
 
 interface BadgeOption {
@@ -79,15 +91,15 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Error(`Admin API request failed: ${achievementsResponse.status}`);
   }
 
-  const achievementsData = (await achievementsResponse.json()) as { achievements: Achievement[] };
+  const achievementsJson = (await achievementsResponse.json()) as { data: Achievement[] };
 
   let badges: BadgeOption[] = [];
   if (badgesResponse.ok) {
-    const badgesData = (await badgesResponse.json()) as { badges: BadgeOption[] };
-    badges = badgesData.badges;
+    const badgesJson = (await badgesResponse.json()) as { data: BadgeOption[] };
+    badges = badgesJson.data;
   }
 
-  return { achievements: achievementsData.achievements, badges };
+  return { achievements: achievementsJson.data, badges };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -107,6 +119,10 @@ export async function action({ request }: Route.ActionArgs) {
     const entitlement = formData.get("entitlement") as string;
     const eventType = formData.get("eventType") as string;
     const sortOrder = Number(formData.get("sortOrder") || "0");
+    const conditionsRaw = formData.get("conditions") as string;
+    const progressMode = formData.get("progressMode") as string;
+    const gaugeField = formData.get("gaugeField") as string;
+    const hiddenVal = formData.get("hidden") === "1";
 
     try {
       const response = await fetch(`${API_HOST}/admin/achievements`, {
@@ -128,6 +144,10 @@ export async function action({ request }: Route.ActionArgs) {
           entitlement: entitlement || undefined,
           eventType,
           sortOrder,
+          conditions: conditionsRaw || undefined,
+          progressMode: progressMode || undefined,
+          gaugeField: gaugeField || undefined,
+          hidden: hiddenVal,
         }),
       });
 
@@ -155,6 +175,10 @@ export async function action({ request }: Route.ActionArgs) {
     const entitlement = formData.get("entitlement") as string;
     const eventType = formData.get("eventType") as string;
     const sortOrder = Number(formData.get("sortOrder") || "0");
+    const conditionsRaw = formData.get("conditions") as string;
+    const progressMode = formData.get("progressMode") as string;
+    const gaugeField = formData.get("gaugeField") as string;
+    const hiddenVal = formData.get("hidden") === "1";
 
     try {
       const response = await fetch(
@@ -178,6 +202,10 @@ export async function action({ request }: Route.ActionArgs) {
             entitlement: entitlement || undefined,
             eventType,
             sortOrder,
+            conditions: conditionsRaw || undefined,
+            progressMode: progressMode || undefined,
+            gaugeField: gaugeField || undefined,
+            hidden: hiddenVal,
           }),
         }
       );
@@ -236,6 +264,33 @@ function AchievementForm({
 
   const [key, setKey] = useState(achievement?.key || "");
   const [color, setColor] = useState(achievement?.color || "#E5574F");
+  const [progressMode, setProgressMode] = useState(achievement?.progressMode || "counter");
+  const [gaugeField, setGaugeField] = useState(achievement?.gaugeField || "");
+  const [hidden, setHidden] = useState(achievement?.hidden ? true : false);
+
+  // Parse conditions from JSON string
+  const initialConditions: Condition[] = (() => {
+    if (!achievement?.conditions) return [];
+    try {
+      const parsed = JSON.parse(achievement.conditions);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+  const [conditions, setConditions] = useState<Condition[]>(initialConditions);
+
+  const addCondition = () => {
+    setConditions([...conditions, { field: "", op: "eq", value: "" }]);
+  };
+
+  const removeCondition = (index: number) => {
+    setConditions(conditions.filter((_, i) => i !== index));
+  };
+
+  const updateCondition = (index: number, updates: Partial<Condition>) => {
+    setConditions(conditions.map((c, i) => (i === index ? { ...c, ...updates } : c)));
+  };
 
   const initialEventType = achievement?.eventType || "";
   const isInitialCustom = initialEventType !== "" && !KNOWN_EVENT_TYPES.includes(initialEventType);
@@ -375,21 +430,18 @@ function AchievementForm({
             <label htmlFor="achievement-badgeSlug" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Badge Slug (auto-award)
             </label>
-            <input
+            <EmojiSelect
               id="achievement-badgeSlug"
               name="badgeSlug"
-              list="badge-slug-options"
+              freeform
               defaultValue={achievement?.badgeSlug || ""}
               placeholder="Select existing or type new slug"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral"
+              options={badges.map((b) => ({
+                value: b.slug,
+                label: b.name,
+                emoji: b.icon,
+              }))}
             />
-            <datalist id="badge-slug-options">
-              {badges.map((b) => (
-                <option key={b.slug} value={b.slug}>
-                  {b.icon} {b.name}
-                </option>
-              ))}
-            </datalist>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Type a new slug to auto-create the badge on first trigger, or pick an existing one.
             </p>
@@ -482,6 +534,142 @@ function AchievementForm({
           />
         </div>
 
+        {/* Hidden Achievement toggle */}
+        <div className="flex items-center gap-3">
+          <input type="hidden" name="hidden" value={hidden ? "1" : "0"} />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={hidden}
+            onClick={() => setHidden(!hidden)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              hidden ? "bg-coral" : "bg-gray-300 dark:bg-gray-600"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                hidden ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Hidden Achievement
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Only visible to users who earned it (Xbox/PSN style)
+            </p>
+          </div>
+        </div>
+
+        {/* Progress Mode selector */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="achievement-progressMode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Progress Mode
+            </label>
+            <input type="hidden" name="progressMode" value={progressMode} />
+            <select
+              id="achievement-progressMode"
+              value={progressMode}
+              onChange={(e) => setProgressMode(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral"
+            >
+              <option value="counter">Counter &mdash; increment by 1 per event</option>
+              <option value="gauge">Gauge &mdash; read absolute value from event payload</option>
+            </select>
+          </div>
+
+          {/* Gauge Field input (shown conditionally) */}
+          {progressMode === "gauge" && (
+            <div>
+              <label htmlFor="achievement-gaugeField" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Payload Field Path
+              </label>
+              <input
+                id="achievement-gaugeField"
+                name="gaugeField"
+                type="text"
+                value={gaugeField}
+                onChange={(e) => setGaugeField(e.target.value)}
+                placeholder="totalScore"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Dot-path to the payload field to use as the progress value
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Conditions editor */}
+        <div>
+          <input
+            type="hidden"
+            name="conditions"
+            value={conditions.length > 0 ? JSON.stringify(conditions) : ""}
+          />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Conditions
+          </label>
+          {conditions.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {conditions.map((condition, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={condition.field}
+                    onChange={(e) => updateCondition(index, { field: e.target.value })}
+                    placeholder="groupSlug"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-coral/50 focus:border-coral"
+                  />
+                  <select
+                    value={condition.op}
+                    onChange={(e) => updateCondition(index, { op: e.target.value })}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-coral/50 focus:border-coral"
+                  >
+                    <option value="eq">eq</option>
+                    <option value="neq">neq</option>
+                    <option value="gt">gt</option>
+                    <option value="gte">gte</option>
+                    <option value="lt">lt</option>
+                    <option value="lte">lte</option>
+                    <option value="in">in</option>
+                    <option value="contains">contains</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={condition.value}
+                    onChange={(e) => updateCondition(index, { value: e.target.value })}
+                    placeholder="value"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-coral/50 focus:border-coral"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeCondition(index)}
+                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Remove condition"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={addCondition}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Condition
+          </button>
+        </div>
+
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
@@ -512,10 +700,10 @@ function AchievementCard({ achievement, onEdit }: { achievement: Achievement; on
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+            className="w-10 h-10 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: `${achievement.color}20` }}
           >
-            {achievement.icon}
+            <Emoji emoji={achievement.icon} size={24} />
           </span>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -570,6 +758,34 @@ function AchievementCard({ achievement, onEdit }: { achievement: Achievement; on
             Entitlement: {achievement.entitlement}
           </span>
         )}
+        {!!achievement.hidden && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+            </svg>
+            Hidden
+          </span>
+        )}
+        {achievement.progressMode === "gauge" && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded">
+            Gauge: {achievement.gaugeField || "—"}
+          </span>
+        )}
+        {achievement.conditions && (() => {
+          try {
+            const parsed = JSON.parse(achievement.conditions);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              return (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded">
+                  {parsed.length} condition{parsed.length !== 1 ? "s" : ""}
+                </span>
+              );
+            }
+            return null;
+          } catch {
+            return null;
+          }
+        })()}
       </div>
 
       <div className="mt-3 flex items-center gap-2">
@@ -578,7 +794,7 @@ function AchievementCard({ achievement, onEdit }: { achievement: Achievement; on
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-white"
           style={{ backgroundColor: achievement.color }}
         >
-          {achievement.icon} {achievement.name}
+          <Emoji emoji={achievement.icon} size={14} /> {achievement.name}
         </span>
 
         <div className="ml-auto flex items-center gap-2">

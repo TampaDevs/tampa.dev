@@ -8,7 +8,11 @@ assets/*
 !assets/.gitkeep
 .wrangler/
 .claude/
+*.bak
 .provider-test-output.json
+.emoji-cache/
+web/public/emoji/
+dist/
 
 # Generated clients - ignore build artifacts but keep source
 openapitools.json

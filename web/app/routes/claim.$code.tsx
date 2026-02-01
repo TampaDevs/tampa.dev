@@ -10,6 +10,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import type { Route } from "./+types/claim.$code";
 import { generateMetaTags } from "~/lib/seo";
 import { getTrophyTier, TrophyIcon } from "~/lib/trophy-tiers";
+import { Emoji } from "~/components/Emoji";
 import { fetchCurrentUser } from "~/lib/admin-api.server";
 
 interface BadgeInfo {
@@ -377,8 +378,8 @@ export default function ClaimBadgePage({
           />
 
           {/* Badge Icon */}
-          <div className="relative z-10 text-7xl mb-3 drop-shadow-lg">
-            {badge.icon}
+          <div className="relative z-10 mb-3 drop-shadow-lg">
+            <Emoji emoji={badge.icon} size={72} />
           </div>
 
           {/* Badge Name */}

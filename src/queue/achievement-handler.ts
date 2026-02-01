@@ -17,6 +17,7 @@ import { NotificationService } from '../lib/event-bus.js';
 import type { DomainEvent } from '../lib/event-bus.js';
 import type { Env } from '../../types/worker.js';
 import type { Achievement } from '../db/schema.js';
+import { parseConditions, evaluateConditions, getNestedValue } from '../lib/condition-evaluator.js';
 
 // Per-batch cache for achievement definitions
 let cachedAchievements: Map<string, Achievement> | null = null;
@@ -46,63 +47,92 @@ async function loadAchievements(env: Env): Promise<void> {
 }
 
 /**
- * Increment achievement progress for a user and check for completion
+ * Process an achievement for a user: evaluate conditions, update progress,
+ * and check for completion. Supports both counter mode (increment by 1)
+ * and gauge mode (set absolute value from event payload).
  */
-async function incrementAchievement(
+async function processAchievement(
   env: Env,
   userId: string,
-  achievementKey: string
+  achievementKey: string,
+  event: DomainEvent
 ): Promise<void> {
   const achievement = cachedAchievements?.get(achievementKey);
   if (!achievement) return;
 
+  // Evaluate payload conditions — skip if event doesn't match
+  const conditions = parseConditions(achievement.conditions);
+  if (!evaluateConditions(conditions, event.payload)) return;
+
+  const isGauge = achievement.progressMode === 'gauge';
   const db = createDatabase(env.DB);
 
-  // Get or create progress record
-  let progress = await db.query.achievementProgress.findFirst({
-    where: and(
-      eq(achievementProgress.userId, userId),
-      eq(achievementProgress.achievementKey, achievementKey)
-    ),
-  });
+  // Atomic upsert: INSERT ... ON CONFLICT DO NOTHING to avoid race conditions
+  let initialValue: number;
+  if (isGauge && achievement.gaugeField) {
+    const extracted = getNestedValue(event.payload, achievement.gaugeField);
+    initialValue = typeof extracted === 'number' ? extracted : 0;
+  } else {
+    initialValue = 0; // counter mode: start at 0, the UPDATE below will increment to 1
+  }
 
-  if (!progress) {
-    // Create new progress record
-    const id = crypto.randomUUID();
+  const progressId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  // Try to insert — silently fails if row already exists (unique on userId+achievementKey)
+  try {
     await db.insert(achievementProgress).values({
-      id,
+      id: progressId,
       userId,
       achievementKey,
-      currentValue: 1,
+      currentValue: initialValue,
       targetValue: achievement.targetValue,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     });
+  } catch {
+    // Unique constraint violation — row already exists, will update below
+  }
 
-    progress = {
-      id,
-      userId,
-      achievementKey,
-      currentValue: 1,
-      targetValue: achievement.targetValue,
-      completedAt: null,
-      updatedAt: new Date().toISOString(),
-    };
-  } else if (!progress.completedAt) {
-    // Increment existing progress
-    const newValue = progress.currentValue + 1;
+  // Atomic increment/set for existing rows that aren't completed
+  if (isGauge && achievement.gaugeField) {
+    const extracted = getNestedValue(event.payload, achievement.gaugeField);
+    const gaugeValue = typeof extracted === 'number' ? extracted : 0;
+    await db
+      .update(achievementProgress)
+      .set({ currentValue: gaugeValue, updatedAt: now })
+      .where(
+        and(
+          eq(achievementProgress.userId, userId),
+          eq(achievementProgress.achievementKey, achievementKey),
+          sql`${achievementProgress.completedAt} IS NULL`,
+        ),
+      );
+  } else {
+    // Counter mode: atomic increment
     await db
       .update(achievementProgress)
       .set({
-        currentValue: newValue,
-        updatedAt: new Date().toISOString(),
+        currentValue: sql`${achievementProgress.currentValue} + 1`,
+        updatedAt: now,
       })
-      .where(eq(achievementProgress.id, progress.id));
-
-    progress = { ...progress, currentValue: newValue };
-  } else {
-    // Already completed, skip
-    return;
+      .where(
+        and(
+          eq(achievementProgress.userId, userId),
+          eq(achievementProgress.achievementKey, achievementKey),
+          sql`${achievementProgress.completedAt} IS NULL`,
+        ),
+      );
   }
+
+  // Read back the current state
+  const progress = await db.query.achievementProgress.findFirst({
+    where: and(
+      eq(achievementProgress.userId, userId),
+      eq(achievementProgress.achievementKey, achievementKey),
+    ),
+  });
+
+  if (!progress || progress.completedAt) return;
 
   // Check if achievement is now completed
   if (progress.currentValue >= achievement.targetValue && !progress.completedAt) {
@@ -172,12 +202,12 @@ async function incrementAchievement(
       }
     }
 
-    // Compute user's total score and emit score_changed event
+    // Compute user's total platform score (exclude group-scoped badges) and emit score_changed event
     const scoreResult = await db
       .select({ totalScore: sql<number>`COALESCE(SUM(${badges.points}), 0)` })
       .from(userBadges)
       .innerJoin(badges, eq(userBadges.badgeId, badges.id))
-      .where(eq(userBadges.userId, userId));
+      .where(sql`${userBadges.userId} = ${userId} AND ${badges.groupId} IS NULL`);
 
     const totalScore = scoreResult[0]?.totalScore ?? 0;
 
@@ -292,8 +322,13 @@ export function registerAchievementHandler(): void {
     const achievementKeys = cachedEventMap?.get(event.type);
     if (!achievementKeys || achievementKeys.length === 0) return;
 
-    await Promise.all(
-      achievementKeys.map((key) => incrementAchievement(env, userId, key))
+    const results = await Promise.allSettled(
+      achievementKeys.map((key) => processAchievement(env, userId, key, event))
     );
+    for (const r of results) {
+      if (r.status === 'rejected') {
+        console.error(`Achievement processing failed:`, r.reason);
+      }
+    }
   });
 }

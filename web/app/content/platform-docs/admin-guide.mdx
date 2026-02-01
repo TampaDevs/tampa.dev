@@ -1,0 +1,104 @@
+---
+title: Platform Administration
+description: Admin guide for managing entitlements, groups, badges, feature flags, and platform connections.
+order: 30
+category: For Platform Admins
+---
+
+# Platform Administration
+
+This guide is for Tampa.dev platform administrators. It covers the tools and workflows available in the admin dashboard for managing the platform.
+
+## Managing Entitlements
+
+Entitlements control what users and groups are allowed to do on the platform. The most common entitlement is **group creation** — users must have a group creation entitlement before they can create a new group.
+
+### Granting Group Creation Entitlements
+
+From the **Entitlements** section in the admin dashboard:
+
+1. Search for the user by username or email.
+2. Grant the `group_create` entitlement.
+3. The user can now access the group creation flow.
+
+Entitlements can be revoked at any time if needed.
+
+## Reviewing Group Creation Requests
+
+When a user with a group creation entitlement submits a request to create a group, it appears in the **Group Requests** queue. As an admin, you can:
+
+| Action | Description |
+|--------|-------------|
+| **Approve** | The group is created and the requesting user becomes the owner. |
+| **Reject** | The request is denied. You can include a reason for the rejection. |
+
+Review requests promptly to keep the community growing.
+
+## Managing Claim Requests
+
+Users may submit requests to claim ownership of existing groups (e.g., synced groups that don't yet have an owner). These appear in the **Claims** section. You can:
+
+| Action | Description |
+|--------|-------------|
+| **Approve** | The user is granted ownership of the group. |
+| **Reject** | The claim is denied. |
+
+Verify that the requester is a legitimate organizer of the group before approving.
+
+## Feature Flags
+
+Feature flags control which optional capabilities are available to specific groups. Manage them from the **Flags** section.
+
+Common feature flags include:
+
+| Flag | Description |
+|------|-------------|
+| `badge_issuer` | Allows the group to create and manage badges |
+| `event_checkins` | Enables event check-in functionality for the group |
+| `custom_theme` | Allows the group to set custom theme colors |
+
+To enable a flag for a group, find the group in the flags interface and toggle the desired flag on. Flags take effect immediately.
+
+## Badge Governance
+
+Platform admins set the global rules for how badges work across the platform:
+
+| Setting | Description |
+|---------|-------------|
+| **Max badges per group** | How many badge types each group can create |
+| **Max badge points** | The maximum XP value any single badge can award |
+
+These limits ensure the badge and XP ecosystem stays balanced. Adjust them thoughtfully — increasing limits too much can inflate leaderboard scores.
+
+You can also create **platform-wide badges** from the admin Badges section. Platform badges are not tied to any specific group and are typically used for community-wide milestones and achievements.
+
+## Platform Connections (Synced Groups)
+
+Tampa.dev automatically syncs events and groups from external platforms. The **Sync** section in the admin dashboard lets you manage these connections.
+
+### Supported Platforms
+
+| Platform | What syncs |
+|----------|------------|
+| **Meetup** | Groups and their events |
+| **Eventbrite** | Organizations and their events |
+| **Luma** | Calendars and their events |
+
+### The Sync System
+
+The sync system runs on a schedule and:
+
+1. **Discovers** new events from connected platforms.
+2. **Creates or updates** event records in Tampa.dev to match the source.
+3. **Handles cancellations** — if an event is cancelled on the source platform, it's marked as cancelled on Tampa.dev too.
+
+Synced groups appear in the groups directory with a badge indicating their source platform. They function like any other group — users can favorite them, view their events, and earn badges from them.
+
+### Managing Synced Groups
+
+From the admin dashboard, you can:
+
+- **Add new connections** — Connect a new Meetup group, Eventbrite organization, or Luma calendar.
+- **Remove connections** — Stop syncing from a specific source.
+- **Force sync** — Trigger an immediate sync instead of waiting for the next scheduled run.
+- **View sync status** — See when the last sync ran and whether it completed successfully.

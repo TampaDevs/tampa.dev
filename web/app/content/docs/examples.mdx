@@ -1,65 +1,275 @@
 ---
 title: Examples
 description: Common API usage examples with cURL
-order: 7
+order: 30
+category: Resources
 ---
 
 # Examples
 
-## Get Upcoming Events
+All examples use Personal Access Tokens. OAuth access tokens work the same way -- just replace the Bearer token value.
+
+## Read Operations
+
+### Get upcoming events
 
 ```bash
 curl -H "Authorization: Bearer td_pat_abc123..." \
-  "https://api.tampa.dev/v1/events?status=upcoming"
+  "https://api.tampa.dev/v1/events?status=upcoming&limit=5"
 ```
 
-## Get User Profile
+### Get your profile
 
 ```bash
 curl -H "Authorization: Bearer td_pat_abc123..." \
-  "https://api.tampa.dev/v1/profile"
+  https://api.tampa.dev/v1/profile
 ```
 
-## List Groups
+### List groups
 
 ```bash
 curl -H "Authorization: Bearer td_pat_abc123..." \
   "https://api.tampa.dev/v1/groups?featured=1"
 ```
 
-## Add a Favorite Group
+### Get group details
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/groups/tampadevs
+```
+
+### Check your RSVP status
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/events/evt_abc123/rsvp
+```
+
+### List your favorite groups
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/favorites
+```
+
+### Get achievement progress
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/achievements
+```
+
+---
+
+## Write Operations
+
+### Update your profile
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"bio": "Building cool stuff", "location": "Tampa, FL"}' \
+  https://api.tampa.dev/v1/profile
+```
+
+### RSVP to an event
 
 ```bash
 curl -X POST \
   -H "Authorization: Bearer td_pat_abc123..." \
-  "https://api.tampa.dev/v1/favorites/group-uuid-here"
+  https://api.tampa.dev/v1/events/evt_abc123/rsvp
 ```
 
-## Create a Portfolio Item
+### Cancel your RSVP
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/events/evt_abc123/rsvp
+```
+
+### Check in to an event
 
 ```bash
 curl -X POST \
   -H "Authorization: Bearer td_pat_abc123..." \
   -H "Content-Type: application/json" \
-  -d '{"title": "My Project", "url": "https://example.com", "description": "A cool project"}' \
-  "https://api.tampa.dev/v1/portfolio"
+  -d '{"method": "qr"}' \
+  https://api.tampa.dev/v1/checkin/ABC123
 ```
 
-## Register a Webhook
+### Add a favorite group
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/favorites/tampadevs
+```
+
+### Remove a favorite group
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/favorites/tampadevs
+```
+
+### Claim a badge
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/claim/BADGE-CODE-123
+```
+
+### Follow a user
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/users/johndoe/follow
+```
+
+### Unfollow a user
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/users/johndoe/follow
+```
+
+### Create a portfolio item
 
 ```bash
 curl -X POST \
   -H "Authorization: Bearer td_pat_abc123..." \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://myapp.com/webhooks", "eventTypes": ["event.created"]}' \
-  "https://api.tampa.dev/developer/webhooks"
+  -d '{
+    "title": "My Project",
+    "url": "https://example.com",
+    "description": "A cool project"
+  }' \
+  https://api.tampa.dev/v1/portfolio
 ```
 
-## Using OAuth Access Token
+---
 
-After completing the OAuth flow, use the access token the same way:
+## Token Management
+
+### Create a new PAT
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "CI Pipeline",
+    "scopes": ["read:events", "read:groups"],
+    "expiresInDays": 30
+  }' \
+  https://api.tampa.dev/v1/profile/tokens
+```
+
+### List your tokens
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/tokens
+```
+
+### Revoke a token
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/tokens/tok_abc123
+```
+
+---
+
+## Group Management
+
+These examples require a PAT with `manage:*` scopes and the appropriate group role.
+
+### Create an event
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "TypeScript Workshop",
+    "description": "Hands-on TypeScript workshop",
+    "startTime": "2026-03-01T14:00:00-05:00",
+    "endTime": "2026-03-01T17:00:00-05:00",
+    "timezone": "America/New_York",
+    "eventType": "in_person",
+    "maxAttendees": 25
+  }' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events
+```
+
+### Award a badge
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123/award/usr_def456
+```
+
+### Generate a checkin code
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"expiresInMinutes": 120}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events/evt_abc123/checkin-codes
+```
+
+### Create a badge claim link
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"maxUses": 50, "expiresInDays": 7}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123/claim-links
+```
+
+---
+
+## Using OAuth Access Tokens
+
+After completing the [OAuth flow](/developer/docs/authentication), use the access token the same way as a PAT:
 
 ```bash
 curl -H "Authorization: Bearer eyJhbGciOiJSUz..." \
-  "https://api.tampa.dev/v1/profile"
+  https://api.tampa.dev/v1/profile
 ```
+
+---
+
+## Pagination
+
+All list endpoints support `limit` and `offset` parameters:
+
+```bash
+# Get the second page of events (items 21-40)
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/events?limit=20&offset=20"
+```
+
+Check the `pagination.hasMore` field to determine if more pages exist.
+
+---
+
+## Discover available scopes
+
+```bash
+curl https://api.tampa.dev/v1/scopes
+```
+
+This endpoint does not require authentication and returns all available OAuth scopes with descriptions and hierarchy information.

@@ -13,8 +13,11 @@ import type { Route } from "./+types/p.$username";
 import { generateMetaTags } from "~/lib/seo";
 import { inferSocialPlatform } from "~/components/SocialLinkIcon";
 import { BadgeDetailModal } from "~/components/BadgeDetailModal";
+import { Emoji } from "~/components/Emoji";
 import { getTrophyTier, TrophyIcon, type TrophyTier } from "~/lib/trophy-tiers";
 import { getRarityTier } from "~/lib/rarity";
+import { GroupBadgeSection } from "~/components/GroupBadgeSection";
+import type { GroupBadgeGroup } from "~/lib/types";
 
 interface PublicBadge {
   name: string;
@@ -148,7 +151,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw data(null, { status: 404 });
   }
 
-  const profile = (await response.json()) as PublicProfile;
+  const profile = ((await response.json()) as { data: PublicProfile }).data;
 
   // Fetch followers (limit=5 for avatar stack), following count, and follow status in parallel
   const [followersRes, followingRes, followStatusRes] = await Promise.all([
@@ -173,14 +176,29 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   let isFollowing = false;
 
   if (followersRes?.ok) {
-    followersData = (await followersRes.json()) as FollowersResponse;
+    followersData = ((await followersRes.json()) as { data: FollowersResponse }).data;
   }
   if (followingRes?.ok) {
-    followingData = (await followingRes.json()) as FollowingResponse;
+    followingData = ((await followingRes.json()) as { data: FollowingResponse }).data;
   }
   if (followStatusRes?.ok) {
-    const statusData = (await followStatusRes.json()) as { following: boolean };
+    const statusData = ((await followStatusRes.json()) as { data: { following: boolean } }).data;
     isFollowing = statusData.following;
+  }
+
+  // Fetch group badges for this user
+  let groupBadges: GroupBadgeGroup[] = [];
+  try {
+    const groupBadgesRes = await fetch(
+      `${apiUrl}/users/${username}/group-badges`,
+      { headers: { Accept: "application/json" } }
+    );
+    if (groupBadgesRes.ok) {
+      const gbData = (await groupBadgesRes.json()) as { groups?: GroupBadgeGroup[] };
+      groupBadges = gbData.groups ?? [];
+    }
+  } catch {
+    // Non-critical — proceed without group badges
   }
 
   return {
@@ -188,6 +206,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     followersData,
     followingData,
     isFollowing,
+    groupBadges,
   };
 }
 
@@ -350,7 +369,7 @@ function BadgePill({ item, onSelect }: { item: UnifiedBadgeItem; onSelect: (item
             backgroundColor: `${item.color}dd`,
           }}
         >
-          {item.icon} {item.name}
+          <Emoji emoji={item.icon} size={16} /> {item.name}
         </button>
       </TiltCard>
       {open && (item.description || (item.points && item.points > 0) || item.rarity) && (
@@ -377,7 +396,7 @@ function BadgePill({ item, onSelect }: { item: UnifiedBadgeItem; onSelect: (item
 export default function PublicProfilePage({
   loaderData,
 }: Route.ComponentProps) {
-  const { profile, followersData, followingData, isFollowing: initialIsFollowing } = loaderData;
+  const { profile, followersData, followingData, isFollowing: initialIsFollowing, groupBadges } = loaderData;
   const displayName = profile.name || profile.username;
   const accent = getThemeAccent(profile.themeColor);
 
@@ -760,6 +779,11 @@ export default function PublicProfilePage({
               )}
             </div>
           </section>
+        )}
+
+        {/* Group Achievements */}
+        {groupBadges && groupBadges.length > 0 && (
+          <GroupBadgeSection groups={groupBadges} className="mt-6" />
         )}
 
         {/* Favorite Groups */}

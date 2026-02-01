@@ -1,0 +1,137 @@
+---
+title: Admin Webhook Events
+description: Admin-restricted webhook event types and payload schemas
+order: 21
+category: Webhooks
+admin: true
+---
+
+# Admin Webhook Events
+
+These webhook event types are restricted to admin and superadmin users. Regular users will receive a 403 error if they attempt to subscribe to these events.
+
+## Event Types
+
+| Event Type | Description |
+|------------|-------------|
+| `dev.tampa.user.identity_linked` | A user linked an identity provider |
+| `dev.tampa.user.registered` | A new user registered |
+| `dev.tampa.user.deleted` | A user deleted their account |
+| `dev.tampa.achievement.unlocked` | A user completed an achievement |
+| `dev.tampa.badge.issued` | A badge was awarded to a user |
+| `dev.tampa.user.score_changed` | A user's XP score changed |
+
+## Payload Schemas
+
+### `dev.tampa.user.identity_linked`
+
+Fired when a user links a new identity provider.
+
+```json
+{
+  "id": "delivery-uuid",
+  "type": "dev.tampa.user.identity_linked",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "userId": "user-uuid",
+    "provider": "github",
+    "username": "octocat"
+  }
+}
+```
+
+### `dev.tampa.user.registered`
+
+Fired when a new user registers.
+
+```json
+{
+  "id": "delivery-uuid",
+  "type": "dev.tampa.user.registered",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "userId": "user-uuid",
+    "email": "user@example.com",
+    "provider": "github"
+  }
+}
+```
+
+### `dev.tampa.user.deleted`
+
+Fired when a user deletes their account.
+
+```json
+{
+  "id": "delivery-uuid",
+  "type": "dev.tampa.user.deleted",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "userId": "user-uuid"
+  }
+}
+```
+
+### `dev.tampa.achievement.unlocked`
+
+Fired when a user completes an achievement.
+
+```json
+{
+  "id": "delivery-uuid",
+  "type": "dev.tampa.achievement.unlocked",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "userId": "user-uuid",
+    "achievementKey": "first_event",
+    "achievementName": "First Event"
+  }
+}
+```
+
+### `dev.tampa.badge.issued`
+
+Fired when a badge is awarded to a user.
+
+```json
+{
+  "id": "delivery-uuid",
+  "type": "dev.tampa.badge.issued",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "userId": "user-uuid",
+    "badgeId": "badge-uuid",
+    "badgeSlug": "early-adopter",
+    "badgeName": "Early Adopter"
+  }
+}
+```
+
+### `dev.tampa.user.score_changed`
+
+Fired when a user's XP score changes (after badge awards).
+
+```json
+{
+  "id": "delivery-uuid",
+  "type": "dev.tampa.user.score_changed",
+  "timestamp": "2026-01-29T12:00:00.000Z",
+  "data": {
+    "userId": "user-uuid",
+    "totalScore": 50,
+    "previousScore": 40
+  }
+}
+```
+
+## Subscribing to Admin Events
+
+Admin-restricted events can only be subscribed to by users with admin or superadmin roles. Use the Developer Portal to create webhooks that include these event types.
+
+When creating webhooks via the API, include the admin event types in the `eventTypes` array:
+
+```
+POST /developer/webhooks
+```
+
+The API will verify your role before allowing the subscription.

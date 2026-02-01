@@ -7,32 +7,8 @@
  */
 
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
-import { createDatabase } from '../db/index.js';
-import { users, sessions } from '../db/schema.js';
-import { getSessionCookieName } from '../lib/session.js';
 import type { Env } from '../../types/worker.js';
-
-/**
- * Get user ID from session cookie, or null if not authenticated.
- */
-async function getUserIdFromSession(request: Request, env: Env): Promise<string | null> {
-  const cookieHeader = request.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(env);
-  const match = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = match?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(env.DB);
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) return null;
-  return session.userId;
-}
+import { getCurrentUser } from '../lib/auth.js';
 
 export function createWSRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -48,7 +24,8 @@ export function createWSRoutes() {
       return c.json({ error: 'Expected WebSocket upgrade' }, 426);
     }
 
-    const userId = await getUserIdFromSession(c.req.raw, c.env);
+    const auth = await getCurrentUser(c);
+    const userId = auth?.user.id ?? null;
     if (!userId) {
       return c.json({ error: 'Unauthorized' }, 401);
     }

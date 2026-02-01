@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { Link } from "react-router";
 import { getTrophyTier, TrophyIcon } from "~/lib/trophy-tiers";
 import { getRarityTier } from "~/lib/rarity";
+import { Emoji } from "~/components/Emoji";
 
 interface BadgeDetailModalProps {
   badge: {
@@ -93,7 +94,7 @@ export function BadgeDetailModal({ badge, onClose }: BadgeDetailModalProps) {
                 background: `radial-gradient(circle at 30% 30%, ${badge.color}33 0%, ${badge.color}11 60%, transparent 100%)`,
               }}
             >
-              <span className="text-6xl drop-shadow-lg">{badge.icon}</span>
+              <Emoji emoji={badge.icon} size={64} className="drop-shadow-lg" />
             </div>
           </div>
 

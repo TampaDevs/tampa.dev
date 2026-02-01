@@ -1,175 +1,156 @@
 ---
-title: API Reference
-description: Complete API endpoint reference for Tampa.dev
-order: 3
+title: API Overview
+description: API overview, authentication, response format, error codes, and pagination
+order: 10
+category: API Reference
 ---
 
 # API Reference
 
-All API endpoints are accessible at `https://api.tampa.dev/v1/` with a valid Bearer token.
+The Tampa Devs Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. The full OpenAPI spec is available at [`/openapi.json`](https://api.tampa.dev/openapi.json) and interactive docs at [`/docs`](https://api.tampa.dev/docs).
 
-## Profile
+## Base URL
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/profile` | `read:user` | Get current user profile |
-| `PATCH` | `/v1/profile` | `user` | Update profile |
-| `GET` | `/v1/profile/email` | `user:email` | Get email address |
+All authenticated API endpoints live under `/v1/`:
 
-## Events
-
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/events` | `read:events` | List upcoming events |
-| `GET` | `/v1/events/:id` | `read:events` | Get event details |
-
-## Groups
-
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/groups` | `read:groups` | List groups |
-| `GET` | `/v1/groups/:slug` | `read:groups` | Get group details |
-
-## Favorites
-
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/favorites` | `read:favorites` | List favorite groups |
-| `POST` | `/v1/favorites/:groupSlug` | `write:favorites` | Add favorite |
-| `DELETE` | `/v1/favorites/:groupSlug` | `write:favorites` | Remove favorite |
-
-## Portfolio
-
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/portfolio` | `read:portfolio` | List portfolio items |
-| `POST` | `/v1/portfolio` | `write:portfolio` | Create portfolio item |
-| `PATCH` | `/v1/portfolio/:id` | `write:portfolio` | Update portfolio item |
-| `DELETE` | `/v1/portfolio/:id` | `write:portfolio` | Delete portfolio item |
-
-## Entitlements
-
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/profile/entitlements` | `user` | Get your active entitlements |
-
-Returns a list of your active entitlements with source and expiration info. Entitlements are API-only and never exposed on public profiles.
-
-## Linked Accounts
-
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/me/linked-accounts` | `user:linked-accounts` | List your connected identity providers |
-
-Returns a list of connected providers (e.g., GitHub, Google, LinkedIn) with provider-specific identifiers.
-
-## Uploads
-
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `POST` | `/v1/uploads/request` | `user` | Request a presigned upload URL |
-
-Request body:
-```json
-{
-  "category": "avatar",
-  "filename": "avatar.png",
-  "contentType": "image/png",
-  "size": 12345
-}
+```
+https://api.tampa.dev/v1/
 ```
 
-Allowed content types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Maximum file size: 5MB. Upload paths are scoped to the authenticated user.
+## Authentication
 
-Returns a presigned URL for direct upload to R2 storage, plus the final public URL.
+Include a Bearer token in the `Authorization` header:
 
-## Following
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile
+```
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `POST` | `/v1/users/:username/follow` | `user` | Follow a user |
-| `DELETE` | `/v1/users/:username/follow` | `user` | Unfollow a user |
-| `GET` | `/v1/users/:username/followers` | — | List a user's followers |
-| `GET` | `/v1/users/:username/following` | — | List who a user follows |
-| `GET` | `/v1/me/following/:username` | `read:user` | Check if you follow a user |
+Two token types are supported:
 
-## Onboarding
+| Type | Format | How to get |
+|------|--------|-----------|
+| **Personal Access Token** | `td_pat_` + 40 hex chars | Create at [tampa.dev/developer](/developer) or via `POST /v1/profile/tokens` |
+| **OAuth Access Token** | Opaque string | Obtained via the [OAuth 2.0 flow](/developer/docs/authentication) |
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/me/onboarding` | `user` | Get onboarding steps with completion status |
-| `POST` | `/v1/me/onboarding/:stepKey/dismiss` | `user` | Dismiss an onboarding step |
-| `POST` | `/v1/me/onboarding/dismiss-all` | `user` | Dismiss all onboarding steps |
+Both token types use the same [scope system](/developer/docs/scopes) to control access. Session cookies are also accepted for first-party web UI requests.
 
-Onboarding steps are automatically completed when corresponding domain events fire (e.g., setting your username, joining a group, earning XP).
+## API Sub-Pages
 
----
-
-## Public Endpoints
-
-The following endpoints are publicly accessible without authentication.
-
-### Public Users
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/users` | List users with public profiles |
-| `GET` | `/users/:username` | Get a user's public profile |
-
-`GET /users` query parameters:
-- `search` — Filter by name or username
-- `badge` — Filter by badge slug (only return users who hold this badge)
-- `limit` — Number of results (default 20, max 100)
-- `offset` — Pagination offset (default 0)
-
-The single-user response includes: profile info (`heroImageUrl`, `themeColor`), location, social links (as an array of URL strings), `githubUsername`, badges (with descriptions, point values, and rarity data), achievements, favorite groups, portfolio items, and `xpScore` (total XP from badges).
-
-### Badges
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/badges` | List all badges |
-| `GET` | `/badges/:slug` | Get badge details |
-
-Badge responses include `points`, `awardedCount`, and a `rarity` object with `tier` and `percentage` fields. Rarity tiers are: `legendary` (under 1%), `epic` (1-5%), `rare` (5-15%), `uncommon` (15-50%), `common` (50%+). Badges with `hideFromDirectory` enabled are excluded from the public listing.
-
-### Badge Claiming
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/claim/:code` | Get badge info for a claim link |
-| `POST` | `/claim/:code` | Claim a badge (requires authentication) |
-
-Claim links are shareable URLs that grant badges. They can have optional use limits and expiration dates.
-
-### Leaderboard
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/leaderboard` | Get the XP leaderboard |
-
-Query parameters:
-- `limit` — Number of entries (default 50, max 100)
-- `offset` — Pagination offset (default 0)
-
-Returns users ranked by XP score (sum of badge point values), with achievement completion counts and `totalAchievements` (number of defined achievements).
+- **[Profile & Users](/developer/docs/api-profile)** -- Profile, portfolio, tokens, achievements, linked accounts, following, uploads, and onboarding
+- **[Events & RSVP](/developer/docs/api-events)** -- Events, RSVP, and checkin
+- **[Groups & Badges](/developer/docs/api-groups)** -- Groups, favorites, badges, leaderboard, and claims
+- **[Management](/developer/docs/api-management)** -- Group management, event management, badge management, and checkin codes
+- **[Error Catalog](/developer/docs/error-catalog)** -- Comprehensive error code reference with example payloads
 
 ## Response Format
 
-All endpoints return JSON. Successful responses include the data directly. Error responses follow this format:
+All `/v1/` endpoints return JSON with standardized envelopes.
+
+### Detail / Mutation Responses
+
+Single-item responses wrap the object in a `data` field:
 
 ```json
 {
-  "error": "Description of what went wrong"
+  "data": {
+    "id": "usr_abc123",
+    "name": "Jane Developer",
+    "username": "janedev"
+  }
 }
 ```
 
-HTTP status codes follow standard conventions:
-- `200` - Success
-- `201` - Created
-- `400` - Bad request (invalid input)
-- `401` - Unauthorized (missing or invalid token)
-- `403` - Forbidden (insufficient scope)
-- `404` - Not found
-- `409` - Conflict (e.g., duplicate username)
-- `429` - Rate limited
+### List Responses
+
+List responses include a `data` array and `pagination` metadata:
+
+```json
+{
+  "data": [
+    { "id": "evt_1", "title": "React Meetup" },
+    { "id": "evt_2", "title": "Rust Workshop" }
+  ],
+  "pagination": {
+    "total": 42,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+### Action Responses
+
+Endpoints that perform an action without returning a resource:
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### Error Responses
+
+All errors include a human-readable `error` message and a machine-readable `code`:
+
+```json
+{
+  "error": "This endpoint requires the 'read:events' scope",
+  "code": "insufficient_scope"
+}
+```
+
+See the [Error Catalog](/developer/docs/error-catalog) for the full list of error codes.
+
+## Pagination
+
+List endpoints accept `limit` and `offset` query parameters:
+
+| Parameter | Type | Default | Max | Description |
+|-----------|------|---------|-----|-------------|
+| `limit` | integer | 20 | 100 | Maximum items per page |
+| `offset` | integer | 0 | -- | Number of items to skip |
+
+Example:
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/events?limit=10&offset=20"
+```
+
+## HTTP Status Codes
+
+| Status | Meaning |
+|--------|---------|
+| `200` | Success |
+| `201` | Created |
+| `204` | No content (successful deletion) |
+| `400` | Bad request -- invalid input |
+| `401` | Unauthorized -- missing or invalid token |
+| `403` | Forbidden -- insufficient scope or permissions |
+| `404` | Not found |
+| `409` | Conflict -- duplicate or state conflict |
+| `410` | Gone -- resource expired or exhausted |
+| `429` | Rate limited (includes `Retry-After` header) |
+| `500` | Internal server error |
+
+## Scope Headers
+
+When a token lacks a required scope, the response includes a `WWW-Authenticate` header:
+
+```
+HTTP/1.1 403 Forbidden
+WWW-Authenticate: Bearer error="insufficient_scope", scope="read:events"
+
+{
+  "error": "This endpoint requires the 'read:events' scope",
+  "code": "insufficient_scope"
+}
+```
+
+## Rate Limiting
+
+Most endpoints are rate-limited. When the limit is exceeded, the response includes a `Retry-After` header with the number of seconds to wait. See [Rate Limits](/developer/docs/rate-limits) for details.

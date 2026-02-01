@@ -7,36 +7,9 @@
 import { Hono } from 'hono';
 import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, onboardingSteps, userOnboarding } from '../db/schema';
+import { onboardingSteps, userOnboarding } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getSessionCookieName } from '../lib/session';
-
-/**
- * Get current user from session cookie
- */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  return await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-}
+import { getCurrentUser } from '../lib/auth.js';
 
 export function createOnboardingRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -45,10 +18,11 @@ export function createOnboardingRoutes() {
    * GET /me/onboarding - Get all steps with completion status for current user
    */
   app.get('/', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const { user } = auth;
 
     const db = createDatabase(c.env.DB);
 
@@ -83,10 +57,11 @@ export function createOnboardingRoutes() {
    * POST /me/onboarding/:stepKey/dismiss - Mark a step as dismissed
    */
   app.post('/:stepKey/dismiss', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const { user } = auth;
 
     const stepKey = c.req.param('stepKey');
     const db = createDatabase(c.env.DB);
@@ -131,10 +106,11 @@ export function createOnboardingRoutes() {
    * POST /me/onboarding/dismiss-all - Dismiss all onboarding steps
    */
   app.post('/dismiss-all', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const { user } = auth;
 
     const db = createDatabase(c.env.DB);
 

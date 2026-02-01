@@ -7,6 +7,7 @@ export const EventPlatform = {
   MEETUP: 'meetup',
   EVENTBRITE: 'eventbrite',
   LUMA: 'luma',
+  TAMPA_DEV: 'tampa.dev',
 } as const;
 
 export type EventPlatformType = (typeof EventPlatform)[keyof typeof EventPlatform];
@@ -65,6 +66,9 @@ export const groups = sqliteTable('groups', {
   isActive: integer('is_active', { mode: 'boolean' }).default(true), // Include in sync jobs
   lastSyncAt: text('last_sync_at'), // ISO 8601
   syncError: text('sync_error'), // Last error if any
+  // Badge governance limits (configurable by platform admin)
+  maxBadges: integer('max_badges').notNull().default(10),
+  maxBadgePoints: integer('max_badge_points').notNull().default(50),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
   updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
 }, (table) => [
@@ -76,6 +80,29 @@ export const groups = sqliteTable('groups', {
 
 export type Group = typeof groups.$inferSelect;
 export type NewGroup = typeof groups.$inferInsert;
+
+
+// ============== GROUP PLATFORM CONNECTIONS ==============
+
+export const groupPlatformConnections = sqliteTable('group_platform_connections', {
+  id: text('id').primaryKey(),
+  groupId: text('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  platform: text('platform').notNull(),
+  platformId: text('platform_id').notNull(),
+  platformUrlname: text('platform_urlname'),
+  platformLink: text('platform_link'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  lastSyncAt: text('last_sync_at'),
+  syncError: text('sync_error'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index('gpc_group_idx').on(table.groupId),
+  uniqueIndex('gpc_platform_id_idx').on(table.platform, table.platformId),
+  index('gpc_active_idx').on(table.isActive),
+]);
+
+export type GroupPlatformConnection = typeof groupPlatformConnections.$inferSelect;
+export type NewGroupPlatformConnection = typeof groupPlatformConnections.$inferInsert;
 
 // ============== VENUES ==============
 
@@ -123,6 +150,7 @@ export const events = sqliteTable('events', {
   rsvpCount: integer('rsvp_count').default(0),
   maxAttendees: integer('max_attendees'),
   isFeatured: integer('is_featured', { mode: 'boolean' }).default(false),
+  createdBy: text('created_by').references(() => users.id),
   lastSyncAt: text('last_sync_at').notNull(),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
   updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
@@ -179,6 +207,8 @@ export const users = sqliteTable('users', {
 }, (table) => [
   uniqueIndex('users_email_idx').on(table.email),
   uniqueIndex('users_username_idx').on(table.username),
+  index('users_profile_visibility_idx').on(table.profileVisibility),
+  index('users_role_idx').on(table.role),
 ]);
 
 export type User = typeof users.$inferSelect;
@@ -248,9 +278,11 @@ export const badges = sqliteTable('badges', {
   points: integer('points').notNull().default(0), // XP value for scoring
   sortOrder: integer('sort_order').notNull().default(0),
   hideFromDirectory: integer('hide_from_directory').notNull().default(0),
+  groupId: text('group_id').references(() => groups.id),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 }, (table) => [
   uniqueIndex('badges_slug_idx').on(table.slug),
+  index('badges_group_idx').on(table.groupId),
 ]);
 
 export type Badge = typeof badges.$inferSelect;
@@ -295,7 +327,8 @@ export type NewUserPortfolioItem = typeof userPortfolioItems.$inferInsert;
 
 export const GroupMemberRole = {
   OWNER: 'owner',
-  ADMIN: 'admin',
+  MANAGER: 'manager',
+  VOLUNTEER: 'volunteer',
   MEMBER: 'member',
 } as const;
 
@@ -305,7 +338,7 @@ export const groupMembers = sqliteTable('group_members', {
   id: text('id').primaryKey(),
   groupId: text('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: text('role').notNull().default('member'), // owner, admin, member
+  role: text('role').notNull().default('member'), // owner, manager, volunteer, member
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 }, (table) => [
   index('group_members_group_idx').on(table.groupId),
@@ -468,6 +501,10 @@ export const achievements = sqliteTable('achievements', {
   points: integer('points').notNull().default(0), // XP value awarded on completion
   entitlement: text('entitlement'), // Auto-grant this entitlement on completion
   eventType: text('event_type'), // Domain event that increments this achievement
+  conditions: text('conditions'), // JSON: Condition[] payload matchers (AND logic)
+  progressMode: text('progress_mode'), // 'counter' (default) | 'gauge'
+  gaugeField: text('gauge_field'), // For gauge mode: payload field dot-path
+  hidden: integer('hidden').notNull().default(0), // 1 = hidden achievement (Xbox/PSN style)
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
   updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
@@ -491,6 +528,8 @@ export const badgeClaimLinks = sqliteTable('badge_claim_links', {
   createdBy: text('created_by').notNull().references(() => users.id),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
   achievementId: text('achievement_id').references(() => achievements.id), // Optional: complete this achievement on claim
+  emitEventType: text('emit_event_type'), // Custom domain event to emit on claim
+  emitEventPayload: text('emit_event_payload'), // JSON: additional payload fields for custom event
 }, (table) => [
   uniqueIndex('badge_claim_links_code_idx').on(table.code),
   index('badge_claim_links_badge_idx').on(table.badgeId),
@@ -538,3 +577,122 @@ export const userOnboarding = sqliteTable('user_onboarding', {
 }, (table) => [
   uniqueIndex('user_onboarding_user_step_idx').on(table.userId, table.stepKey),
 ]);
+
+// ============== EVENT RSVPS ==============
+
+export const eventRsvps = sqliteTable('event_rsvps', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('confirmed'), // confirmed, waitlisted, cancelled
+  rsvpAt: text('rsvp_at').notNull().default(sql`(datetime('now'))`),
+  waitlistPosition: integer('waitlist_position'),
+  cancelledAt: text('cancelled_at'),
+}, (table) => [
+  index('event_rsvps_event_idx').on(table.eventId),
+  index('event_rsvps_user_idx').on(table.userId),
+  uniqueIndex('event_rsvps_event_user_idx').on(table.eventId, table.userId),
+]);
+
+export type EventRsvp = typeof eventRsvps.$inferSelect;
+export type NewEventRsvp = typeof eventRsvps.$inferInsert;
+
+// ============== EVENT CHECKIN CODES ==============
+
+export const eventCheckinCodes = sqliteTable('event_checkin_codes', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+  code: text('code').notNull(),
+  maxUses: integer('max_uses'),
+  currentUses: integer('current_uses').notNull().default(0),
+  expiresAt: text('expires_at'),
+  createdBy: text('created_by').notNull().references(() => users.id),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex('event_checkin_codes_code_idx').on(table.code),
+  index('event_checkin_codes_event_idx').on(table.eventId),
+]);
+
+export type EventCheckinCode = typeof eventCheckinCodes.$inferSelect;
+export type NewEventCheckinCode = typeof eventCheckinCodes.$inferInsert;
+
+// ============== EVENT CHECKINS ==============
+
+export const eventCheckins = sqliteTable('event_checkins', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  checkinCodeId: text('checkin_code_id').references(() => eventCheckinCodes.id),
+  method: text('method').notNull().default('link'), // link, qr, nfc
+  checkedInAt: text('checked_in_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex('event_checkins_event_user_idx').on(table.eventId, table.userId),
+  index('event_checkins_event_idx').on(table.eventId),
+]);
+
+export type EventCheckin = typeof eventCheckins.$inferSelect;
+export type NewEventCheckin = typeof eventCheckins.$inferInsert;
+
+// ============== GROUP CLAIM REQUESTS ==============
+
+export const groupClaimRequests = sqliteTable('group_claim_requests', {
+  id: text('id').primaryKey(),
+  groupId: text('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('pending'), // pending, approved, rejected
+  reviewedBy: text('reviewed_by').references(() => users.id),
+  reviewedAt: text('reviewed_at'),
+  notes: text('notes'),
+  // Scaffolding for future Meetup/Eventbrite API verification when sign-in-with-platform
+  // is implemented. The claim review UI can display verification results to the reviewing
+  // admin. For now this remains NULL.
+  verificationData: text('verification_data'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index('gcr_group_idx').on(table.groupId),
+  index('gcr_user_idx').on(table.userId),
+  index('gcr_status_idx').on(table.status),
+]);
+
+export type GroupClaimRequest = typeof groupClaimRequests.$inferSelect;
+export type NewGroupClaimRequest = typeof groupClaimRequests.$inferInsert;
+
+// ============== GROUP CLAIM INVITES ==============
+
+export const groupClaimInvites = sqliteTable('group_claim_invites', {
+  id: text('id').primaryKey(),
+  groupId: text('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  token: text('token').notNull(),
+  autoApprove: integer('auto_approve', { mode: 'boolean' }).notNull().default(false),
+  expiresAt: text('expires_at'),
+  createdBy: text('created_by').notNull().references(() => users.id),
+  usedBy: text('used_by').references(() => users.id),
+  usedAt: text('used_at'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex('gci_token_idx').on(table.token),
+  index('gci_group_idx').on(table.groupId),
+]);
+
+export type GroupClaimInvite = typeof groupClaimInvites.$inferSelect;
+export type NewGroupClaimInvite = typeof groupClaimInvites.$inferInsert;
+
+// ============== GROUP CREATION REQUESTS ==============
+
+export const groupCreationRequests = sqliteTable('group_creation_requests', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  groupName: text('group_name').notNull(),
+  description: text('description'),
+  status: text('status').notNull().default('pending'), // pending, approved, rejected
+  reviewedBy: text('reviewed_by').references(() => users.id),
+  reviewedAt: text('reviewed_at'),
+  groupId: text('group_id').references(() => groups.id),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index('gcreq_user_idx').on(table.userId),
+  index('gcreq_status_idx').on(table.status),
+]);
+
+export type GroupCreationRequest = typeof groupCreationRequests.$inferSelect;
+export type NewGroupCreationRequest = typeof groupCreationRequests.$inferInsert;

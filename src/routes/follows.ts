@@ -7,37 +7,11 @@
 import { Hono } from 'hono';
 import { eq, and, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, userFollows } from '../db/schema';
+import { users, userFollows } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getSessionCookieName } from '../lib/session';
+import { getCurrentUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
-
-/**
- * Get current user from session cookie
- */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  return await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-}
+import { ok, success, list, unauthorized, notFound, badRequest, parsePagination } from '../lib/responses.js';
 
 export function createFollowsRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -46,10 +20,9 @@ export function createFollowsRoutes() {
    * POST /users/:username/follow - Follow a user
    */
   app.post('/users/:username/follow', async (c) => {
-    const currentUser = await getCurrentUser(c);
-    if (!currentUser) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const currentUser = auth.user;
 
     const username = c.req.param('username').toLowerCase();
     const db = createDatabase(c.env.DB);
@@ -59,12 +32,10 @@ export function createFollowsRoutes() {
       where: eq(users.username, username),
     });
 
-    if (!targetUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!targetUser) return notFound(c, 'User not found');
 
     if (targetUser.id === currentUser.id) {
-      return c.json({ error: 'Cannot follow yourself' }, 400);
+      return badRequest(c, 'Cannot follow yourself');
     }
 
     // Check if already following
@@ -76,7 +47,7 @@ export function createFollowsRoutes() {
     });
 
     if (existing) {
-      return c.json({ success: true, message: 'Already following' });
+      return success(c, { message: 'Already following' });
     }
 
     await db.insert(userFollows).values({
@@ -91,17 +62,16 @@ export function createFollowsRoutes() {
       metadata: { userId: currentUser.id, source: 'follows' },
     });
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
    * DELETE /users/:username/follow - Unfollow a user
    */
   app.delete('/users/:username/follow', async (c) => {
-    const currentUser = await getCurrentUser(c);
-    if (!currentUser) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const currentUser = auth.user;
 
     const username = c.req.param('username').toLowerCase();
     const db = createDatabase(c.env.DB);
@@ -110,9 +80,7 @@ export function createFollowsRoutes() {
       where: eq(users.username, username),
     });
 
-    if (!targetUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!targetUser) return notFound(c, 'User not found');
 
     await db.delete(userFollows).where(
       and(
@@ -121,7 +89,7 @@ export function createFollowsRoutes() {
       ),
     );
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
@@ -129,8 +97,7 @@ export function createFollowsRoutes() {
    */
   app.get('/users/:username/followers', async (c) => {
     const username = c.req.param('username').toLowerCase();
-    const limit = Math.min(Math.max(Number(c.req.query('limit') || '20'), 1), 100);
-    const offset = Math.max(Number(c.req.query('offset') || '0'), 0);
+    const { limit, offset } = parsePagination(c);
 
     const db = createDatabase(c.env.DB);
 
@@ -138,9 +105,7 @@ export function createFollowsRoutes() {
       where: eq(users.username, username),
     });
 
-    if (!targetUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!targetUser) return notFound(c, 'User not found');
 
     // Get follower count
     const countResult = await db
@@ -175,12 +140,7 @@ export function createFollowsRoutes() {
       })
     );
 
-    return c.json({
-      followers: followers.filter(Boolean),
-      total,
-      limit,
-      offset,
-    });
+    return list(c, followers.filter(Boolean), { total, limit, offset });
   });
 
   /**
@@ -188,8 +148,7 @@ export function createFollowsRoutes() {
    */
   app.get('/users/:username/following', async (c) => {
     const username = c.req.param('username').toLowerCase();
-    const limit = Math.min(Math.max(Number(c.req.query('limit') || '20'), 1), 100);
-    const offset = Math.max(Number(c.req.query('offset') || '0'), 0);
+    const { limit, offset } = parsePagination(c);
 
     const db = createDatabase(c.env.DB);
 
@@ -197,9 +156,7 @@ export function createFollowsRoutes() {
       where: eq(users.username, username),
     });
 
-    if (!targetUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!targetUser) return notFound(c, 'User not found');
 
     // Get following count
     const countResult = await db
@@ -234,22 +191,16 @@ export function createFollowsRoutes() {
       })
     );
 
-    return c.json({
-      following: following.filter(Boolean),
-      total,
-      limit,
-      offset,
-    });
+    return list(c, following.filter(Boolean), { total, limit, offset });
   });
 
   /**
    * GET /me/following/:username - Check if current user follows a target user
    */
   app.get('/me/following/:username', async (c) => {
-    const currentUser = await getCurrentUser(c);
-    if (!currentUser) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const currentUser = auth.user;
 
     const username = c.req.param('username').toLowerCase();
     const db = createDatabase(c.env.DB);
@@ -258,9 +209,7 @@ export function createFollowsRoutes() {
       where: eq(users.username, username),
     });
 
-    if (!targetUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!targetUser) return notFound(c, 'User not found');
 
     const existing = await db.query.userFollows.findFirst({
       where: and(
@@ -269,7 +218,7 @@ export function createFollowsRoutes() {
       ),
     });
 
-    return c.json({ following: !!existing });
+    return ok(c, { following: !!existing });
   });
 
   return app;

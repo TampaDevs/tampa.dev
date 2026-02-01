@@ -5,39 +5,13 @@
  */
 
 import { Hono } from 'hono';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { badges, badgeClaimLinks, userBadges, achievementProgress, achievements, users, sessions } from '../db/schema';
+import { badges, badgeClaimLinks, userBadges, achievementProgress, achievements, groups } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getSessionCookieName } from '../lib/session';
+import { getCurrentUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
-
-/**
- * Get current user from session cookie
- */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  return await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-}
+import { ok, unauthorized, notFound, conflict, gone } from '../lib/responses.js';
 
 export function createClaimRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -53,18 +27,16 @@ export function createClaimRoutes() {
       where: eq(badgeClaimLinks.code, code),
     });
 
-    if (!claimLink) {
-      return c.json({ error: 'Claim link not found' }, 404);
-    }
+    if (!claimLink) return notFound(c, 'Claim link not found');
 
     // Check expiration
     if (claimLink.expiresAt && new Date(claimLink.expiresAt) < new Date()) {
-      return c.json({ error: 'This claim link has expired' }, 410);
+      return gone(c, 'This claim link has expired');
     }
 
     // Check max uses
     if (claimLink.maxUses !== null && claimLink.currentUses >= claimLink.maxUses) {
-      return c.json({ error: 'This claim link has reached its maximum uses' }, 410);
+      return gone(c, 'This claim link has reached its maximum uses');
     }
 
     // Get badge info
@@ -72,11 +44,25 @@ export function createClaimRoutes() {
       where: eq(badges.id, claimLink.badgeId),
     });
 
-    if (!badge) {
-      return c.json({ error: 'Badge not found' }, 404);
+    if (!badge) return notFound(c, 'Badge not found');
+
+    // Include group info if badge is group-scoped
+    let group = null;
+    if (badge.groupId) {
+      const g = await db.query.groups.findFirst({
+        where: eq(groups.id, badge.groupId),
+      });
+      if (g) {
+        group = {
+          id: g.id,
+          name: g.name,
+          urlname: g.urlname,
+          photoUrl: g.photoUrl,
+        };
+      }
     }
 
-    return c.json({
+    return ok(c, {
       badge: {
         name: badge.name,
         slug: badge.slug,
@@ -85,6 +71,7 @@ export function createClaimRoutes() {
         color: badge.color,
         points: badge.points,
       },
+      group,
       claimable: true,
       maxUses: claimLink.maxUses,
       currentUses: claimLink.currentUses,
@@ -96,10 +83,9 @@ export function createClaimRoutes() {
    * POST /claim/:code - Claim a badge (auth required)
    */
   app.post('/:code', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const { user } = auth;
 
     const code = c.req.param('code');
     const db = createDatabase(c.env.DB);
@@ -108,18 +94,16 @@ export function createClaimRoutes() {
       where: eq(badgeClaimLinks.code, code),
     });
 
-    if (!claimLink) {
-      return c.json({ error: 'Claim link not found' }, 404);
-    }
+    if (!claimLink) return notFound(c, 'Claim link not found');
 
     // Check expiration
     if (claimLink.expiresAt && new Date(claimLink.expiresAt) < new Date()) {
-      return c.json({ error: 'This claim link has expired' }, 410);
+      return gone(c, 'This claim link has expired');
     }
 
     // Check max uses
     if (claimLink.maxUses !== null && claimLink.currentUses >= claimLink.maxUses) {
-      return c.json({ error: 'This claim link has reached its maximum uses' }, 410);
+      return gone(c, 'This claim link has reached its maximum uses');
     }
 
     // Check if user already has this badge
@@ -128,7 +112,7 @@ export function createClaimRoutes() {
     });
 
     if (existingBadge) {
-      return c.json({ error: 'You already have this badge' }, 409);
+      return conflict(c, 'You already have this badge');
     }
 
     // Award the badge
@@ -138,9 +122,9 @@ export function createClaimRoutes() {
       badgeId: claimLink.badgeId,
     });
 
-    // Increment current_uses
+    // Atomic increment of current_uses
     await db.update(badgeClaimLinks).set({
-      currentUses: claimLink.currentUses + 1,
+      currentUses: sql`${badgeClaimLinks.currentUses} + 1`,
     }).where(eq(badgeClaimLinks.id, claimLink.id));
 
     // If linked to an achievement, complete it
@@ -192,8 +176,20 @@ export function createClaimRoutes() {
       metadata: { userId: user.id, source: 'claim' },
     });
 
-    return c.json({
-      success: true,
+    // Emit custom event if configured on the claim link (enables achievement triggers)
+    if (claimLink.emitEventType) {
+      let customPayload: Record<string, unknown> = {};
+      if (claimLink.emitEventPayload) {
+        try { customPayload = JSON.parse(claimLink.emitEventPayload); } catch { /* ignore invalid JSON */ }
+      }
+      emitEvent(c, {
+        type: claimLink.emitEventType,
+        payload: { userId: user.id, badgeId: claimLink.badgeId, claimLinkId: claimLink.id, ...customPayload },
+        metadata: { userId: user.id, source: 'claim-link' },
+      });
+    }
+
+    return ok(c, {
       badge: badge ? {
         name: badge.name,
         slug: badge.slug,

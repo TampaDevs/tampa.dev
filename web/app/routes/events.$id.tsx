@@ -1,10 +1,12 @@
 import type { Route } from "./+types/events.$id";
 import { Link, data } from "react-router";
 import { marked } from "marked";
-import { fetchEventById, fetchGroups, toLocalGroup, findGroupByUrlname } from "~/lib/api.server";
+import { fetchEventById, fetchGroups, toLocalGroup, findGroupByUrlname, fetchEventRsvpSummary, fetchCurrentUser, API_HOST } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
 import { eventToJsonLd } from "~/lib/structured-data";
 import { AddToCalendar, StructuredData } from "~/components";
+import { RsvpButton } from "~/components/RsvpButton";
+import { CapacityIndicator } from "~/components/CapacityIndicator";
 import { formatEventDate, formatEventTime, addUtmParams, getRsvpLabel, getSourceDisplayName } from "~/lib/utils";
 
 // Configure marked for lenient rendering
@@ -35,7 +37,9 @@ export const meta: Route.MetaFunction = ({ data }) => {
   });
 };
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const cookieHeader = request.headers.get("Cookie") || "";
+
   const [event, apiGroups] = await Promise.all([
     fetchEventById(params.id!),
     fetchGroups(),
@@ -48,6 +52,15 @@ export async function loader({ params }: Route.LoaderArgs) {
   // Try to find the local group config for additional info
   const groups = apiGroups.map(toLocalGroup);
   const localGroup = findGroupByUrlname(groups, event.group.urlname);
+
+  // For tampa.dev native events, fetch RSVP summary and auth state
+  const isNativeEvent = event.source === "tampa.dev";
+  const [rsvpSummary, user] = isNativeEvent
+    ? await Promise.all([
+        fetchEventRsvpSummary(params.id!, cookieHeader),
+        fetchCurrentUser(cookieHeader),
+      ])
+    : [null, null];
 
   // Parse markdown description
   // Preprocess to handle common markdown issues from Meetup descriptions
@@ -66,11 +79,14 @@ export async function loader({ params }: Route.LoaderArgs) {
     event,
     localGroup,
     descriptionHtml,
+    rsvpSummary,
+    isLoggedIn: !!user,
+    apiUrl: API_HOST,
   };
 }
 
 export default function EventDetail({ loaderData }: Route.ComponentProps) {
-  const { event, localGroup, descriptionHtml } = loaderData;
+  const { event, localGroup, descriptionHtml, rsvpSummary, isLoggedIn, apiUrl } = loaderData;
   const venue = event.venues[0];
 
   // Format date for display
@@ -187,27 +203,45 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 mb-8">
-              <a
-                href={addUtmParams(event.eventUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-gradient-to-b from-coral to-coral-dark hover:from-coral-light hover:to-coral text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-md shadow-coral/15 hover:shadow-lg hover:shadow-coral/20 hover:-translate-y-0.5"
-              >
-                {getRsvpLabel(event.source)}
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              {event.source === "tampa.dev" && rsvpSummary ? (
+                <>
+                  <RsvpButton
+                    eventId={event.id}
+                    initialStatus={rsvpSummary.userRsvpStatus === "cancelled" ? null : rsvpSummary.userRsvpStatus}
+                    capacity={rsvpSummary.capacity}
+                    confirmed={rsvpSummary.confirmed}
+                    waitlisted={rsvpSummary.waitlisted}
+                    isLoggedIn={isLoggedIn}
+                    apiUrl={apiUrl}
                   />
-                </svg>
-              </a>
+                  <CapacityIndicator
+                    confirmed={rsvpSummary.confirmed}
+                    capacity={rsvpSummary.capacity}
+                  />
+                </>
+              ) : (
+                <a
+                  href={addUtmParams(event.eventUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-gradient-to-b from-coral to-coral-dark hover:from-coral-light hover:to-coral text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-md shadow-coral/15 hover:shadow-lg hover:shadow-coral/20 hover:-translate-y-0.5"
+                >
+                  {getRsvpLabel(event.source)}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </a>
+              )}
 
               <AddToCalendar event={event} label="Add to Calendar" size="small" />
             </div>

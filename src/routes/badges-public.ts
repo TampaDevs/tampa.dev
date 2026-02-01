@@ -5,7 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, isNull } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { badges, userBadges, users } from '../db/schema';
 import type { Env } from '../../types/worker';
@@ -27,8 +27,9 @@ export function createBadgesPublicRoutes() {
   app.get('/', async (c) => {
     const db = createDatabase(c.env.DB);
 
+    // Only show platform badges (no groupId) in the public directory
     const allBadges = await db.query.badges.findMany({
-      where: eq(badges.hideFromDirectory, 0),
+      where: and(eq(badges.hideFromDirectory, 0), isNull(badges.groupId)),
       orderBy: [badges.sortOrder],
     });
 

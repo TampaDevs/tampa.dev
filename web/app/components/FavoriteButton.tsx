@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isFavorite, toggleFavoriteAsync } from "~/lib/favorites";
+import { triggerSignInPrompt } from "~/lib/signin-prompt";
 
 interface FavoriteButtonProps {
   slug: string;
@@ -36,6 +37,9 @@ export function FavoriteButton({ slug, size = "medium", count }: FavoriteButtonP
     if (newState) {
       setShowBurst(true);
       setTimeout(() => setShowBurst(false), 600);
+
+      // Nudge unauthenticated users to sign in (root.tsx decides whether to show)
+      triggerSignInPrompt();
     }
 
     try {

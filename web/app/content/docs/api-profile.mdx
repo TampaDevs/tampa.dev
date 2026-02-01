@@ -1,0 +1,524 @@
+---
+title: "Profile & Users"
+description: API endpoints for profiles, users, social features, and uploads
+order: 11
+category: API Reference
+---
+
+# Profile & Users
+
+## Identity
+
+### GET /v1/me
+
+Get the authenticated user's basic identity. Scope: `read:user`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/me
+```
+
+```json
+{
+  "data": {
+    "id": "usr_abc123",
+    "name": "Jane Developer",
+    "avatarUrl": "https://avatars.githubusercontent.com/u/12345",
+    "username": "janedev",
+    "email": "jane@example.com"
+  }
+}
+```
+
+The `email` field is only included when the token has the `user:email` scope.
+
+---
+
+## Profile
+
+### GET /v1/profile
+
+Get the authenticated user's full profile. Scope: `read:user`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile
+```
+
+```json
+{
+  "data": {
+    "id": "usr_abc123",
+    "name": "Jane Developer",
+    "username": "janedev",
+    "avatarUrl": "https://avatars.githubusercontent.com/u/12345",
+    "heroImageUrl": null,
+    "themeColor": "ocean",
+    "bio": "Full-stack developer in Tampa",
+    "location": "Tampa, FL",
+    "socialLinks": ["https://github.com/janedev", "https://twitter.com/janedev"],
+    "role": "user",
+    "profileVisibility": "public",
+    "showAchievements": true,
+    "createdAt": "2025-06-15T10:30:00Z",
+    "email": "jane@example.com"
+  }
+}
+```
+
+### PATCH /v1/profile
+
+Update the authenticated user's profile. Scope: `user`.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bio": "Building cool stuff in Tampa",
+    "location": "Tampa, FL",
+    "themeColor": "coral"
+  }' \
+  https://api.tampa.dev/v1/profile
+```
+
+```json
+{
+  "data": {
+    "id": "usr_abc123",
+    "name": "Jane Developer",
+    "username": "janedev",
+    "bio": "Building cool stuff in Tampa",
+    "location": "Tampa, FL",
+    "themeColor": "coral"
+  }
+}
+```
+
+**Updatable fields:**
+
+| Field | Type | Constraints |
+|-------|------|-------------|
+| `name` | string | 1-100 characters |
+| `username` | string | 3-30 chars, alphanumeric + hyphens, lowercased |
+| `avatarUrl` | string \| null | Valid URL |
+| `heroImageUrl` | string \| null | Valid URL |
+| `themeColor` | string \| null | One of: `coral`, `ocean`, `sunset`, `forest`, `violet`, `rose`, `slate`, `sky` |
+| `bio` | string \| null | Max 500 characters |
+| `location` | string \| null | Max 100 characters |
+| `socialLinks` | string[] \| null | Up to 5 valid URLs |
+| `showAchievements` | boolean | Show/hide achievements on profile |
+| `profileVisibility` | string | `public` or `private` |
+
+### GET /v1/profile/email
+
+Get the authenticated user's email address. Scope: `user:email`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/email
+```
+
+```json
+{
+  "data": {
+    "email": "jane@example.com"
+  }
+}
+```
+
+---
+
+## Entitlements
+
+### GET /v1/profile/entitlements
+
+Get the authenticated user's active entitlements. Scope: `user`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/entitlements
+```
+
+```json
+{
+  "data": [
+    {
+      "entitlement": "group_creation",
+      "source": "admin_grant",
+      "grantedAt": "2025-09-01T00:00:00Z",
+      "expiresAt": null
+    },
+    {
+      "entitlement": "badge_issuer",
+      "source": "admin_grant",
+      "grantedAt": "2025-09-01T00:00:00Z",
+      "expiresAt": "2026-09-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+Entitlements are API-only and never exposed on public profiles.
+
+---
+
+## Portfolio
+
+### GET /v1/portfolio
+
+List the authenticated user's portfolio items. Scope: `read:portfolio`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/portfolio
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "pf_abc123",
+      "userId": "usr_abc123",
+      "title": "My Open Source Project",
+      "description": "A CLI tool for developers",
+      "url": "https://github.com/janedev/project",
+      "imageUrl": null,
+      "sortOrder": 0,
+      "createdAt": "2025-10-01T12:00:00Z"
+    }
+  ]
+}
+```
+
+### POST /v1/portfolio
+
+Create a portfolio item. Scope: `write:portfolio`.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "My Project",
+    "url": "https://example.com",
+    "description": "A cool project"
+  }' \
+  https://api.tampa.dev/v1/portfolio
+```
+
+```json
+{
+  "data": {
+    "id": "pf_def456",
+    "userId": "usr_abc123",
+    "title": "My Project",
+    "description": "A cool project",
+    "url": "https://example.com",
+    "imageUrl": null,
+    "sortOrder": 0,
+    "createdAt": "2025-11-15T09:00:00Z"
+  }
+}
+```
+
+### PATCH /v1/portfolio/:id
+
+Update a portfolio item. Scope: `write:portfolio`.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Updated Title", "sortOrder": 1}' \
+  https://api.tampa.dev/v1/portfolio/pf_def456
+```
+
+### DELETE /v1/portfolio/:id
+
+Delete a portfolio item. Scope: `write:portfolio`. Returns `204 No Content`.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/portfolio/pf_def456
+```
+
+---
+
+## Achievements
+
+### GET /v1/profile/achievements
+
+Get the authenticated user's achievement progress. Scope: `read:user`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/achievements
+```
+
+```json
+{
+  "data": [
+    {
+      "key": "first_event",
+      "name": "First Event",
+      "description": "Attend your first community event",
+      "icon": "calendar",
+      "color": "#4CAF50",
+      "targetValue": 1,
+      "currentValue": 1,
+      "completedAt": "2025-08-20T19:00:00Z",
+      "badgeSlug": "first-event",
+      "hidden": false
+    },
+    {
+      "key": "social_butterfly",
+      "name": "Social Butterfly",
+      "description": "Follow 10 community members",
+      "icon": "users",
+      "color": "#2196F3",
+      "targetValue": 10,
+      "currentValue": 3,
+      "completedAt": null,
+      "badgeSlug": null,
+      "hidden": false
+    }
+  ]
+}
+```
+
+---
+
+## Personal Access Tokens
+
+### GET /v1/profile/tokens
+
+List the authenticated user's PATs. Scope: `user`. The token value is never returned -- only the prefix.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/tokens
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "tok_abc123",
+      "name": "CI/CD Pipeline",
+      "tokenPrefix": "td_pat_a1b2",
+      "scopes": "read:events,read:groups",
+      "expiresAt": "2026-06-15T00:00:00Z",
+      "createdAt": "2025-12-15T10:00:00Z",
+      "lastUsedAt": "2026-01-30T14:22:00Z"
+    }
+  ]
+}
+```
+
+### POST /v1/profile/tokens
+
+Create a new PAT. Scope: `user`. The full token value is returned **only in this response** -- store it securely.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Integration",
+    "scopes": ["read:events", "read:groups"],
+    "expiresInDays": 90
+  }' \
+  https://api.tampa.dev/v1/profile/tokens
+```
+
+```json
+{
+  "data": {
+    "id": "tok_def456",
+    "name": "My Integration",
+    "token": "td_pat_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    "tokenPrefix": "td_pat_a1b2",
+    "scopes": "read:events,read:groups",
+    "expiresAt": "2026-04-30T10:00:00Z",
+    "createdAt": "2026-01-31T10:00:00Z"
+  }
+}
+```
+
+### DELETE /v1/profile/tokens/:id
+
+Revoke a PAT. Scope: `user`.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/tokens/tok_def456
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+## Linked Accounts
+
+### GET /v1/me/linked-accounts
+
+List connected OAuth providers. Scope: `user:linked-accounts`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/me/linked-accounts
+```
+
+```json
+{
+  "data": [
+    {
+      "provider": "github",
+      "providerUsername": "janedev",
+      "providerEmail": "jane@example.com",
+      "createdAt": "2025-06-15T10:30:00Z"
+    },
+    {
+      "provider": "google",
+      "providerUsername": null,
+      "providerEmail": "jane@gmail.com",
+      "createdAt": "2025-07-01T08:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Following
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `POST` | `/v1/users/:username/follow` | `user` | Follow a user |
+| `DELETE` | `/v1/users/:username/follow` | `user` | Unfollow a user |
+| `GET` | `/v1/users/:username/followers` | -- | List a user's followers |
+| `GET` | `/v1/users/:username/following` | -- | List who a user follows |
+| `GET` | `/v1/me/following/:username` | `read:user` | Check if you follow a user |
+
+### POST /v1/users/:username/follow
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/users/johndoe/follow
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### GET /v1/users/:username/followers
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/users/janedev/followers
+```
+
+```json
+{
+  "data": [
+    {
+      "username": "johndoe",
+      "name": "John Doe",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/67890",
+      "followedAt": "2025-12-01T15:00:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+---
+
+## Uploads
+
+### POST /v1/uploads/request
+
+Request a presigned upload URL for direct upload to R2 storage. Scope: `user`.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": "avatar",
+    "filename": "avatar.png",
+    "contentType": "image/png",
+    "size": 12345
+  }' \
+  https://api.tampa.dev/v1/uploads/request
+```
+
+```json
+{
+  "data": {
+    "uploadUrl": "https://uploads.tampa.dev/...",
+    "publicUrl": "https://cdn.tampa.dev/avatars/usr_abc123/avatar.png"
+  }
+}
+```
+
+Allowed content types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Maximum file size: 5MB.
+
+---
+
+## Onboarding
+
+| Method | Endpoint | Scope | Description |
+|--------|----------|-------|-------------|
+| `GET` | `/v1/me/onboarding` | `user` | Get onboarding steps with completion status |
+| `POST` | `/v1/me/onboarding/:stepKey/dismiss` | `user` | Dismiss an onboarding step |
+| `POST` | `/v1/me/onboarding/dismiss-all` | `user` | Dismiss all onboarding steps |
+
+Onboarding steps are automatically completed when corresponding domain events fire (e.g., setting your username, joining a group, earning XP).
+
+---
+
+## Public Users
+
+These endpoints do not require authentication.
+
+### GET /users
+
+List users with public profiles.
+
+```bash
+curl "https://api.tampa.dev/users?search=jane&limit=10"
+```
+
+Query parameters:
+- `search` -- Filter by name or username
+- `badge` -- Filter by badge slug (only return users who hold this badge)
+- `limit` -- Number of results (default 20, max 100)
+- `offset` -- Pagination offset (default 0)
+
+### GET /users/:username
+
+Get a user's public profile. Includes badges, achievements, favorite groups, portfolio items, and XP score.
+
+```bash
+curl "https://api.tampa.dev/users/janedev"
+```

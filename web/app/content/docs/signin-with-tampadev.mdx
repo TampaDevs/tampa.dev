@@ -1,0 +1,387 @@
+---
+title: Sign in with Tampa.dev
+description: Add "Sign in with Tampa.dev" to your app using OAuth 2.1 with PKCE
+order: 0
+category: Getting Started
+---
+
+# Sign in with Tampa.dev
+
+Add Tampa.dev authentication to your app and give your users single sign-on with the Tampa Bay tech community. Your app gets access to verified community member profiles, event data, and group memberships -- all through standard OAuth 2.1 with PKCE.
+
+## Quick Start
+
+### Step 1: Register Your Application
+
+You need a `client_id` before your app can authenticate users. There are two ways to get one.
+
+#### Developer Portal (Recommended)
+
+1. Sign in to [tampa.dev](https://tampa.dev) and go to the [Developer Portal](/developer)
+2. Click **Create Application**
+3. Fill in your app name and at least one redirect URI
+4. Save your `client_id` and `client_secret`
+
+#### Dynamic Client Registration
+
+For programmatic setups (CI pipelines, CLI tools, SPAs), register via the API:
+
+```bash
+curl -X POST https://tampa.dev/oauth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_name": "My App",
+    "redirect_uris": ["https://myapp.com/callback"],
+    "grant_types": ["authorization_code"],
+    "response_types": ["code"],
+    "token_endpoint_auth_method": "none"
+  }'
+```
+
+The response includes your `client_id`:
+
+```json
+{
+  "client_id": "abc123...",
+  "client_name": "My App",
+  "redirect_uris": ["https://myapp.com/callback"],
+  "grant_types": ["authorization_code"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none"
+}
+```
+
+Set `token_endpoint_auth_method` to `"none"` for public clients (SPAs, mobile apps) that use PKCE without a client secret.
+
+### Step 2: Generate PKCE Parameters
+
+PKCE (Proof Key for Code Exchange) is required for all OAuth flows. Generate a `code_verifier` and its SHA-256 `code_challenge` before redirecting the user:
+
+```javascript
+function generateCodeVerifier() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return base64URLEncode(array);
+}
+
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return base64URLEncode(new Uint8Array(digest));
+}
+
+function base64URLEncode(buffer) {
+  return btoa(String.fromCharCode(...buffer))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+```
+
+Store the `code_verifier` in the user's session -- you'll need it in Step 5.
+
+### Step 3: Redirect to Authorize
+
+Send the user to the Tampa.dev authorization endpoint:
+
+```
+https://tampa.dev/oauth/authorize
+  ?response_type=code
+  &client_id=YOUR_CLIENT_ID
+  &redirect_uri=https://myapp.com/callback
+  &scope=read:user user:email
+  &code_challenge=YOUR_CODE_CHALLENGE
+  &code_challenge_method=S256
+  &state=RANDOM_STATE_VALUE
+```
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `response_type` | Yes | Must be `code` |
+| `client_id` | Yes | Your app's client ID |
+| `redirect_uri` | Yes | Must match a registered redirect URI |
+| `scope` | Yes | Space-separated [scopes](/developer/docs/scopes) |
+| `code_challenge` | Yes | PKCE code challenge (S256) |
+| `code_challenge_method` | Yes | Must be `S256` |
+| `state` | Recommended | Random string to prevent CSRF attacks |
+
+The user will sign in (if needed) and see a consent screen listing the scopes your app is requesting. After they approve, Tampa.dev redirects back to your `redirect_uri`.
+
+### Step 4: Handle the Callback
+
+Tampa.dev redirects the user back to your `redirect_uri` with an authorization `code` and your `state` value:
+
+```
+https://myapp.com/callback?code=AUTH_CODE&state=RANDOM_STATE_VALUE
+```
+
+Verify that `state` matches the value you sent in Step 3 to prevent CSRF attacks.
+
+### Step 5: Exchange Code for Tokens
+
+Exchange the authorization code for an access token:
+
+```bash
+curl -X POST https://tampa.dev/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "code=AUTH_CODE" \
+  -d "redirect_uri=https://myapp.com/callback" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "code_verifier=YOUR_CODE_VERIFIER"
+```
+
+The response:
+
+```json
+{
+  "access_token": "eyJhbGciOi...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "dGhpcyBpcyBh...",
+  "scope": "read:user user:email"
+}
+```
+
+Store the `refresh_token` securely. Use it to get new access tokens without requiring the user to sign in again:
+
+```bash
+curl -X POST https://tampa.dev/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=refresh_token" \
+  -d "refresh_token=YOUR_REFRESH_TOKEN" \
+  -d "client_id=YOUR_CLIENT_ID"
+```
+
+### Step 6: Fetch User Data
+
+Use the access token to call the Tampa.dev API:
+
+```bash
+# Basic identity
+curl -H "Authorization: Bearer ACCESS_TOKEN" \
+  https://api.tampa.dev/v1/me
+
+# Full profile
+curl -H "Authorization: Bearer ACCESS_TOKEN" \
+  https://api.tampa.dev/v1/profile
+```
+
+`GET /v1/me` returns:
+
+```json
+{
+  "id": "user-uuid",
+  "email": "dev@example.com",
+  "name": "Jane Developer",
+  "avatarUrl": "https://avatars.githubusercontent.com/...",
+  "githubUsername": "janedev"
+}
+```
+
+---
+
+## Complete Node.js Example
+
+A minimal Express server implementing the full flow:
+
+```javascript
+import express from 'express';
+import crypto from 'crypto';
+
+const app = express();
+
+const CLIENT_ID = 'YOUR_CLIENT_ID';
+const REDIRECT_URI = 'http://localhost:3000/callback';
+
+// In production, use a proper session store
+const sessions = new Map();
+
+function base64URLEncode(buffer) {
+  return buffer.toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+// Step 1: Start the OAuth flow
+app.get('/login', async (req, res) => {
+  const codeVerifier = base64URLEncode(crypto.randomBytes(32));
+  const codeChallenge = base64URLEncode(
+    crypto.createHash('sha256').update(codeVerifier).digest()
+  );
+  const state = base64URLEncode(crypto.randomBytes(16));
+
+  // Store verifier and state in session
+  const sessionId = base64URLEncode(crypto.randomBytes(16));
+  sessions.set(sessionId, { codeVerifier, state });
+  res.cookie('sid', sessionId, { httpOnly: true });
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    scope: 'read:user user:email',
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+    state,
+  });
+
+  res.redirect(`https://tampa.dev/oauth/authorize?${params}`);
+});
+
+// Step 2: Handle the callback
+app.get('/callback', async (req, res) => {
+  const { code, state } = req.query;
+  const session = sessions.get(req.cookies?.sid);
+
+  if (!session || session.state !== state) {
+    return res.status(403).send('Invalid state');
+  }
+
+  // Exchange code for tokens
+  const tokenRes = await fetch('https://tampa.dev/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: REDIRECT_URI,
+      client_id: CLIENT_ID,
+      code_verifier: session.codeVerifier,
+    }),
+  });
+
+  const tokens = await tokenRes.json();
+
+  // Fetch user profile
+  const userRes = await fetch('https://api.tampa.dev/v1/me', {
+    headers: { Authorization: `Bearer ${tokens.access_token}` },
+  });
+
+  const user = await userRes.json();
+  res.json({ user, tokens: { scope: tokens.scope } });
+});
+
+app.listen(3000, () => console.log('http://localhost:3000/login'));
+```
+
+---
+
+## Button Assets and Style Guide
+
+Use the official "Sign in with Tampa.dev" button for a consistent, recognizable experience across applications.
+
+### Hosted SVG Button
+
+The easiest approach -- link directly to the hosted button image:
+
+```html
+<!-- Light theme (default) -->
+<a href="https://tampa.dev/oauth/authorize?...">
+  <img src="https://api.tampa.dev/assets/signin-button.svg"
+       alt="Sign in with Tampa.dev"
+       height="40" />
+</a>
+
+<!-- Dark theme -->
+<a href="https://tampa.dev/oauth/authorize?...">
+  <img src="https://api.tampa.dev/assets/signin-button.svg?theme=dark"
+       alt="Sign in with Tampa.dev"
+       height="40" />
+</a>
+```
+
+### Self-Contained HTML Button
+
+If you prefer not to load an external image, use this copy-pasteable HTML. It includes the Tampa.dev icon mark inline and requires no external assets:
+
+**Light variant:**
+
+```html
+<a href="https://tampa.dev/oauth/authorize?..."
+   style="display:inline-flex;align-items:center;gap:10px;
+          padding:10px 20px 10px 12px;border-radius:6px;
+          background:#fff;border:1px solid #dadce0;
+          font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+          font-size:14px;font-weight:600;color:#1a1a1a;
+          text-decoration:none;cursor:pointer;
+          transition:background .15s,box-shadow .15s;"
+   onmouseover="this.style.background='#f8f9fa';this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)'"
+   onmouseout="this.style.background='#fff';this.style.boxShadow='none'">
+  <svg width="20" height="20" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+    <rect width="192" height="192" rx="32" ry="32" fill="#F97066"/>
+    <text x="96" y="128" font-family="Inter,sans-serif" font-size="108"
+          font-weight="800" fill="white" text-anchor="middle">T</text>
+    <text x="130" y="140" font-family="Inter,sans-serif" font-size="32"
+          font-weight="700" fill="white" text-anchor="middle" opacity="0.95">.</text>
+  </svg>
+  Sign in with Tampa.dev
+</a>
+```
+
+**Dark variant:**
+
+```html
+<a href="https://tampa.dev/oauth/authorize?..."
+   style="display:inline-flex;align-items:center;gap:10px;
+          padding:10px 20px 10px 12px;border-radius:6px;
+          background:#1a1a1a;border:1px solid #3a3a3a;
+          font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+          font-size:14px;font-weight:600;color:#fff;
+          text-decoration:none;cursor:pointer;
+          transition:background .15s,box-shadow .15s;"
+   onmouseover="this.style.background='#2a2a2a';this.style.boxShadow='0 1px 3px rgba(0,0,0,0.3)'"
+   onmouseout="this.style.background='#1a1a1a';this.style.boxShadow='none'">
+  <svg width="20" height="20" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+    <rect width="192" height="192" rx="32" ry="32" fill="#F97066"/>
+    <text x="96" y="128" font-family="Inter,sans-serif" font-size="108"
+          font-weight="800" fill="white" text-anchor="middle">T</text>
+    <text x="130" y="140" font-family="Inter,sans-serif" font-size="32"
+          font-weight="700" fill="white" text-anchor="middle" opacity="0.95">.</text>
+  </svg>
+  Sign in with Tampa.dev
+</a>
+```
+
+### Brand Guidelines
+
+#### Do
+
+- Use the official coral icon mark (`#F97066` background, white "T." text)
+- Keep the full text "Sign in with Tampa.dev" -- the period and lowercase "dev" are part of the brand
+- Maintain at least 8px padding around the button
+- Use the button at a minimum height of 32px
+- Provide sufficient contrast between the button and its background
+
+#### Don't
+
+- Change the icon mark colors or proportions
+- Abbreviate the text (not "Sign in with TD" or "Tampa Devs Login")
+- Place the button on a coral or red background where the icon loses contrast
+- Stretch or distort the button -- it should maintain its natural aspect ratio
+- Use the button for purposes other than Tampa.dev authentication
+
+### Brand Colors
+
+| Element | Hex | Usage |
+|---------|-----|-------|
+| Icon background | `#F97066` | Coral fill on the "T." icon mark |
+| Icon text | `#FFFFFF` | White "T." on the icon mark |
+| Wordmark "Tampa" | `#000000` | Black in the full Tampa.dev logo |
+| Wordmark ".dev" | `#E85A4F` | Coral in the full Tampa.dev logo |
+| Light button background | `#FFFFFF` | White button on light backgrounds |
+| Light button border | `#DADCE0` | Subtle gray border |
+| Light button text | `#1A1A1A` | Near-black text |
+| Dark button background | `#1A1A1A` | Dark button on dark backgrounds |
+| Dark button border | `#3A3A3A` | Subtle dark border |
+| Dark button text | `#FFFFFF` | White text |
+
+---
+
+## Next Steps
+
+- [Authentication](/developer/docs/authentication) -- Full OAuth parameter reference and token details
+- [Scopes](/developer/docs/scopes) -- Available scopes and scope hierarchy
+- [API Reference](/developer/docs/api-reference) -- Endpoints available with your access token
+- [Examples](/developer/docs/examples) -- Common API usage patterns with cURL

@@ -11,6 +11,8 @@ import { webhooks, webhookDeliveries } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import type { DomainEvent } from '../lib/event-bus.js';
 import type { Env } from '../../types/worker.js';
+import { decryptOrPassthrough } from '../lib/crypto.js';
+import { validateWebhookUrl } from '../lib/url-validation.js';
 
 /**
  * Sign a payload with HMAC-SHA256
@@ -41,6 +43,23 @@ async function deliverToWebhook(
   const db = createDatabase(env.DB);
   const deliveryId = crypto.randomUUID();
 
+  // SSRF pre-check before delivery
+  const urlCheck = validateWebhookUrl(webhook.url);
+  if (!urlCheck.valid) {
+    // Log as failed delivery and skip
+    await db.insert(webhookDeliveries).values({
+      id: deliveryId,
+      webhookId: webhook.id,
+      eventType: event.type,
+      payload: JSON.stringify({ type: event.type, data: event.payload }),
+      statusCode: 0,
+      responseBody: `Blocked: ${urlCheck.error}`,
+      attempt: 1,
+      deliveredAt: new Date().toISOString(),
+    });
+    return;
+  }
+
   const payload = JSON.stringify({
     id: deliveryId,
     type: event.type,
@@ -48,7 +67,12 @@ async function deliverToWebhook(
     data: event.payload,
   });
 
-  const signature = await signPayload(payload, webhook.secret);
+  // Decrypt the secret if encrypted (handles migration period transparently)
+  const webhookSecret = env.ENCRYPTION_KEY
+    ? await decryptOrPassthrough(webhook.secret, env.ENCRYPTION_KEY)
+    : webhook.secret;
+
+  const signature = await signPayload(payload, webhookSecret!);
 
   let statusCode: number | null = null;
   let responseBody: string | null = null;
@@ -64,6 +88,7 @@ async function deliverToWebhook(
         'User-Agent': 'TampaDevs-Webhooks/1.0',
       },
       body: payload,
+      signal: AbortSignal.timeout(15_000),
     });
 
     statusCode = response.status;

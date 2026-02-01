@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "@tampadevs/react";
 
 interface User {
@@ -141,7 +141,7 @@ function UserMenu({ user }: { user: User }) {
               className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4h12v4a6 6 0 01-12 0V4zM12 14v4m-4 2h8M6 4H3v3a4 4 0 004 4M18 4h3v3a4 4 0 01-4 4" />
               </svg>
               Achievements
             </Link>
@@ -171,6 +171,20 @@ function UserMenu({ user }: { user: User }) {
 
 export function Header({ user }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [wiggleSignIn, setWiggleSignIn] = useState(false);
+
+  useEffect(() => {
+    if (user) return;
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("signin-wiggle-shown")) return;
+
+    const delay = 1500 + Math.random() * 2500;
+    const timer = setTimeout(() => {
+      setWiggleSignIn(true);
+      sessionStorage.setItem("signin-wiggle-shown", "1");
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [user]);
 
   return (
     <header className="sticky top-0 z-50 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm shadow-gray-200/20 dark:shadow-black/10">
@@ -285,7 +299,8 @@ export function Header({ user }: HeaderProps) {
 
                 <Link
                   to="/login"
-                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-coral text-white hover:bg-coral-dark transition-colors"
+                  className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-coral text-white hover:bg-coral-dark transition-colors ${wiggleSignIn ? "animate-wave-wiggle" : ""}`}
+                  onAnimationEnd={() => setWiggleSignIn(false)}
                 >
                   Sign In
                 </Link>

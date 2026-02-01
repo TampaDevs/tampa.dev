@@ -23,6 +23,14 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               <li>
                 <Link
+                  to="/docs/platform"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  Platform Guide
+                </Link>
+              </li>
+              <li>
+                <Link
                   to="/calendar"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
                 >
@@ -103,6 +111,16 @@ export function Footer() {
                   About Tampa Devs
                 </a>
               </li>
+              <li>
+                <a
+                  href="https://github.com/TampaDevs/tampa.dev/issues/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  Add Your Group
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -120,14 +138,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="https://api.tampa.dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/developer/docs"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
                 >
-                  API
-                </a>
+                  API Docs
+                </Link>
               </li>
               <li>
                 <Link
@@ -136,16 +152,6 @@ export function Footer() {
                 >
                   Developer Portal
                 </Link>
-              </li>
-              <li>
-                <a
-                  href="https://github.com/TampaDevs/tampa.dev/issues/new"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
-                >
-                  Add Your Group
-                </a>
               </li>
               <li>
                 <a

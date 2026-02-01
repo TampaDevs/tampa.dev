@@ -8,6 +8,8 @@
 import { useLoaderData, useFetcher } from "react-router";
 import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/admin.badges";
+import { Emoji } from "~/components/Emoji";
+import { EmojiSelect } from "~/components/EmojiSelect";
 import {
   fetchBadges,
   createBadge,
@@ -51,8 +53,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   let achievements: Achievement[] = [];
   if (achievementsResponse.ok) {
-    const data = (await achievementsResponse.json()) as { achievements: Achievement[] };
-    achievements = data.achievements;
+    const json = (await achievementsResponse.json()) as { data: Achievement[] };
+    achievements = json.data;
   }
 
   return { badges, achievements };
@@ -128,6 +130,11 @@ export async function action({ request }: Route.ActionArgs) {
       if (maxUses) body.maxUses = Number(maxUses);
       if (expiresAt) body.expiresAt = expiresAt;
       if (achievementId) body.achievementId = achievementId;
+
+      const emitEventType = formData.get("emitEventType") as string;
+      const emitEventPayload = formData.get("emitEventPayload") as string;
+      if (emitEventType) body.emitEventType = emitEventType;
+      if (emitEventPayload) body.emitEventPayload = emitEventPayload;
 
       const response = await fetch(
         `${API_HOST}/admin/badges/${encodeURIComponent(badgeId)}/claim-links`,
@@ -401,8 +408,8 @@ function ClaimLinksSection({ badge, achievements }: { badge: Badge; achievements
       if (!response.ok) {
         throw new Error(`Failed to fetch claim links: ${response.status}`);
       }
-      const data = (await response.json()) as { claimLinks: ClaimLink[] };
-      setClaimLinks(data.claimLinks || []);
+      const json = (await response.json()) as { data: ClaimLink[] };
+      setClaimLinks(json.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch claim links");
     } finally {
@@ -506,18 +513,50 @@ function ClaimLinksSection({ badge, achievements }: { badge: Badge; achievements
                 <label htmlFor={`claim-achievement-${badge.id}`} className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                   Achievement (optional)
                 </label>
-                <select
+                <EmojiSelect
                   id={`claim-achievement-${badge.id}`}
                   name="achievementId"
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral"
-                >
-                  <option value="">None (badge only)</option>
-                  {achievements.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.icon} {a.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="None (badge only)"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-left border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral"
+                  options={[
+                    { value: "", label: "None (badge only)" },
+                    ...achievements.map((a) => ({
+                      value: a.id,
+                      label: a.name,
+                      emoji: a.icon,
+                    })),
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor={`claim-event-type-${badge.id}`} className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Custom Event Type (optional)
+                </label>
+                <input
+                  id={`claim-event-type-${badge.id}`}
+                  name="emitEventType"
+                  type="text"
+                  placeholder="dev.tampa.event.checkin"
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral font-mono"
+                />
+                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Emit a custom domain event when this link is claimed</p>
+              </div>
+
+              <div>
+                <label htmlFor={`claim-event-payload-${badge.id}`} className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Custom Event Payload (optional)
+                </label>
+                <textarea
+                  id={`claim-event-payload-${badge.id}`}
+                  name="emitEventPayload"
+                  rows={2}
+                  placeholder='{"groupSlug": "tampa-devs"}'
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-coral/50 focus:border-coral font-mono resize-none"
+                />
+                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">JSON payload merged into the emitted event</p>
               </div>
             </div>
 
@@ -624,10 +663,10 @@ function BadgeCard({ badge, onEdit, achievements }: { badge: Badge; onEdit: () =
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+            className="w-10 h-10 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: `${badge.color}20` }}
           >
-            {badge.icon}
+            <Emoji emoji={badge.icon} size={24} />
           </span>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -671,7 +710,7 @@ function BadgeCard({ badge, onEdit, achievements }: { badge: Badge; onEdit: () =
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-white"
           style={{ backgroundColor: badge.color }}
         >
-          {badge.icon} {badge.name}
+          <Emoji emoji={badge.icon} size={14} /> {badge.name}
         </span>
 
         <div className="ml-auto flex items-center gap-2">
