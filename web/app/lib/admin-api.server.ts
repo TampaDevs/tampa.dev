@@ -16,13 +16,15 @@ export interface AdminGroup {
   description: string | null;
   link: string;
   website: string | null;
-  platform: "meetup" | "eventbrite" | "luma";
+  platform: "meetup" | "eventbrite" | "luma" | "tampa.dev";
   platformId: string;
   memberCount: number | null;
   photoUrl: string | null;
   isActive: boolean;
   displayOnSite: boolean;
   isFeatured: boolean | null;
+  maxBadges: number;
+  maxBadgePoints: number;
   tags: string[] | null;
   socialLinks: {
     slack?: string;
@@ -38,7 +40,7 @@ export interface AdminGroup {
 }
 
 export interface GroupsListResponse {
-  groups: AdminGroup[];
+  data: AdminGroup[];
   pagination: {
     total: number;
     limit: number;
@@ -91,7 +93,7 @@ export interface SyncResult {
 // ============== Groups API ==============
 
 export interface FetchGroupsOptions {
-  platform?: "meetup" | "eventbrite" | "luma";
+  platform?: "meetup" | "eventbrite" | "luma" | "tampa.dev";
   active?: boolean;
   displayOnSite?: boolean;
   featured?: boolean;
@@ -101,7 +103,8 @@ export interface FetchGroupsOptions {
 }
 
 export async function fetchAdminGroups(
-  options: FetchGroupsOptions = {}
+  options: FetchGroupsOptions = {},
+  cookieHeader?: string
 ): Promise<GroupsListResponse> {
   const params = new URLSearchParams();
 
@@ -117,7 +120,10 @@ export async function fetchAdminGroups(
   const url = `${ADMIN_API_BASE}/groups${params.toString() ? `?${params}` : ""}`;
 
   const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
   });
 
   if (!response.ok) {
@@ -127,11 +133,14 @@ export async function fetchAdminGroups(
   return (await response.json()) as GroupsListResponse;
 }
 
-export async function fetchAdminGroup(id: string): Promise<AdminGroup | null> {
+export async function fetchAdminGroup(id: string, cookieHeader?: string): Promise<AdminGroup | null> {
   const url = `${ADMIN_API_BASE}/groups/${encodeURIComponent(id)}`;
 
   const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
   });
 
   if (!response.ok) {
@@ -139,7 +148,8 @@ export async function fetchAdminGroup(id: string): Promise<AdminGroup | null> {
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  return (await response.json()) as AdminGroup;
+  const json = (await response.json()) as { data: AdminGroup };
+  return json.data;
 }
 
 export interface CreateGroupData {
@@ -164,12 +174,13 @@ export interface CreateGroupData {
   };
 }
 
-export async function createGroup(data: CreateGroupData): Promise<AdminGroup> {
+export async function createGroup(data: CreateGroupData, cookieHeader?: string): Promise<AdminGroup> {
   const response = await fetch(`${ADMIN_API_BASE}/groups`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
     },
     body: JSON.stringify(data),
   });
@@ -179,7 +190,8 @@ export async function createGroup(data: CreateGroupData): Promise<AdminGroup> {
     throw new Error(errorData.error || `Failed to create group: ${response.status}`);
   }
 
-  return (await response.json()) as AdminGroup;
+  const json = (await response.json()) as { data: AdminGroup };
+  return json.data;
 }
 
 export interface UpdateGroupData {
@@ -193,6 +205,8 @@ export interface UpdateGroupData {
   isActive?: boolean;
   displayOnSite?: boolean;
   isFeatured?: boolean;
+  maxBadges?: number;
+  maxBadgePoints?: number;
   tags?: string[] | null;
   socialLinks?: {
     slack?: string;
@@ -206,13 +220,15 @@ export interface UpdateGroupData {
 
 export async function updateGroup(
   id: string,
-  data: UpdateGroupData
+  data: UpdateGroupData,
+  cookieHeader?: string
 ): Promise<AdminGroup> {
   const response = await fetch(`${ADMIN_API_BASE}/groups/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
     },
     body: JSON.stringify(data),
   });
@@ -222,13 +238,17 @@ export async function updateGroup(
     throw new Error(errorData.error || `Failed to update group: ${response.status}`);
   }
 
-  return (await response.json()) as AdminGroup;
+  const json = (await response.json()) as { data: AdminGroup };
+  return json.data;
 }
 
-export async function deleteGroup(id: string): Promise<void> {
+export async function deleteGroup(id: string, cookieHeader?: string): Promise<void> {
   const response = await fetch(`${ADMIN_API_BASE}/groups/${encodeURIComponent(id)}`, {
     method: "DELETE",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
   });
 
   if (!response.ok) {
@@ -239,37 +259,48 @@ export async function deleteGroup(id: string): Promise<void> {
 
 // ============== Sync API ==============
 
-export async function fetchSyncStatus(): Promise<SyncStatusResponse> {
+export async function fetchSyncStatus(cookieHeader?: string): Promise<SyncStatusResponse> {
   const response = await fetch(`${ADMIN_API_BASE}/sync/status`, {
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
   });
 
   if (!response.ok) {
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  return (await response.json()) as SyncStatusResponse;
+  const json = (await response.json()) as { data: SyncStatusResponse };
+  return json.data;
 }
 
-export async function triggerSyncAll(): Promise<SyncResult> {
+export async function triggerSyncAll(cookieHeader?: string): Promise<SyncResult> {
   const response = await fetch(`${ADMIN_API_BASE}/sync/all`, {
     method: "POST",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
   });
 
   if (!response.ok) {
     throw new Error(`Sync failed: ${response.status}`);
   }
 
-  return (await response.json()) as SyncResult;
+  const json = (await response.json()) as { data: SyncResult };
+  return json.data;
 }
 
-export async function triggerGroupSync(groupId: string): Promise<SyncResult> {
+export async function triggerGroupSync(groupId: string, cookieHeader?: string): Promise<SyncResult> {
   const response = await fetch(
     `${ADMIN_API_BASE}/sync/group/${encodeURIComponent(groupId)}`,
     {
       method: "POST",
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
     }
   );
 
@@ -277,7 +308,8 @@ export async function triggerGroupSync(groupId: string): Promise<SyncResult> {
     throw new Error(`Sync failed: ${response.status}`);
   }
 
-  return (await response.json()) as SyncResult;
+  const json = (await response.json()) as { data: SyncResult };
+  return json.data;
 }
 
 export interface FetchSyncLogsOptions {
@@ -286,7 +318,8 @@ export interface FetchSyncLogsOptions {
 }
 
 export async function fetchSyncLogs(
-  options: FetchSyncLogsOptions = {}
+  options: FetchSyncLogsOptions = {},
+  cookieHeader?: string
 ): Promise<SyncLog[]> {
   const params = new URLSearchParams();
 
@@ -296,15 +329,18 @@ export async function fetchSyncLogs(
   const url = `${ADMIN_API_BASE}/sync/logs${params.toString() ? `?${params}` : ""}`;
 
   const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
   });
 
   if (!response.ok) {
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  const data = (await response.json()) as { logs: SyncLog[] };
-  return data.logs;
+  const json = (await response.json()) as { data: SyncLog[] };
+  return json.data;
 }
 
 // ============== Auth API ==============
@@ -405,7 +441,7 @@ export interface AdminUser {
 }
 
 export interface UsersListResponse {
-  users: AdminUser[];
+  data: AdminUser[];
   pagination: {
     total: number;
     limit: number;
@@ -466,7 +502,8 @@ export async function fetchAdminUser(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  return (await response.json()) as AdminUser;
+  const json = (await response.json()) as { data: AdminUser };
+  return json.data;
 }
 
 export async function updateUserRole(
@@ -496,7 +533,8 @@ export async function updateUserRole(
     );
   }
 
-  return (await response.json()) as AdminUser;
+  const json = (await response.json()) as { data: AdminUser };
+  return json.data;
 }
 
 export async function deleteUser(
@@ -533,7 +571,9 @@ export interface Badge {
   description: string | null;
   icon: string;
   color: string;
+  points: number;
   sortOrder: number;
+  hideFromDirectory: number;
   createdAt: string;
   userCount?: number;
 }
@@ -556,8 +596,8 @@ export async function fetchBadges(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  const data = (await response.json()) as BadgesListResponse;
-  return data.badges;
+  const json = (await response.json()) as { data: Badge[] };
+  return json.data;
 }
 
 export interface CreateBadgeData {
@@ -566,7 +606,9 @@ export interface CreateBadgeData {
   description?: string;
   icon: string;
   color?: string;
+  points?: number;
   sortOrder?: number;
+  hideFromDirectory?: boolean;
 }
 
 export async function createBadge(
@@ -588,7 +630,8 @@ export async function createBadge(
     throw new Error(errorData.error || `Failed to create badge: ${response.status}`);
   }
 
-  return (await response.json()) as Badge;
+  const json = (await response.json()) as { data: Badge };
+  return json.data;
 }
 
 export async function updateBadge(
@@ -614,7 +657,8 @@ export async function updateBadge(
     throw new Error(errorData.error || `Failed to update badge: ${response.status}`);
   }
 
-  return (await response.json()) as Badge;
+  const json = (await response.json()) as { data: Badge };
+  return json.data;
 }
 
 export async function deleteBadge(
@@ -715,8 +759,8 @@ export async function fetchGroupMembers(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  const data = (await response.json()) as { members: GroupMember[] };
-  return data.members;
+  const json = (await response.json()) as { data: GroupMember[] };
+  return json.data;
 }
 
 export async function addGroupMember(
@@ -832,7 +876,8 @@ export async function fetchOAuthClients(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  return (await response.json()) as OAuthClientsListResponse;
+  const json = (await response.json()) as { data: OAuthClient[] };
+  return { clients: json.data, total: json.data.length };
 }
 
 export async function fetchOAuthClient(
@@ -853,7 +898,8 @@ export async function fetchOAuthClient(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  return (await response.json()) as OAuthClient;
+  const json = (await response.json()) as { data: OAuthClient };
+  return json.data;
 }
 
 export async function deleteOAuthClient(
@@ -880,7 +926,8 @@ export async function deleteOAuthClient(
     );
   }
 
-  return (await response.json()) as { deletedGrants: number; deletedTokens: number };
+  const json = (await response.json()) as { data: { success: boolean; message: string; deletedGrants: number; deletedTokens: number } };
+  return { deletedGrants: json.data.deletedGrants, deletedTokens: json.data.deletedTokens };
 }
 
 export async function fetchOAuthStats(
@@ -897,7 +944,8 @@ export async function fetchOAuthStats(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  return (await response.json()) as OAuthStats;
+  const json = (await response.json()) as { data: OAuthStats };
+  return json.data;
 }
 
 // ============== Feature Flags API ==============
@@ -946,8 +994,8 @@ export async function fetchFlags(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  const data = (await response.json()) as { flags: FeatureFlag[] };
-  return data.flags;
+  const json = (await response.json()) as { data: FeatureFlag[] };
+  return json.data;
 }
 
 export async function fetchFlagDetail(
@@ -969,7 +1017,8 @@ export async function fetchFlagDetail(
     throw new Error(`Admin API request failed: ${response.status}`);
   }
 
-  return (await response.json()) as FeatureFlagDetail;
+  const json = (await response.json()) as { data: FeatureFlagDetail };
+  return json.data;
 }
 
 export interface CreateFlagData {
@@ -998,7 +1047,8 @@ export async function createFlag(
     throw new Error(errorData.error || `Failed to create flag: ${response.status}`);
   }
 
-  return (await response.json()) as FeatureFlag;
+  const json = (await response.json()) as { data: FeatureFlag };
+  return json.data;
 }
 
 export async function updateFlag(
@@ -1024,7 +1074,8 @@ export async function updateFlag(
     throw new Error(errorData.error || `Failed to update flag: ${response.status}`);
   }
 
-  return (await response.json()) as FeatureFlag;
+  const json = (await response.json()) as { data: FeatureFlag };
+  return json.data;
 }
 
 export async function deleteFlag(
@@ -1045,5 +1096,363 @@ export async function deleteFlag(
   if (!response.ok) {
     const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
     throw new Error(errorData.error || `Failed to delete flag: ${response.status}`);
+  }
+}
+
+// ============== Claim Requests API ==============
+
+export interface ClaimRequest {
+  id: string;
+  groupId: string;
+  userId: string;
+  status: "pending" | "approved" | "rejected";
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  // Enriched fields
+  userName: string;
+  userEmail: string;
+  userUsername: string | null;
+  groupName: string;
+  groupUrlname: string | null;
+  groupPlatform: string | null;
+}
+
+export interface ClaimRequestsResponse {
+  data: ClaimRequest[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
+export async function fetchClaimRequests(
+  options: { status?: "pending" | "approved" | "rejected"; limit?: number; offset?: number } = {},
+  cookieHeader?: string
+): Promise<ClaimRequestsResponse> {
+  const params = new URLSearchParams();
+  if (options.status) params.set("status", options.status);
+  if (options.limit) params.set("limit", String(options.limit));
+  if (options.offset) params.set("offset", String(options.offset));
+
+  const url = `${ADMIN_API_BASE}/claim-requests${params.toString() ? `?${params}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as ClaimRequestsResponse;
+}
+
+export async function approveClaimRequest(
+  id: string,
+  cookieHeader?: string
+): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/claim-requests/${encodeURIComponent(id)}/approve`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to approve claim request: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: { success: boolean; message: string } };
+  return json.data;
+}
+
+export async function rejectClaimRequest(
+  id: string,
+  notes?: string,
+  cookieHeader?: string
+): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/claim-requests/${encodeURIComponent(id)}/reject`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify({ notes }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to reject claim request: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: { success: boolean; message: string } };
+  return json.data;
+}
+
+// ============== Claim Invites API ==============
+
+export interface ClaimInvite {
+  id: string;
+  groupId: string;
+  token: string;
+  autoApprove: boolean;
+  expiresAt: string | null;
+  createdBy: string;
+  usedBy: string | null;
+  usedAt: string | null;
+  createdAt: string;
+}
+
+export async function fetchClaimInvites(
+  groupId: string,
+  cookieHeader?: string
+): Promise<ClaimInvite[]> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/claim-invites`,
+    {
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: ClaimInvite[] };
+  return json.data;
+}
+
+export async function createClaimInvite(
+  groupId: string,
+  options: { autoApprove?: boolean; expiresAt?: string } = {},
+  cookieHeader?: string
+): Promise<ClaimInvite> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/claim-invites`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify(options),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to create claim invite: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: ClaimInvite };
+  return json.data;
+}
+
+// ============== Group Creation Requests API ==============
+
+export interface GroupCreationRequest {
+  id: string;
+  userId: string;
+  groupName: string;
+  description: string | null;
+  status: "pending" | "approved" | "rejected";
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  groupId: string | null;
+  createdAt: string;
+  // Enriched fields
+  userName: string;
+  userEmail: string;
+  userUsername: string | null;
+}
+
+export interface GroupCreationRequestsResponse {
+  data: GroupCreationRequest[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
+export async function fetchGroupCreationRequests(
+  options: { status?: "pending" | "approved" | "rejected"; limit?: number; offset?: number } = {},
+  cookieHeader?: string
+): Promise<GroupCreationRequestsResponse> {
+  const params = new URLSearchParams();
+  if (options.status) params.set("status", options.status);
+  if (options.limit) params.set("limit", String(options.limit));
+  if (options.offset) params.set("offset", String(options.offset));
+
+  const url = `${ADMIN_API_BASE}/group-creation-requests${params.toString() ? `?${params}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as GroupCreationRequestsResponse;
+}
+
+export async function approveGroupCreationRequest(
+  id: string,
+  cookieHeader?: string
+): Promise<{ success: boolean; message: string; groupId?: string; urlname?: string }> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/group-creation-requests/${encodeURIComponent(id)}/approve`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to approve creation request: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: { success: boolean; message: string; groupId?: string; urlname?: string } };
+  return json.data;
+}
+
+export async function rejectGroupCreationRequest(
+  id: string,
+  notes?: string,
+  cookieHeader?: string
+): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/group-creation-requests/${encodeURIComponent(id)}/reject`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify({ notes }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to reject creation request: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: { success: boolean; message: string } };
+  return json.data;
+}
+
+// ============== Platform Connections API ==============
+
+export interface PlatformConnection {
+  id: string;
+  groupId: string;
+  platform: string;
+  platformId: string;
+  platformUrlname: string | null;
+  platformLink: string | null;
+  isActive: boolean;
+  lastSyncAt: string | null;
+  syncError: string | null;
+  createdAt: string;
+}
+
+export async function fetchGroupConnections(
+  groupId: string,
+  cookieHeader?: string
+): Promise<PlatformConnection[]> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/connections`,
+    {
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: PlatformConnection[] };
+  return json.data;
+}
+
+export async function addGroupConnection(
+  groupId: string,
+  data: { platform: string; platformId: string; platformUrlname?: string; platformLink?: string; isActive?: boolean },
+  cookieHeader?: string
+): Promise<PlatformConnection> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/groups/${encodeURIComponent(groupId)}/connections`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to add connection: ${response.status}`);
+  }
+
+  const json = (await response.json()) as { data: PlatformConnection };
+  return json.data;
+}
+
+export async function removeGroupConnection(
+  connectionId: string,
+  cookieHeader?: string
+): Promise<void> {
+  const response = await fetch(
+    `${ADMIN_API_BASE}/connections/${encodeURIComponent(connectionId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+    throw new Error(errorData.error || `Failed to remove connection: ${response.status}`);
   }
 }

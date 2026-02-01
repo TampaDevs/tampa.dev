@@ -11,6 +11,10 @@ export interface Env {
   UPLOADS_BUCKET: R2Bucket;
   EVENTS_QUEUE: Queue;
 
+  // Durable Objects for real-time WebSocket notifications
+  USER_NOTIFICATIONS: DurableObjectNamespace;
+  BROADCAST: DurableObjectNamespace;
+
   // OAuth Provider helpers (injected by OAuthProvider wrapper)
   OAUTH_PROVIDER: OAuthHelpers;
 
@@ -64,17 +68,25 @@ export interface Env {
   APPLE_PRIVATE_KEY?: string;     // PEM key for JWT signing
   APPLE_REDIRECT_URI?: string;
 
+  // Discord OAuth (upstream auth)
+  DISCORD_CLIENT_ID?: string;
+  DISCORD_CLIENT_SECRET?: string;
+  DISCORD_REDIRECT_URI?: string;
+
   // Session
   SESSION_SECRET?: string;
 
   // Admin bootstrap
   ADMIN_ALLOWLIST?: string; // Comma-separated GitHub usernames
 
-  // Tampa Devs OAuth Provider config
+  // Tampa.dev OAuth Provider config
   OAUTH_AUTHORIZE_URL?: string; // e.g., https://tampa.dev/oauth/authorize
 
   // Environment identifier (e.g., "staging")
   ENVIRONMENT?: string;
+
+  // Encryption key for sensitive data at rest (base64-encoded 32-byte key)
+  ENCRYPTION_KEY?: string;
 
   // R2 uploads
   UPLOADS_PUBLIC_URL?: string; // e.g., https://uploads.tampa.dev or R2 public bucket URL
@@ -87,7 +99,7 @@ export interface Env {
 }
 
 /**
- * Tampa Devs OAuth scopes
+ * Tampa.dev OAuth scopes
  */
 export const TAMPA_DEVS_SCOPES = {
   PROFILE: 'profile',           // Read user profile (name, email, avatar)

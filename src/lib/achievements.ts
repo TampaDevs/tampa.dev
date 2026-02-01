@@ -1,9 +1,13 @@
 /**
- * Achievement Definitions
+ * Achievement Definitions (DEPRECATED)
  *
- * Defines all possible achievements with their targets and rewards.
- * When a user reaches the target value, the achievement is completed
- * and optional badges/entitlements are automatically awarded.
+ * Achievement definitions have moved to the `achievements` DB table.
+ * The achievement handler now reads from DB instead of these constants.
+ *
+ * This file is kept temporarily for the AchievementDef interface export.
+ * Do not add new achievements here — use the admin panel instead.
+ *
+ * @deprecated Use the `achievements` table in the database
  */
 
 export interface AchievementDef {
@@ -11,10 +15,13 @@ export interface AchievementDef {
   name: string;
   description: string;
   targetValue: number;
-  badgeSlug?: string;       // auto-award this badge on completion
-  entitlement?: string;     // auto-grant this entitlement on completion
+  badgeSlug?: string;
+  entitlement?: string;
 }
 
+/**
+ * @deprecated Achievements are now DB-backed. Use db.query.achievements instead.
+ */
 export const ACHIEVEMENTS: AchievementDef[] = [
   {
     key: 'groups_favorited_3',
@@ -40,16 +47,16 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 ];
 
 /**
- * Map from event type to the achievement keys it can increment
+ * @deprecated Achievements are now DB-backed. Use db.query.achievements instead.
  */
 export const EVENT_TO_ACHIEVEMENT: Record<string, string[]> = {
-  'user.favorite_added': ['groups_favorited_3'],
-  'user.identity_linked': ['providers_linked_3'],
-  'user.portfolio_item_created': ['portfolio_items_1'],
+  'dev.tampa.user.favorite_added': ['groups_favorited_3'],
+  'dev.tampa.user.identity_linked': ['providers_linked_3'],
+  'dev.tampa.user.portfolio_item_created': ['portfolio_items_1'],
 };
 
 /**
- * Look up an achievement definition by key
+ * @deprecated Achievements are now DB-backed. Use db.query.achievements instead.
  */
 export function getAchievement(key: string): AchievementDef | undefined {
   return ACHIEVEMENTS.find((a) => a.key === key);

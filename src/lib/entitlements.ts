@@ -62,3 +62,33 @@ export async function grantEntitlement(
     grantedAt: new Date().toISOString(),
   });
 }
+
+/**
+ * Consume (use and delete) an entitlement from a user.
+ * Returns true if the entitlement existed, was valid, and was consumed.
+ * Returns false if the entitlement was not found or expired.
+ */
+export async function consumeEntitlement(
+  db: ReturnType<typeof createDatabase>,
+  userId: string,
+  entitlement: string
+): Promise<boolean> {
+  const record = await db.query.userEntitlements.findFirst({
+    where: and(
+      eq(userEntitlements.userId, userId),
+      eq(userEntitlements.entitlement, entitlement)
+    ),
+  });
+
+  if (!record) return false;
+
+  // Check expiration
+  if (record.expiresAt && new Date(record.expiresAt) < new Date()) {
+    return false;
+  }
+
+  // Delete (consume) the entitlement
+  await db.delete(userEntitlements).where(eq(userEntitlements.id, record.id));
+
+  return true;
+}

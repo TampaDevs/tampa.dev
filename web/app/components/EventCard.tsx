@@ -7,6 +7,7 @@ import {
   getRelativeTime,
   truncate,
   stripHtml,
+  stripMarkdown,
 } from "~/lib/utils";
 import { findGroupByUrlname } from "~/lib/types";
 
@@ -20,13 +21,13 @@ export function EventCard({ event, variant = "default", groups }: EventCardProps
   const localGroup = groups ? findGroupByUrlname(groups, event.group.urlname) : undefined;
   const relativeTime = getRelativeTime(event.dateTime);
   const description = event.description
-    ? truncate(stripHtml(event.description), 120)
+    ? truncate(stripMarkdown(stripHtml(event.description)), 120)
     : null;
 
   if (variant === "compact") {
     return (
       <article className="flex gap-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-navy/30 dark:hover:border-navy-light/30 transition-colors">
-        <div className="flex-shrink-0 w-16 text-center">
+        <div className="flex-shrink-0 w-16 text-center flex flex-col items-center">
           <div className="text-sm font-semibold text-navy dark:text-gray-300">
             {formatEventDate(event.dateTime).split(" ")[1]}
           </div>
@@ -217,7 +218,7 @@ export function EventCard({ event, variant = "default", groups }: EventCardProps
           </div>
         )}
         {/* Date badge overlay */}
-        <div className="absolute top-3 left-3 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 rounded-lg px-2 py-1 shadow-lg shadow-black/10 border border-white/50 dark:border-gray-700/50">
+        <div className="absolute top-3 left-3 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 rounded-lg px-2 py-1 shadow-lg shadow-black/10 border border-white/50 dark:border-gray-700/50 text-center">
           <div className="text-xs font-semibold text-navy dark:text-gray-300">
             {formatEventDate(event.dateTime).split(" ")[1]}
           </div>

@@ -1,0 +1,200 @@
+---
+title: Error Catalog
+description: Comprehensive reference for all API error codes with example payloads
+order: 15
+category: API Reference
+---
+
+# Error Catalog
+
+All API errors return a JSON object with two fields:
+
+```json
+{
+  "error": "Human-readable description of the problem",
+  "code": "machine_readable_error_code"
+}
+```
+
+The `code` field is stable and safe to use in programmatic error handling. The `error` message may change and is intended for developer debugging.
+
+---
+
+## `unauthorized` (401)
+
+The request has no valid authentication credentials.
+
+```json
+{
+  "error": "Unauthorized",
+  "code": "unauthorized"
+}
+```
+
+**Common causes:**
+- Missing `Authorization` header
+- Expired or revoked token
+- Malformed Bearer token
+- Invalid session cookie
+
+---
+
+## `forbidden` (403)
+
+The authenticated user is not authorized to perform this action.
+
+```json
+{
+  "error": "Forbidden",
+  "code": "forbidden"
+}
+```
+
+**Common causes:**
+- Non-admin user accessing admin endpoints
+- User without the required group role (e.g., trying to manage a group they don't own)
+- Attempting to modify another user's resources
+
+---
+
+## `insufficient_scope` (403)
+
+The token is valid but lacks the required OAuth scope. The response includes a `WWW-Authenticate` header identifying the missing scope.
+
+```
+HTTP/1.1 403 Forbidden
+WWW-Authenticate: Bearer error="insufficient_scope", scope="write:events"
+```
+
+```json
+{
+  "error": "This endpoint requires the 'write:events' scope",
+  "code": "insufficient_scope"
+}
+```
+
+**Fix:** Create a new token with the required scope, or request the scope during OAuth authorization.
+
+---
+
+## `not_found` (404)
+
+The requested resource does not exist.
+
+```json
+{
+  "error": "Event not found",
+  "code": "not_found"
+}
+```
+
+**Common causes:**
+- Invalid resource ID or slug
+- Resource was deleted
+- User profile is private
+
+---
+
+## `conflict` (409)
+
+The request conflicts with the current state of the resource.
+
+```json
+{
+  "error": "Username is already taken",
+  "code": "conflict"
+}
+```
+
+**Common causes:**
+- Duplicate username
+- Already RSVPed to an event
+- Already following a user
+- Badge already awarded to user
+
+---
+
+## `gone` (410)
+
+The resource existed but is no longer available.
+
+```json
+{
+  "error": "This claim link has expired",
+  "code": "gone"
+}
+```
+
+**Common causes:**
+- Claim link has expired
+- Claim link has reached its maximum uses
+- Event has been cancelled
+
+---
+
+## `validation_error` (400)
+
+The request body failed schema validation.
+
+```json
+{
+  "error": "Invalid input",
+  "code": "validation_error"
+}
+```
+
+Zod validation errors may include additional details about which fields failed. Always validate request bodies match the expected schema before sending.
+
+---
+
+## `bad_request` (400)
+
+The request is malformed or missing required data.
+
+```json
+{
+  "error": "Request body is required",
+  "code": "bad_request"
+}
+```
+
+**Common causes:**
+- Missing required fields
+- Invalid query parameters
+- Malformed JSON body
+- Missing `Content-Type: application/json` header
+
+---
+
+## `rate_limited` (429)
+
+Too many requests in the current time window. The response includes a `Retry-After` header.
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+```
+
+```json
+{
+  "error": "Too many requests",
+  "code": "rate_limited"
+}
+```
+
+**Fix:** Wait the number of seconds indicated by the `Retry-After` header before retrying. See [Rate Limits](/developer/docs/rate-limits) for per-endpoint limits.
+
+---
+
+## `internal_error` (500)
+
+An unexpected server error occurred. The error message is always generic to avoid leaking internal details.
+
+```json
+{
+  "error": "Internal server error",
+  "code": "internal_error"
+}
+```
+
+If you encounter persistent 500 errors, please report them at [github.com/tampadevs](https://github.com/TampaDevs).

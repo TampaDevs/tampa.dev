@@ -1,13 +1,14 @@
 ---
 title: Personal Access Tokens
 description: Simpler alternative to OAuth for API access
-order: 5
+order: 3
+category: Getting Started
 ---
 
 # Personal Access Tokens
 
 Personal Access Tokens (PATs) provide a simpler alternative to the full OAuth flow.
-Create tokens in your [Profile settings](/profile).
+Create tokens in your [Profile settings](/profile) or programmatically via the API.
 
 ## Usage
 
@@ -27,6 +28,100 @@ Example: `td_pat_a1b2c3d4e5f6...`
 ## Scopes
 
 PATs use the same scope system as OAuth tokens. When creating a token, select the scopes your integration needs. Token scopes cannot exceed your user permissions.
+
+See [Scopes](/developer/docs/scopes) for the full list of available scopes.
+
+## Management Scopes
+
+PATs can include management scopes for programmatic access to group and event management:
+
+| Scope | Description |
+|-------|-------------|
+| `manage:groups` | Manage groups you own or co-manage (settings, members, claims) |
+| `manage:events` | Create and manage events in your groups |
+| `manage:checkins` | Manage checkin codes and view attendees |
+| `manage:badges` | Create, award, and manage group badges |
+
+Management scopes require that your user account has the corresponding group role (owner, manager, or volunteer). The PAT scope grants API access, but group role checks still apply.
+
+## Token Management API
+
+You can manage PATs programmatically. All endpoints require the `user` scope.
+
+### List tokens
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/tokens
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "tok_abc123",
+      "name": "CI/CD Pipeline",
+      "tokenPrefix": "td_pat_a1b2",
+      "scopes": "read:events,read:groups",
+      "expiresAt": "2026-06-15T00:00:00Z",
+      "createdAt": "2025-12-15T10:00:00Z",
+      "lastUsedAt": "2026-01-30T14:22:00Z"
+    }
+  ]
+}
+```
+
+### Create a token
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Bot",
+    "scopes": ["read:events", "read:groups", "write:favorites"],
+    "expiresInDays": 90
+  }' \
+  https://api.tampa.dev/v1/profile/tokens
+```
+
+```json
+{
+  "data": {
+    "id": "tok_def456",
+    "name": "My Bot",
+    "token": "td_pat_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    "tokenPrefix": "td_pat_a1b2",
+    "scopes": "read:events,read:groups,write:favorites",
+    "expiresAt": "2026-05-01T10:00:00Z",
+    "createdAt": "2026-01-31T10:00:00Z"
+  }
+}
+```
+
+The `token` field contains the full token value. **Store it securely -- it cannot be retrieved again.**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Human-readable name (1-100 chars) |
+| `scopes` | string[] | Yes | OAuth scopes to grant |
+| `expiresInDays` | integer | No | 1-365 days until expiry |
+
+### Revoke a token
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/tokens/tok_def456
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
 
 ## Security Best Practices
 

@@ -1,0 +1,626 @@
+---
+title: MCP Examples
+description: End-to-end MCP integration examples
+order: 44
+category: MCP
+---
+
+# MCP Examples
+
+This page provides end-to-end examples for integrating with the Tampa.dev MCP server. Each example shows the complete JSON-RPC request and response flow.
+
+## Claude Desktop Configuration
+
+To connect Claude Desktop to the Tampa.dev MCP server, add the following to your Claude Desktop configuration file (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "tampa-devs": {
+      "url": "https://api.tampa.dev/mcp",
+      "transport": "streamable-http",
+      "headers": {
+        "Authorization": "Bearer td_pat_abc123..."
+      }
+    }
+  }
+}
+```
+
+For OAuth-based authentication (recommended for interactive use):
+
+```json
+{
+  "mcpServers": {
+    "tampa-devs": {
+      "url": "https://api.tampa.dev/mcp",
+      "transport": "streamable-http",
+      "authentication": {
+        "type": "oauth2",
+        "clientId": "YOUR_CLIENT_ID",
+        "authorizationUrl": "https://tampa.dev/oauth/authorize",
+        "tokenUrl": "https://tampa.dev/oauth/token",
+        "scopes": ["read:events", "read:groups", "read:user", "write:favorites"]
+      }
+    }
+  }
+}
+```
+
+After adding this configuration and restarting Claude Desktop, the Tampa.dev tools will appear in the tools menu automatically.
+
+---
+
+## Basic JSON-RPC Flow
+
+Every MCP session follows the same lifecycle: initialize, discover capabilities, then call tools or read resources.
+
+### Step 1: Initialize
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "my-agent",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {
+      "tools": {},
+      "resources": {},
+      "prompts": {}
+    },
+    "serverInfo": {
+      "name": "tampa-devs-mcp",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+### Step 2: List tools
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list"
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "name": "events_list",
+        "description": "List events with optional filters",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": ["upcoming", "past", "all"],
+              "description": "Filter by event status"
+            },
+            "groupId": {
+              "type": "string",
+              "description": "Filter by group ID"
+            },
+            "limit": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "profile_get",
+        "description": "Get the authenticated user's profile",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    ]
+  }
+}
+```
+
+### Step 3: Call a tool
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "events_list",
+    "arguments": {
+      "status": "upcoming",
+      "limit": 3
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":[{\"id\":\"evt_abc123\",\"title\":\"React Meetup\",\"startTime\":\"2026-02-15T18:00:00Z\",\"groupName\":\"Tampa React\",\"rsvpCount\":24},{\"id\":\"evt_def456\",\"title\":\"Rust Workshop\",\"startTime\":\"2026-02-20T14:00:00Z\",\"groupName\":\"Tampa Rust\",\"rsvpCount\":15},{\"id\":\"evt_ghi789\",\"title\":\"Python Data Night\",\"startTime\":\"2026-02-22T18:30:00Z\",\"groupName\":\"Tampa Python\",\"rsvpCount\":18}],\"pagination\":{\"total\":12,\"limit\":3,\"offset\":0,\"hasMore\":true}}"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Personal Scheduling Assistant
+
+This example builds a personal event scheduling flow: browse events, check RSVP status, and RSVP to an event.
+
+### Browse upcoming events
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "method": "tools/call",
+  "params": {
+    "name": "events_list",
+    "arguments": {
+      "status": "upcoming",
+      "limit": 10
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":[{\"id\":\"evt_react01\",\"title\":\"React Meetup: Server Components Deep Dive\",\"startTime\":\"2026-02-15T18:00:00Z\",\"endTime\":\"2026-02-15T20:00:00Z\",\"groupName\":\"Tampa React\",\"eventType\":\"in_person\",\"rsvpCount\":24,\"maxAttendees\":40},{\"id\":\"evt_rust01\",\"title\":\"Rust Workshop: Error Handling Patterns\",\"startTime\":\"2026-02-20T14:00:00Z\",\"endTime\":\"2026-02-20T17:00:00Z\",\"groupName\":\"Tampa Rust\",\"eventType\":\"in_person\",\"rsvpCount\":15,\"maxAttendees\":25}],\"pagination\":{\"total\":8,\"limit\":10,\"offset\":0,\"hasMore\":false}}"
+      }
+    ]
+  }
+}
+```
+
+### Check RSVP status for an event
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 11,
+  "method": "tools/call",
+  "params": {
+    "name": "events_rsvp_status",
+    "arguments": {
+      "eventId": "evt_react01"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 11,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"hasRsvp\":false,\"eventId\":\"evt_react01\",\"spotsRemaining\":16}}"
+      }
+    ]
+  }
+}
+```
+
+### RSVP to the event
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 12,
+  "method": "tools/call",
+  "params": {
+    "name": "events_rsvp",
+    "arguments": {
+      "eventId": "evt_react01"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 12,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"success\":true}}"
+      }
+    ]
+  }
+}
+```
+
+The agent can now confirm to the user: "You are RSVPed to React Meetup: Server Components Deep Dive on February 15. There are 15 spots remaining."
+
+---
+
+## Event Summary Bot
+
+This example demonstrates gathering event details to produce a summary -- useful for newsletter bots or weekly digest generators.
+
+### List recent events for a group
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 20,
+  "method": "tools/call",
+  "params": {
+    "name": "events_list",
+    "arguments": {
+      "status": "upcoming",
+      "groupId": "grp_tampadevs",
+      "limit": 5
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 20,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":[{\"id\":\"evt_td01\",\"title\":\"Monthly Social Mixer\",\"startTime\":\"2026-02-10T18:00:00Z\",\"rsvpCount\":45},{\"id\":\"evt_td02\",\"title\":\"Lightning Talks Night\",\"startTime\":\"2026-02-17T18:30:00Z\",\"rsvpCount\":32},{\"id\":\"evt_td03\",\"title\":\"Career Workshop\",\"startTime\":\"2026-02-24T14:00:00Z\",\"rsvpCount\":20}],\"pagination\":{\"total\":3,\"limit\":5,\"offset\":0,\"hasMore\":false}}"
+      }
+    ]
+  }
+}
+```
+
+### Get detailed info for a specific event
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 21,
+  "method": "tools/call",
+  "params": {
+    "name": "events_get",
+    "arguments": {
+      "eventId": "evt_td02"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 21,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"id\":\"evt_td02\",\"title\":\"Lightning Talks Night\",\"description\":\"Five 10-minute talks from community members on topics ranging from AI to DevOps. Pizza and drinks provided.\",\"startTime\":\"2026-02-17T18:30:00Z\",\"endTime\":\"2026-02-17T21:00:00Z\",\"timezone\":\"America/New_York\",\"eventType\":\"in_person\",\"location\":\"Tampa Bay Innovation Center\",\"groupId\":\"grp_tampadevs\",\"groupName\":\"Tampa Devs\",\"rsvpCount\":32,\"maxAttendees\":60}}"
+      }
+    ]
+  }
+}
+```
+
+With this data, the agent can generate a summary like:
+
+> **Lightning Talks Night** -- Tuesday, Feb 17 at 6:30 PM ET at Tampa Bay Innovation Center. Five community members share 10-minute talks on AI, DevOps, and more. 32 of 60 spots taken. Pizza and drinks provided.
+
+---
+
+## Group Management from AI
+
+This example shows an organizer using an AI agent to create an event and generate a check-in code. Requires `manage:events` and `manage:checkins` scopes.
+
+### Create an event
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 30,
+  "method": "tools/call",
+  "params": {
+    "name": "manage_create_event",
+    "arguments": {
+      "groupId": "grp_react",
+      "title": "React 19 Release Party",
+      "description": "Celebrate the React 19 release with demos, live coding, and community discussion.",
+      "startTime": "2026-03-15T18:00:00-04:00",
+      "endTime": "2026-03-15T21:00:00-04:00",
+      "timezone": "America/New_York",
+      "eventType": "in_person",
+      "maxAttendees": 50
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 30,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"id\":\"evt_new456\",\"title\":\"React 19 Release Party\",\"startTime\":\"2026-03-15T22:00:00Z\",\"endTime\":\"2026-03-16T01:00:00Z\",\"status\":\"upcoming\",\"maxAttendees\":50}}"
+      }
+    ]
+  }
+}
+```
+
+### Generate a check-in code for the event
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 31,
+  "method": "tools/call",
+  "params": {
+    "name": "manage_create_checkin_code",
+    "arguments": {
+      "groupId": "grp_react",
+      "eventId": "evt_new456",
+      "expiresInMinutes": 180
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 31,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"code\":\"RCT19PARTY\",\"expiresAt\":\"2026-03-16T01:00:00Z\",\"eventId\":\"evt_new456\"}}"
+      }
+    ]
+  }
+}
+```
+
+The agent can now tell the organizer: "Your event 'React 19 Release Party' is created for March 15 at 6 PM. The check-in code is RCT19PARTY and will be valid for 3 hours. Share this code with attendees at the door."
+
+---
+
+## Using Resources for Context
+
+This example demonstrates reading MCP resources to build context before making decisions. Resources are useful when an agent needs background information without performing actions.
+
+### Read available events as context
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 40,
+  "method": "resources/read",
+  "params": {
+    "uri": "tampadev://events"
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 40,
+  "result": {
+    "contents": [
+      {
+        "uri": "tampadev://events",
+        "mimeType": "application/json",
+        "text": "[{\"id\":\"evt_react01\",\"title\":\"React Meetup\",\"startTime\":\"2026-02-15T18:00:00Z\",\"groupName\":\"Tampa React\"},{\"id\":\"evt_rust01\",\"title\":\"Rust Workshop\",\"startTime\":\"2026-02-20T14:00:00Z\",\"groupName\":\"Tampa Rust\"}]"
+      }
+    ]
+  }
+}
+```
+
+### Read the user's profile for personalization
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 41,
+  "method": "resources/read",
+  "params": {
+    "uri": "tampadev://profile"
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 41,
+  "result": {
+    "contents": [
+      {
+        "uri": "tampadev://profile",
+        "mimeType": "application/json",
+        "text": "{\"id\":\"usr_abc123\",\"name\":\"Jane Developer\",\"username\":\"janedev\",\"bio\":\"Full-stack developer interested in React and Rust\",\"xp\":450,\"level\":5}"
+      }
+    ]
+  }
+}
+```
+
+With this context, the agent knows the user is interested in React and Rust, and can suggest both the React Meetup and Rust Workshop as relevant events.
+
+---
+
+## Using Prompts
+
+This example shows how to use the `suggest_events` prompt to get a structured workflow for event recommendations.
+
+### Get the prompt template
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 50,
+  "method": "prompts/get",
+  "params": {
+    "name": "suggest_events"
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 50,
+  "result": {
+    "description": "Suggest events based on user interests",
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "type": "text",
+          "text": "Suggest upcoming events I should attend. Use the available tools to gather context:\n\n1. Get my profile with profile_get to understand my interests.\n2. List my favorite groups with favorites_list to know which communities I follow.\n3. List upcoming events with events_list to see what is available.\n\nFor each suggested event, explain why it matches my interests and include the event title, date, group, and a brief description. Prioritize events from my favorite groups."
+        }
+      }
+    ]
+  }
+}
+```
+
+The agent then follows the instructions in the prompt, calling `profile_get`, `favorites_list`, and `events_list` in sequence to build personalized event recommendations.
+
+---
+
+## Error Handling
+
+When a tool call fails, handle the error gracefully and inform the user.
+
+### Insufficient scope error
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 90,
+  "method": "tools/call",
+  "params": {
+    "name": "manage_create_event",
+    "arguments": {
+      "groupId": "grp_react",
+      "title": "Test Event"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 90,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":\"This endpoint requires the 'manage:events' scope\",\"code\":\"insufficient_scope\"}"
+      }
+    ],
+    "isError": true
+  }
+}
+```
+
+The agent should inform the user that the current token does not have permission to create events and suggest requesting the `manage:events` scope.
+
+### Resource not found
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 91,
+  "method": "tools/call",
+  "params": {
+    "name": "events_get",
+    "arguments": {
+      "eventId": "evt_nonexistent"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 91,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":\"Event not found\",\"code\":\"not_found\"}"
+      }
+    ],
+    "isError": true
+  }
+}
+```
+
+---
+
+## Tips for Building MCP Agents
+
+- **Start with `tools/list`** to discover what your token can do. Do not hard-code tool names -- they may change or be unavailable based on scopes.
+- **Use resources for context** before making decisions. Reading `tampadev://profile` and `tampadev://events` gives you a solid foundation.
+- **Use prompts for complex workflows.** The built-in prompts encode Tampa.dev best practices and save you from writing multi-step logic.
+- **Handle errors gracefully.** Check for `isError` in tool responses and provide helpful messages to the user.
+- **Respect rate limits.** If you receive a `rate_limited` error, back off and retry after the indicated period.
+- **Request minimal scopes.** Only request the scopes your agent actually needs. This follows the principle of least privilege and builds user trust.

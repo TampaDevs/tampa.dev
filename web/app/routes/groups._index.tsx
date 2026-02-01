@@ -4,13 +4,14 @@ import { GroupCard, StructuredData } from "~/components";
 import { fetchGroups, toLocalGroup, extractTags } from "~/lib/api.server";
 import { useSearchParams } from "react-router";
 import { useState, useEffect, useMemo } from "react";
+import { useWS } from "~/hooks/WebSocketProvider";
 import { getFavorites } from "~/lib/favorites";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
-    title: "Tech Groups & Communities",
+    title: "Tampa Bay Tech Groups & Communities",
     description:
-      "Explore tech groups and communities in Tampa Bay. From cloud computing to AI, find your tribe of developers and technologists.",
+      "Explore tech groups and communities in Tampa Bay. Developer meetups, startup groups, AI communities, and more across Tampa, St. Petersburg, and Clearwater.",
     url: "/groups",
   });
 };
@@ -27,11 +28,33 @@ export async function loader() {
 }
 
 export default function Groups({ loaderData }: Route.ComponentProps) {
-  const { groups: allGroups, tags } = loaderData;
+  const { groups: loaderGroups, tags } = loaderData;
+  const { broadcast } = useWS();
   const [searchParams, setSearchParams] = useSearchParams();
   const [favoriteSlugs, setFavoriteSlugs] = useState<string[]>([]);
+  const [favoriteCountOverrides, setFavoriteCountOverrides] = useState<Map<string, number>>(new Map());
   const [isLoaded, setIsLoaded] = useState(false);
   const activeTag = searchParams.get("tag");
+
+  // Apply real-time favorite count overrides from broadcast WebSocket
+  const allGroups = useMemo(() => {
+    if (favoriteCountOverrides.size === 0) return loaderGroups;
+    return loaderGroups.map((g) => {
+      const override = favoriteCountOverrides.get(g.slug);
+      return override !== undefined ? { ...g, favoritesCount: override } : g;
+    });
+  }, [loaderGroups, favoriteCountOverrides]);
+
+  // Listen for broadcast favorite count changes
+  useEffect(() => {
+    return broadcast.on('favorite.count_changed', (msg) => {
+      setFavoriteCountOverrides((prev) => {
+        const next = new Map(prev);
+        next.set(msg.data.groupSlug, msg.data.favoriteCount);
+        return next;
+      });
+    });
+  }, [broadcast]);
 
   useEffect(() => {
     setFavoriteSlugs(getFavorites());
@@ -50,9 +73,16 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
     };
   }, []);
 
-  const filteredGroups = activeTag
-    ? allGroups.filter((g) => g.tags.includes(activeTag))
-    : allGroups;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredGroups = allGroups.filter((g) => {
+    if (activeTag && !g.tags.includes(activeTag)) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return g.name.toLowerCase().includes(q) || g.description.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   // Sort groups: favorites first (alphabetically), then non-favorites (alphabetically)
   const sortedGroups = useMemo(() => {
@@ -95,13 +125,10 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Tech Groups & Communities
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {allGroups.length} groups building the Tampa Bay tech scene
-          </p>
         </div>
 
         {/* Tags Filter */}
-        <div className="mb-8 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setSearchParams(new URLSearchParams())}
@@ -132,6 +159,29 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
             </button>
           ))}
         </div>
+
+        {/* Search Bar */}
+        <div className="mb-6 max-w-md">
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search groups..."
+              className="block w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-shadow"
+            />
+          </div>
+        </div>
+
+        {/* Group Count */}
+        <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+          {filteredGroups.length} group{filteredGroups.length !== 1 ? "s" : ""} {activeTag ? `tagged "${activeTag}"` : ""} {searchQuery ? `matching "${searchQuery}"` : "building the Tampa Bay tech scene"}
+        </p>
 
         {/* Groups Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

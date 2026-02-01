@@ -170,9 +170,27 @@ export function createOAuthInternalRoutes() {
     try {
       const grants = await c.env.OAUTH_PROVIDER.listUserGrants(userId);
 
+      // Map GrantSummary to the shape the frontend expects (OAuthGrant)
+      const mappedGrants = await Promise.allSettled(
+        grants.items.map(async (grant) => {
+          const client = await c.env.OAUTH_PROVIDER.lookupClient(grant.clientId);
+          return {
+            grantId: grant.id,
+            clientId: grant.clientId,
+            clientName: client?.clientName || grant.clientId,
+            clientUri: client?.clientUri,
+            logoUri: client?.logoUri,
+            scopes: grant.scope,
+            grantedAt: new Date(grant.createdAt * 1000).toISOString(),
+          };
+        })
+      );
+
       return c.json({
         success: true,
-        grants: grants.items,
+        grants: mappedGrants
+          .filter((r) => r.status === 'fulfilled')
+          .map((r) => (r as PromiseFulfilledResult<unknown>).value),
         cursor: grants.cursor,
       });
     } catch (error) {

@@ -6,18 +6,32 @@
  */
 
 import { Link, Outlet, useNavigate, useParams } from "react-router";
-import { DOCS } from "~/content/docs";
+import { data as routerData } from "react-router";
+import { DOCS, CATEGORIES } from "~/content/docs";
+import { fetchCurrentUser } from "~/lib/api.server";
 import type { Route } from "./+types/developer.docs";
+import { generateMetaTags } from "~/lib/seo";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "API Documentation | Tampa.dev Developer Portal" },
-  { name: "description", content: "API reference for the Tampa.dev platform. OAuth 2.1, scopes, webhooks, and Personal Access Tokens." },
-];
+export const meta: Route.MetaFunction = () => generateMetaTags({
+  title: "API Documentation",
+  description: "API reference for the Tampa.dev platform. OAuth 2.1, scopes, webhooks, and Personal Access Tokens.",
+  url: "/developer/docs",
+});
 
-export default function DocsLayout() {
+export async function loader({ request }: Route.LoaderArgs) {
+  const cookieHeader = request.headers.get("Cookie") || undefined;
+  const user = await fetchCurrentUser(cookieHeader);
+  return { user };
+}
+
+export default function DocsLayout({ loaderData }: Route.ComponentProps) {
   const params = useParams();
   const navigate = useNavigate();
-  const currentSlug = params.slug || DOCS[0]?.slug;
+
+  const isAdmin = loaderData.user?.role === "admin" || loaderData.user?.role === "superadmin";
+  const filteredDocs = DOCS.filter((d) => !d.admin || isAdmin);
+
+  const currentSlug = params.slug || filteredDocs[0]?.slug;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -35,21 +49,34 @@ export default function DocsLayout() {
       <div className="flex gap-8">
         {/* Sidebar Navigation */}
         <nav className="hidden lg:block w-48 flex-shrink-0 sticky top-20 self-start">
-          <ul className="space-y-1">
-            {DOCS.map((doc) => (
-              <li key={doc.slug}>
-                <Link
-                  to={`/developer/docs/${doc.slug}`}
-                  className={`block px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                    currentSlug === doc.slug
-                      ? "bg-coral/10 text-coral font-medium"
-                      : "text-gray-600 dark:text-gray-400 hover:text-coral dark:hover:text-coral hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {doc.title}
-                </Link>
-              </li>
-            ))}
+          <ul className="space-y-0">
+            {CATEGORIES.map((category) => {
+              const categoryDocs = filteredDocs.filter((d) => d.category === category);
+              if (categoryDocs.length === 0) return null;
+              return (
+                <li key={category}>
+                  <h3 className="px-3 pt-4 pb-1 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    {category}
+                  </h3>
+                  <ul className="space-y-0.5">
+                    {categoryDocs.map((doc) => (
+                      <li key={doc.slug}>
+                        <Link
+                          to={`/developer/docs/${doc.slug}`}
+                          className={`block px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                            currentSlug === doc.slug
+                              ? "bg-coral/10 text-coral font-medium"
+                              : "text-gray-600 dark:text-gray-400 hover:text-coral dark:hover:text-coral hover:bg-gray-100 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          {doc.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
@@ -64,9 +91,17 @@ export default function DocsLayout() {
               }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             >
-              {DOCS.map((doc) => (
-                <option key={doc.slug} value={doc.slug}>{doc.title}</option>
-              ))}
+              {CATEGORIES.map((category) => {
+                const categoryDocs = filteredDocs.filter((d) => d.category === category);
+                if (categoryDocs.length === 0) return null;
+                return (
+                  <optgroup key={category} label={category}>
+                    {categoryDocs.map((doc) => (
+                      <option key={doc.slug} value={doc.slug}>{doc.title}</option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
           </div>
 
@@ -89,17 +124,17 @@ export default function DocsLayout() {
           </div>
 
           {/* Prev/Next Navigation */}
-          <DocsNavigation currentSlug={currentSlug || ''} />
+          <DocsNavigation currentSlug={currentSlug || ''} filteredDocs={filteredDocs} />
         </div>
       </div>
     </div>
   );
 }
 
-function DocsNavigation({ currentSlug }: { currentSlug: string }) {
-  const currentIndex = DOCS.findIndex((d) => d.slug === currentSlug);
-  const prev = currentIndex > 0 ? DOCS[currentIndex - 1] : null;
-  const next = currentIndex < DOCS.length - 1 ? DOCS[currentIndex + 1] : null;
+function DocsNavigation({ currentSlug, filteredDocs }: { currentSlug: string; filteredDocs: typeof DOCS }) {
+  const currentIndex = filteredDocs.findIndex((d) => d.slug === currentSlug);
+  const prev = currentIndex > 0 ? filteredDocs[currentIndex - 1] : null;
+  const next = currentIndex < filteredDocs.length - 1 ? filteredDocs[currentIndex + 1] : null;
 
   if (!prev && !next) return null;
 

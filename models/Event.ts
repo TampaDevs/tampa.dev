@@ -38,6 +38,8 @@ export const EventSchema = z.object({
   venues: z.array(VenueSchema).default([]),
   photo: PhotoSchema.optional(),
   group: GroupSchema, // Every event belongs to a group
+  // Event source platform (meetup, eventbrite, luma)
+  source: z.string().optional(),
   // Provider-specific data can be stored here
   extras: z.record(z.unknown()).optional(),
 }).strict();
@@ -61,6 +63,7 @@ export class Event {
   readonly venues: Venue[];
   readonly photo?: Photo;
   readonly group: Group;
+  readonly source?: string;
   readonly extras?: Record<string, unknown>;
 
   constructor(data: EventData) {
@@ -77,6 +80,7 @@ export class Event {
     this.venues = validated.venues.map(v => new Venue(v));
     this.photo = validated.photo ? new Photo(validated.photo) : undefined;
     this.group = new Group(validated.group);
+    this.source = validated.source;
     this.extras = validated.extras;
   }
 
@@ -233,6 +237,7 @@ export class Event {
       appleMapsUrl: this.appleMapsUrl,
       photoUrl: this.photoUrl,
       isOnline: this.isOnline,
+      ...(this.source && { source: this.source }),
     };
   }
 

@@ -1,0 +1,639 @@
+---
+title: Management
+description: Group management, event management, badge management, and checkin code endpoints
+order: 14
+category: API Reference
+---
+
+# Management
+
+Management endpoints allow group owners and managers to administer their groups, events, badges, and checkin codes programmatically. All endpoints accept three authentication methods: session cookies, Personal Access Tokens (PATs), and OAuth Bearer tokens.
+
+When using PATs or OAuth, the appropriate `manage:*` scope is required. Role hierarchy: `owner > manager > volunteer > member`. Platform admins bypass all role checks.
+
+---
+
+## Group Management
+
+Scope: `manage:groups`
+
+### GET /v1/manage/groups
+
+List groups the authenticated user can manage. Platform admins see all groups.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "grp_react",
+      "name": "React Tampa",
+      "urlname": "react-tampa",
+      "description": "Tampa's React developer community",
+      "memberCount": 450,
+      "photoUrl": "https://cdn.tampa.dev/groups/react-tampa.jpg",
+      "role": "owner"
+    }
+  ],
+  "pagination": {
+    "total": 2,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+### GET /v1/manage/groups/:groupId
+
+Get managed group details including your role and permissions.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react
+```
+
+```json
+{
+  "data": {
+    "id": "grp_react",
+    "name": "React Tampa",
+    "urlname": "react-tampa",
+    "description": "Tampa's React developer community",
+    "memberCount": 450,
+    "photoUrl": "https://cdn.tampa.dev/groups/react-tampa.jpg",
+    "role": "owner",
+    "permissions": {
+      "canManageMembers": true,
+      "canManageEvents": true,
+      "canManageBadges": true,
+      "canManageSettings": true
+    }
+  }
+}
+```
+
+### PUT /v1/manage/groups/:groupId
+
+Update group settings. Requires `manager` role or higher.
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "React Tampa Bay",
+    "description": "Updated description",
+    "website": "https://react-tampa.dev"
+  }' \
+  https://api.tampa.dev/v1/manage/groups/grp_react
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### GET /v1/manage/groups/:groupId/members
+
+List group members. Requires `volunteer` role or higher.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/manage/groups/grp_react/members?limit=10"
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "mem_abc123",
+      "userId": "usr_abc123",
+      "name": "Jane Developer",
+      "username": "janedev",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/12345",
+      "role": "owner",
+      "joinedAt": "2025-06-15T10:30:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 12,
+    "limit": 10,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+### POST /v1/manage/groups/:groupId/members
+
+Invite a member. Requires `manager` role or higher.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"userId": "usr_def456", "role": "member"}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/members
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### PATCH /v1/manage/groups/:groupId/members/:memberId
+
+Update a member's role. Requires `owner` or `manager` role.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"role": "volunteer"}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/members/mem_def456
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### DELETE /v1/manage/groups/:groupId/members/:memberId
+
+Remove a member. Requires `manager` role or higher.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/members/mem_def456
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### POST /v1/manage/groups/:groupId/leave
+
+Leave a group.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/leave
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+## Event Management
+
+Scope: `manage:events`
+
+### GET /v1/manage/groups/:groupId/events
+
+List events for a managed group.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/manage/groups/grp_react/events?limit=10"
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "evt_abc123",
+      "title": "React Tampa Monthly Meetup",
+      "startTime": "2026-02-15T18:30:00-05:00",
+      "endTime": "2026-02-15T20:30:00-05:00",
+      "eventType": "in_person",
+      "rsvpCount": 24,
+      "maxAttendees": 30,
+      "status": "published"
+    }
+  ],
+  "pagination": {
+    "total": 5,
+    "limit": 10,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+### GET /v1/manage/groups/:groupId/events/:eventId
+
+Get event details with attendee statistics.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events/evt_abc123
+```
+
+```json
+{
+  "data": {
+    "id": "evt_abc123",
+    "title": "React Tampa Monthly Meetup",
+    "description": "Join us for talks on React Server Components...",
+    "startTime": "2026-02-15T18:30:00-05:00",
+    "endTime": "2026-02-15T20:30:00-05:00",
+    "timezone": "America/New_York",
+    "location": "Tampa Innovation Hub",
+    "eventType": "in_person",
+    "maxAttendees": 30,
+    "totalConfirmed": 24,
+    "totalWaitlisted": 3,
+    "totalCheckedIn": 18
+  }
+}
+```
+
+### POST /v1/manage/groups/:groupId/events
+
+Create a native event. Requires `manager` role or higher.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "TypeScript Workshop",
+    "description": "Hands-on TypeScript workshop for beginners",
+    "startTime": "2026-03-01T14:00:00-05:00",
+    "endTime": "2026-03-01T17:00:00-05:00",
+    "timezone": "America/New_York",
+    "location": "Tampa Innovation Hub",
+    "eventType": "in_person",
+    "maxAttendees": 25
+  }' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events
+```
+
+```json
+{
+  "data": {
+    "id": "evt_new123",
+    "title": "TypeScript Workshop",
+    "startTime": "2026-03-01T14:00:00-05:00",
+    "status": "published"
+  }
+}
+```
+
+### PUT /v1/manage/groups/:groupId/events/:eventId
+
+Update an event. Requires `manager` role or higher.
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"title": "TypeScript Workshop (Updated)", "maxAttendees": 30}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events/evt_new123
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### POST /v1/manage/groups/:groupId/events/:eventId/cancel
+
+Cancel an event. Requires `manager` role or higher.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events/evt_new123/cancel
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+## Checkin Code Management
+
+Scope: `manage:checkins`
+
+### POST /v1/manage/groups/:groupId/events/:eventId/checkin-codes
+
+Generate a checkin code. Requires `volunteer` role or higher.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"expiresInMinutes": 120}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events/evt_abc123/checkin-codes
+```
+
+```json
+{
+  "data": {
+    "id": "chkcode_abc123",
+    "code": "ABC123",
+    "eventId": "evt_abc123",
+    "expiresAt": "2026-02-15T20:30:00Z",
+    "createdBy": "usr_abc123"
+  }
+}
+```
+
+### GET /v1/manage/groups/:groupId/events/:eventId/checkin-codes
+
+List checkin codes for an event. Requires `volunteer` role or higher.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events/evt_abc123/checkin-codes
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "chkcode_abc123",
+      "code": "ABC123",
+      "expiresAt": "2026-02-15T20:30:00Z",
+      "createdBy": "usr_abc123",
+      "usageCount": 15
+    }
+  ]
+}
+```
+
+### DELETE /v1/manage/groups/:groupId/checkin-codes/:codeId
+
+Delete a checkin code. Requires `manager` role or higher.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/checkin-codes/chkcode_abc123
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### GET /v1/manage/groups/:groupId/events/:eventId/attendees
+
+Get the attendee list for an event. Requires `volunteer` role or higher.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/events/evt_abc123/attendees
+```
+
+```json
+{
+  "data": {
+    "rsvps": [
+      {
+        "userId": "usr_abc123",
+        "name": "Jane Developer",
+        "username": "janedev",
+        "status": "confirmed",
+        "rsvpAt": "2026-02-01T10:00:00Z"
+      }
+    ],
+    "checkins": [
+      {
+        "userId": "usr_abc123",
+        "name": "Jane Developer",
+        "username": "janedev",
+        "checkedInAt": "2026-02-15T18:45:00Z",
+        "method": "qr"
+      }
+    ],
+    "totalConfirmed": 24,
+    "totalWaitlisted": 3,
+    "totalCheckedIn": 18
+  }
+}
+```
+
+---
+
+## Group Badge Management
+
+Scope: `manage:badges`
+
+### GET /v1/manage/groups/:groupId/badges
+
+List badges for a group. Requires `volunteer` role or higher.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "bdg_abc123",
+      "name": "Workshop Attendee",
+      "slug": "workshop-attendee",
+      "description": "Attended a React Tampa workshop",
+      "icon": "award",
+      "color": "#FF6B6B",
+      "points": 50,
+      "awardedCount": 23
+    }
+  ]
+}
+```
+
+### POST /v1/manage/groups/:groupId/badges
+
+Create a badge. Requires `manager` role or higher and the `badge_issuer` entitlement.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Lightning Talk Speaker",
+    "slug": "lightning-talk-speaker",
+    "description": "Gave a lightning talk at React Tampa",
+    "icon": "zap",
+    "color": "#FFD700",
+    "points": 100
+  }' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges
+```
+
+```json
+{
+  "data": {
+    "id": "bdg_new123",
+    "name": "Lightning Talk Speaker",
+    "slug": "lightning-talk-speaker",
+    "points": 100
+  }
+}
+```
+
+### PATCH /v1/manage/groups/:groupId/badges/:badgeId
+
+Update a badge. Requires `manager` role or higher.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Updated description", "points": 75}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### DELETE /v1/manage/groups/:groupId/badges/:badgeId
+
+Delete a badge. Requires `owner` role.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### POST /v1/manage/groups/:groupId/badges/:badgeId/award/:userId
+
+Award a badge to a user. Requires `manager` role or higher.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123/award/usr_def456
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### DELETE /v1/manage/groups/:groupId/badges/:badgeId/revoke/:userId
+
+Revoke a badge from a user. Requires `manager` role or higher.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123/revoke/usr_def456
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### POST /v1/manage/groups/:groupId/badges/:badgeId/claim-links
+
+Create a badge claim link. Requires `manager` role or higher.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"maxUses": 50, "expiresInDays": 7}' \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123/claim-links
+```
+
+```json
+{
+  "data": {
+    "id": "cl_abc123",
+    "code": "REACT-WORKSHOP-2026",
+    "badgeId": "bdg_abc123",
+    "maxUses": 50,
+    "currentUses": 0,
+    "expiresAt": "2026-02-07T00:00:00Z",
+    "claimUrl": "https://tampa.dev/claim/REACT-WORKSHOP-2026"
+  }
+}
+```
+
+### GET /v1/manage/groups/:groupId/badges/:badgeId/claim-links
+
+List claim links for a badge. Requires `manager` role or higher.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/manage/groups/grp_react/badges/bdg_abc123/claim-links
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "cl_abc123",
+      "code": "REACT-WORKSHOP-2026",
+      "maxUses": 50,
+      "currentUses": 23,
+      "expiresAt": "2026-02-07T00:00:00Z",
+      "createdAt": "2026-01-31T10:00:00Z"
+    }
+  ]
+}
+```

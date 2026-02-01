@@ -37,7 +37,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     cookieHeader
   );
 
-  return { users: data.users, pagination: data.pagination, currentPage: page };
+  return { users: data.data, pagination: data.pagination, currentPage: page };
 }
 
 export async function action({ request }: Route.ActionArgs) {

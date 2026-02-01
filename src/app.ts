@@ -23,19 +23,61 @@ export interface Env {
 export function createApp() {
   const app = new OpenAPIHono<{ Bindings: Env }>();
 
+  // Security headers
+  app.use('*', async (c, next) => {
+    await next();
+    if (c.res.status === 101) return; // Skip WebSocket upgrades
+    c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    c.res.headers.set('X-Frame-Options', 'DENY');
+    c.res.headers.set('X-Content-Type-Options', 'nosniff');
+    c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  });
+
   // Add CORS middleware
   app.use('*', async (c, next) => {
     await next();
-    c.res.headers.set('Access-Control-Allow-Origin', '*');
-    c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    // WebSocket upgrade responses (101) have immutable headers in CF Workers
+    if (c.res.status === 101) return;
+
+    const origin = c.req.header('Origin');
+    // Allow requests from *.tampa.dev subdomains and localhost for development
+    if (origin && (/^https?:\/\/([a-z0-9-]+\.)*tampa\.dev$/.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin))) {
+      c.res.headers.set('Access-Control-Allow-Origin', origin);
+      c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+    } else {
+      c.res.headers.set('Access-Control-Allow-Origin', '*');
+    }
+    c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
   });
 
   // Handle OPTIONS requests
-  app.options('*', (c) => c.text('', 200));
+  app.options('*', (c) => c.body(null, 204));
 
   // Favicon handler
   app.get('/favicon.ico', (c) => c.text('', 404));
+
+  // MCP Server Discovery (RFC well-known endpoint)
+  app.get('/.well-known/mcp-configuration', (c) => {
+    return c.json({
+      mcp_version: '2025-03-26',
+      server_name: 'Tampa.dev',
+      server_description: 'Tampa Bay tech community platform - events, groups, badges, and more',
+      server_url: 'https://api.tampa.dev/mcp',
+      transport: 'streamable-http',
+      authentication: {
+        type: 'oauth2',
+        oauth_metadata_url: 'https://api.tampa.dev/.well-known/oauth-authorization-server',
+      },
+      capabilities: {
+        tools: true,
+        resources: true,
+        prompts: true,
+      },
+    }, 200, { 'Cache-Control': 'public, max-age=3600' });
+  });
 
   return app;
 }
@@ -48,11 +90,14 @@ export function addOpenAPIRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   app.doc('/openapi.json', {
     openapi: '3.1.0',
     info: {
-      title: 'Tampa Events API',
+      title: 'Tampa.dev Platform API',
       version: '2026-01-25',
-      description: 'Community events aggregation API for Tampa Bay tech meetups and events',
+      description:
+        'The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. ' +
+        'Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. ' +
+        'All authenticated endpoints are under `/v1/`.',
       contact: {
-        name: 'Tampa Devs',
+        name: 'Tampa.dev',
         url: 'https://tampa.dev',
       },
     },
@@ -70,6 +115,29 @@ export function addOpenAPIRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
         description: 'Development',
       },
     ],
+    security: [{ BearerToken: [] }],
+    tags: [
+      { name: 'User', description: 'User identity and profile management' },
+      { name: 'Events', description: 'Event discovery, RSVP, and check-in' },
+      { name: 'Groups', description: 'Group discovery and favorites' },
+      { name: 'Follows', description: 'User follow relationships' },
+      { name: 'Claims', description: 'Badge claim links' },
+      { name: 'Scopes', description: 'OAuth scope discovery' },
+      { name: 'Admin', description: 'Platform administration (admin role required)' },
+      { name: 'Management', description: 'Group management (group role required)' },
+      { name: 'Public', description: 'Public endpoints (no authentication required)' },
+      { name: 'MCP', description: 'Model Context Protocol (JSON-RPC 2.0) endpoint for AI agents and automation tools' },
+    ],
+  });
+
+  // Register security scheme
+  app.openAPIRegistry.registerComponent('securitySchemes', 'BearerToken', {
+    type: 'http',
+    scheme: 'bearer',
+    description:
+      'Personal Access Token (td_pat_...) or OAuth 2.0 access token. ' +
+      'Create PATs at https://tampa.dev/developer. ' +
+      'OAuth tokens are obtained via the /oauth/authorize flow.',
   });
 
   // Swagger UI

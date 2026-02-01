@@ -2,12 +2,13 @@
 title: Authentication
 description: OAuth 2.1 with PKCE authorization flow for Tampa.dev
 order: 1
+category: Getting Started
 ---
 
 # Authentication
 
 Tampa.dev uses **OAuth 2.1 with PKCE** for authorization. This is the recommended
-flow for all applications — both server-side and single-page apps.
+flow for all applications - both server-side and single-page apps.
 
 ## Authorization Flow
 
@@ -45,3 +46,24 @@ curl -X POST https://tampa.dev/oauth/token \
 ```
 
 The response includes an `access_token` and `refresh_token`.
+
+## Authentication Methods
+
+All API endpoints accept three authentication methods:
+
+| Method | Header | Use Case |
+|--------|--------|----------|
+| **OAuth Bearer Token** | `Authorization: Bearer <access_token>` | Third-party apps, integrations |
+| **Personal Access Token** | `Authorization: Bearer td_pat_...` | CLI tools, scripts, CI/CD |
+| **Session Cookie** | `Cookie: session=...` | Tampa.dev web application |
+
+This includes management endpoints (group settings, event creation, badge management, etc.) which require the appropriate `manage:*` scope when using OAuth or PAT authentication. See [Scopes](/developer/docs/scopes) for details.
+
+## MCP (AI Agent) Authentication
+
+Tampa.dev also supports the [Model Context Protocol](/developer/docs/mcp-overview) (MCP), allowing AI assistants and automation tools to interact with the platform. MCP clients authenticate using the same methods above:
+
+- **OAuth 2.1**: MCP clients discover the server via `GET /.well-known/mcp-configuration`, register dynamically, and obtain tokens through the standard OAuth flow. This is MCP's preferred authentication method.
+- **Personal Access Tokens**: For simpler setups, configure your AI assistant with a PAT.
+
+MCP requests are sent as JSON-RPC 2.0 to `POST /mcp`. The server returns tool catalogs filtered by the token's scopes, so agents automatically understand what actions they can perform. See the [MCP Overview](/developer/docs/mcp-overview) for details.

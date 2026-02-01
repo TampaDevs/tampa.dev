@@ -8,11 +8,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
-import { createDatabase } from '../db/index.js';
-import { users, sessions } from '../db/schema.js';
 import type { Env } from '../../types/worker.js';
-import { getSessionCookieName } from '../lib/session.js';
+import { getCurrentUser } from '../lib/auth.js';
 import { generatePresignedUploadUrl } from '../lib/r2-presign.js';
 
 // ============== Constants ==============
@@ -38,6 +35,21 @@ const UPLOAD_CATEGORIES = {
     allowedTypes: ALLOWED_IMAGE_TYPES,
     path: 'media',
   },
+  hero: {
+    maxSize: MAX_FILE_SIZE, // 5MB - hero images are larger format
+    allowedTypes: ALLOWED_IMAGE_TYPES,
+    path: 'heroes',
+  },
+  'group-photo': {
+    maxSize: MAX_FILE_SIZE,
+    allowedTypes: ALLOWED_IMAGE_TYPES,
+    path: 'group-photos',
+  },
+  'event-photo': {
+    maxSize: MAX_FILE_SIZE,
+    allowedTypes: ALLOWED_IMAGE_TYPES,
+    path: 'event-photos',
+  },
 } as const;
 
 type UploadCategory = keyof typeof UPLOAD_CATEGORIES;
@@ -45,10 +57,10 @@ type UploadCategory = keyof typeof UPLOAD_CATEGORIES;
 // ============== Validation Schemas ==============
 
 const requestUploadSchema = z.object({
-  category: z.enum(['avatar', 'app-logo', 'media']),
+  category: z.enum(['avatar', 'app-logo', 'media', 'hero', 'group-photo', 'event-photo']),
   filename: z.string().min(1).max(255),
-  contentType: z.string(),
-  size: z.number().positive(),
+  contentType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+  size: z.number().positive().max(MAX_FILE_SIZE, 'File size must not exceed 5MB'),
 });
 
 // ============== Types ==============
@@ -65,33 +77,6 @@ interface UploadToken {
 // ============== Helper Functions ==============
 
 /**
- * Get current user from session cookie
- */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  return await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-}
-
-/**
  * Generate a unique file key
  * In development, adds a 'dev_' prefix for easy cleanup via lifecycle rules
  */
@@ -101,7 +86,8 @@ function generateFileKey(category: UploadCategory, userId: string, filename: str
   const safeName = filename.replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 50);
   const prefix = isDev ? 'dev_' : '';
 
-  return `${prefix}${UPLOAD_CATEGORIES[category].path}/${userId}/${timestamp}-${random}-${safeName}`;
+  // All uploads are under uploads/{userId}/ for security isolation
+  return `${prefix}uploads/${userId}/${UPLOAD_CATEGORIES[category].path}/${timestamp}-${random}-${safeName}`;
 }
 
 /**
@@ -178,10 +164,11 @@ export function createUploadRoutes() {
    * Returns a presigned URL for direct upload to R2.
    */
   app.post('/request', zValidator('json', requestUploadSchema as z.ZodType<z.infer<typeof requestUploadSchema>>), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     // Check R2 credentials
     const accountId = c.env.R2_ACCOUNT_ID;
@@ -394,10 +381,11 @@ export function createUploadRoutes() {
    * Only the owner can delete their files.
    */
   app.delete('/file/*', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const bucket = c.env.UPLOADS_BUCKET;
     if (!bucket) {

@@ -23,3 +23,79 @@ body {
   background: transparent !important;
   border: none !important;
 }
+
+/* Sign-in button wave wiggle (evokes a friendly wave) */
+@keyframes wave-wiggle {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(12deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+  60% { transform: rotate(-3deg); }
+  70% { transform: rotate(3deg); }
+  80% { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-wave-wiggle {
+  animation: wave-wiggle 0.8s ease-in-out;
+  transform-origin: center bottom;
+}
+
+/* Disable backdrop blur on add-to-calendar overlay */
+.atcb-modal-backdrop,
+[class*="atcb-bgoverlay"],
+.atcb-bgoverlay {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ─── Leaderboard: Podium float animation ─── */
+@keyframes podium-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ─── Leaderboard: Decorative particle drift ─── */
+@keyframes lb-particle-drift {
+  0% { transform: translateY(0) translateX(0); opacity: var(--lb-p-opacity); }
+  50% { transform: translateY(-18px) translateX(8px); opacity: calc(var(--lb-p-opacity) * 1.6); }
+  100% { transform: translateY(0) translateX(0); opacity: var(--lb-p-opacity); }
+}
+
+/* ─── Leaderboard: Trophy shimmer ─── */
+@keyframes lb-trophy-shimmer {
+  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 3px currentColor); }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
+}
+
+/* ─── Leaderboard: Header text fade-in slide ─── */
+@keyframes lb-fade-in-up {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Leaderboard: Stagger card entrance ─── */
+@keyframes lb-card-enter {
+  0% { opacity: 0; transform: translateY(20px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Leaderboard: Reduced motion on mobile ─── */
+@media (max-width: 639px) {
+  @keyframes podium-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1.5px); }
+  }
+
+  @keyframes lb-particle-drift {
+    0%, 100% { transform: translateY(0) translateX(0); opacity: var(--lb-p-opacity); }
+    50% { transform: translateY(-3px) translateX(1.5px); opacity: var(--lb-p-opacity); }
+  }
+
+  @keyframes lb-trophy-shimmer {
+    0%, 100% { opacity: 0.85; filter: none; }
+    50% { opacity: 1; filter: none; }
+  }
+}

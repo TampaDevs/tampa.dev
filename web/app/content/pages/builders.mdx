@@ -1,0 +1,90 @@
+---
+title: "For Builders | Tampa.dev Community Identity & APIs"
+description: "Tampa.dev provides open OAuth identity and APIs for tools built by and for the Tampa Bay tech and startup community. Build event tools, dashboards, directories, and more."
+h1: "For Builders"
+order: 10
+faqs:
+  - q: "What can I build with Tampa.dev?"
+    a: "Anything that serves the Tampa Bay tech community. Event check-in tools, hackathon apps, community dashboards, job boards, member directories, and lightweight social or discovery tools are all examples. You do not need permission to experiment with read-only integrations."
+  - q: "Do I need permission to use the Tampa.dev API?"
+    a: "No permission is needed for read-only access. You can start building immediately. Write access requires creating an app and requesting scopes, which are reviewed to protect the community."
+  - q: "Is Tampa.dev identity required to participate in the community?"
+    a: "No. Tampa.dev identity is optional. It is not required to attend events, join groups, or participate in the community. It exists to reduce friction for community-built tools."
+---
+
+Tampa.dev provides open identity and APIs to support tools built for the Tampa Bay tech and startup community. Anyone can build on it. You do not need permission to experiment or deploy read-only integrations.
+
+## What you can build
+
+Here are some things people build with Tampa.dev:
+
+- **Event check-in tools** - apps for tracking attendance at meetups and events
+- **Hackathon or demo-day apps** - event-specific tools for participants and organizers
+- **Community dashboards** - aggregated views of events, groups, and activity
+- **Job boards or opportunity boards** - listings that serve the local tech community
+- **Member directories** - tools for finding and connecting with community members
+- **Lightweight social or discovery tools** - anything that helps people find each other or find events
+
+These are examples, not limits. The goal is to reduce friction for anything that serves the community.
+
+## Identity and OAuth
+
+"Login with Tampa.dev" lets users authenticate with community-built apps using their Tampa.dev account. Here is how it works:
+
+- Users always see a consent screen before sharing any information
+- Apps only receive the scopes they request
+- Identity is portable - users own their account, not any individual app
+- Tampa.dev uses OAuth 2.1 with PKCE, a modern standard
+
+**What this is not:**
+
+- Not required to participate in the Tampa Bay tech community
+- Not a replacement for Slack, Discord, or any other communication tool
+- Not a gatekeeping mechanism - it exists to make building easier
+
+## Scopes and permissions
+
+Tampa.dev follows a read-first philosophy:
+
+- **Read access** is available by default for public data like events and groups
+- **Minimal surface area** - scopes are narrow and specific
+- **Write access requires review** - to protect the integrity of shared community data
+
+Example scope categories include reading public events and groups, reading user profiles (with consent), and managing user-specific data like favorites. See the [API documentation](/developer/docs/scopes) for the full list.
+
+Write scopes exist but are intentionally conservative. The goal is safety and trust, not control.
+
+## APIs and data access
+
+Tampa.dev exposes APIs for events, groups, and user data. The data is intended to be reused:
+
+- **Events API** - upcoming events, event details, venue information
+- **Groups API** - community groups, descriptions, social links
+- **Calendar feeds** - iCal and RSS feeds for subscribing to events
+- **User API** - profile data for authenticated users (with consent)
+
+Attribution is appreciated but not onerous. See the [API reference](/developer/docs/api-reference) for endpoints and usage details.
+
+## Governance and trust
+
+Tampa.dev is operated in service of the Tampa Bay tech community. A few principles guide how it's run:
+
+- **Stability matters more than rapid change.** If you build on Tampa.dev, we want it to keep working.
+- **Breaking changes are avoided and communicated clearly.** API versions are explicit and documented.
+- **Transparency is a priority.** Tampa.dev is [open source](https://github.com/TampaDevs/tampa.dev) and community-governed.
+
+These commitments exist so you can feel comfortable building something real on top of this infrastructure.
+
+## Getting started
+
+1. **Create an app** - register an OAuth application in the [Developer Portal](/developer)
+2. **Request scopes** - choose the permissions your app needs
+3. **Start building** - use the [API documentation](/developer/docs/authentication) to integrate
+
+For read-only access to public data (events, groups), you can start immediately without creating an app.
+
+Browse the full [Documentation](/docs) for API references, platform guides, and more.
+
+---
+
+*Built by and for the Tampa Bay tech and startup community. Open to developers, founders, and builders of all kinds.*

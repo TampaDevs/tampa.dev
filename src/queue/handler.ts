@@ -34,13 +34,21 @@ export async function handleQueueBatch(
     const allHandlers = [...specificHandlers, ...wildcardHandlers];
 
     if (allHandlers.length === 0) {
-      // No handlers registered — ack and move on
+      // No handlers registered - ack and move on
       msg.ack();
       continue;
     }
 
     try {
-      await Promise.all(allHandlers.map((h) => h(event, env)));
+      const results = await Promise.allSettled(allHandlers.map((h) => h(event, env)));
+      const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      if (failures.length > 0) {
+        for (const f of failures) {
+          console.error(`Handler failed for ${event.type}:`, f.reason);
+        }
+      }
+      // Ack even if some handlers fail — prevents already-processed
+      // handlers from being re-triggered on retry
       msg.ack();
     } catch (err) {
       console.error(`Failed to handle ${event.type}:`, err);

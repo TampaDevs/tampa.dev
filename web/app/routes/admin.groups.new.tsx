@@ -14,6 +14,7 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export async function action({ request }: Route.ActionArgs) {
+  const cookieHeader = request.headers.get("Cookie") || undefined;
   const formData = await request.formData();
 
   const urlname = formData.get("urlname");
@@ -74,7 +75,7 @@ export async function action({ request }: Route.ActionArgs) {
       data.socialLinks = socialLinks;
     }
 
-    const group = await createGroup(data);
+    const group = await createGroup(data, cookieHeader);
     return redirect(`/admin/groups/${group.id}`);
   } catch (error) {
     console.error("Failed to create group:", error);

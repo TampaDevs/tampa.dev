@@ -3,6 +3,10 @@
  *
  * Handles synchronization of events from external providers to D1 database.
  * Implements ETL: Extract (from providers) → Transform (to canonical) → Load (to D1)
+ *
+ * Platform connections are decoupled from groups via the group_platform_connections
+ * table. A group can have 0..N platform connections; native (tampa.dev) groups
+ * have zero connections and are skipped during sync.
  */
 
 import { eq, and, inArray, gte, sql } from 'drizzle-orm';
@@ -12,17 +16,19 @@ import {
   events,
   venues,
   syncLogs,
+  groupPlatformConnections,
   type Group,
   type NewGroup,
   type NewEvent,
   type NewVenue,
   type NewSyncLog,
+  type GroupPlatformConnection,
   EventPlatform,
   SyncStatus,
 } from '../db/schema';
 import type { ProviderRegistry } from '../providers/registry';
 import type { Env } from '../../types/worker';
-import type { EventBus } from '../lib/event-bus';
+import { emitEvent } from '../lib/event-bus';
 import type {
   CanonicalEvent,
   CanonicalGroup,
@@ -63,8 +69,11 @@ export interface SyncOptions {
 
 // ============== Sync Service ==============
 
+/** Context needed for emitting domain events from the sync service */
+export type SyncEventContext = Parameters<typeof emitEvent>[0];
+
 export class SyncService {
-  private eventBus?: EventBus;
+  private eventCtx?: SyncEventContext;
 
   constructor(
     private db: Database,
@@ -72,13 +81,14 @@ export class SyncService {
     private env: Env
   ) {}
 
-  /** Attach an EventBus to publish domain events during sync */
-  setEventBus(eventBus: EventBus): void {
-    this.eventBus = eventBus;
+  /** Attach an event context to publish domain events during sync */
+  setEventContext(ctx: SyncEventContext): void {
+    this.eventCtx = ctx;
   }
 
   /**
-   * Sync a single group by its database ID
+   * Sync a single group by its database ID.
+   * Finds all active platform connections for the group and syncs each one.
    */
   async syncGroup(groupId: string): Promise<SyncResult> {
     const startTime = Date.now();
@@ -101,11 +111,60 @@ export class SyncService {
       };
     }
 
-    return this.syncGroupInternal(group, startTime);
+    // Find all active platform connections for this group (skip native tampa.dev)
+    const connections = await this.db.query.groupPlatformConnections.findMany({
+      where: and(
+        eq(groupPlatformConnections.groupId, groupId),
+        eq(groupPlatformConnections.isActive, true),
+        sql`${groupPlatformConnections.platform} != 'tampa.dev'`
+      ),
+    });
+
+    if (connections.length === 0) {
+      return {
+        success: true,
+        groupId: group.id,
+        groupUrlname: group.urlname,
+        eventsCreated: 0,
+        eventsUpdated: 0,
+        eventsDeleted: 0,
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    // Sync each connection and aggregate results
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalDeleted = 0;
+    let lastError: string | undefined;
+    let anyFailed = false;
+
+    for (const connection of connections) {
+      const result = await this.syncConnection(connection, group, Date.now());
+      totalCreated += result.eventsCreated;
+      totalUpdated += result.eventsUpdated;
+      totalDeleted += result.eventsDeleted;
+      if (!result.success) {
+        anyFailed = true;
+        lastError = result.error;
+      }
+    }
+
+    return {
+      success: !anyFailed,
+      groupId: group.id,
+      groupUrlname: group.urlname,
+      eventsCreated: totalCreated,
+      eventsUpdated: totalUpdated,
+      eventsDeleted: totalDeleted,
+      error: lastError,
+      durationMs: Date.now() - startTime,
+    };
   }
 
   /**
-   * Sync a group by its urlname
+   * Sync a group by its urlname.
+   * Finds all active platform connections for the group and syncs each one.
    */
   async syncGroupByUrlname(urlname: string): Promise<SyncResult> {
     const startTime = Date.now();
@@ -127,40 +186,111 @@ export class SyncService {
       };
     }
 
-    return this.syncGroupInternal(group, startTime);
+    // Find all active platform connections for this group (skip native tampa.dev)
+    const connections = await this.db.query.groupPlatformConnections.findMany({
+      where: and(
+        eq(groupPlatformConnections.groupId, group.id),
+        eq(groupPlatformConnections.isActive, true),
+        sql`${groupPlatformConnections.platform} != 'tampa.dev'`
+      ),
+    });
+
+    if (connections.length === 0) {
+      return {
+        success: true,
+        groupId: group.id,
+        groupUrlname: group.urlname,
+        eventsCreated: 0,
+        eventsUpdated: 0,
+        eventsDeleted: 0,
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    // Sync each connection and aggregate results
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalDeleted = 0;
+    let lastError: string | undefined;
+    let anyFailed = false;
+
+    for (const connection of connections) {
+      const result = await this.syncConnection(connection, group, Date.now());
+      totalCreated += result.eventsCreated;
+      totalUpdated += result.eventsUpdated;
+      totalDeleted += result.eventsDeleted;
+      if (!result.success) {
+        anyFailed = true;
+        lastError = result.error;
+      }
+    }
+
+    return {
+      success: !anyFailed,
+      groupId: group.id,
+      groupUrlname: group.urlname,
+      eventsCreated: totalCreated,
+      eventsUpdated: totalUpdated,
+      eventsDeleted: totalDeleted,
+      error: lastError,
+      durationMs: Date.now() - startTime,
+    };
   }
 
   /**
-   * Sync all active groups
+   * Sync all active groups via their platform connections.
    */
   async syncAllGroups(options: SyncOptions = {}): Promise<SyncAllResult> {
     const startTime = Date.now();
     const concurrency = options.concurrency || 5;
 
-    // Get active groups
-    let groupsToSync: Group[];
+    // Query active platform connections (skip native tampa.dev groups)
+    const activeConnections = await this.db.query.groupPlatformConnections.findMany({
+      where: and(
+        eq(groupPlatformConnections.isActive, true),
+        sql`${groupPlatformConnections.platform} != 'tampa.dev'`
+      ),
+    });
+
+    // Filter to requested group IDs if specified
+    let connectionsToSync = activeConnections;
     if (options.groupIds && options.groupIds.length > 0) {
-      groupsToSync = await this.db.query.groups.findMany({
-        where: and(
-          eq(groups.isActive, true),
-          inArray(groups.id, options.groupIds)
-        ),
-      });
-    } else {
-      groupsToSync = await this.db.query.groups.findMany({
-        where: eq(groups.isActive, true),
-      });
+      connectionsToSync = activeConnections.filter(c => options.groupIds!.includes(c.groupId));
     }
+
+    // Look up all parent groups for the connections we will sync
+    const groupIds = [...new Set(connectionsToSync.map(c => c.groupId))];
+    const parentGroups = groupIds.length > 0
+      ? await this.db.query.groups.findMany({
+          where: inArray(groups.id, groupIds),
+        })
+      : [];
+    const groupMap = new Map(parentGroups.map(g => [g.id, g]));
 
     const results: SyncResult[] = [];
     let succeeded = 0;
     let failed = 0;
 
     // Process in batches with concurrency limit
-    for (let i = 0; i < groupsToSync.length; i += concurrency) {
-      const batch = groupsToSync.slice(i, i + concurrency);
+    for (let i = 0; i < connectionsToSync.length; i += concurrency) {
+      const batch = connectionsToSync.slice(i, i + concurrency);
       const batchResults = await Promise.allSettled(
-        batch.map((group) => this.syncGroupInternal(group, Date.now()))
+        batch.map((connection) => {
+          const group = groupMap.get(connection.groupId);
+          if (!group) {
+            return Promise.resolve<SyncResult>({
+              success: false,
+              groupId: connection.groupId,
+              groupUrlname: 'unknown',
+              eventsCreated: 0,
+              eventsUpdated: 0,
+              eventsDeleted: 0,
+              error: `Parent group not found for connection: ${connection.id}`,
+              durationMs: 0,
+            });
+          }
+          return this.syncConnection(connection, group, Date.now());
+        })
       );
 
       for (const result of batchResults) {
@@ -189,7 +319,7 @@ export class SyncService {
 
     const syncAllResult: SyncAllResult = {
       success: failed === 0,
-      total: groupsToSync.length,
+      total: connectionsToSync.length,
       succeeded,
       failed,
       results,
@@ -197,36 +327,38 @@ export class SyncService {
     };
 
     // Publish sync.completed event
-    if (this.eventBus) {
-      try {
-        await this.eventBus.publish({
-          type: 'sync.completed',
-          payload: {
-            total: syncAllResult.total,
-            succeeded: syncAllResult.succeeded,
-            failed: syncAllResult.failed,
-            durationMs: syncAllResult.durationMs,
-          },
-          metadata: { source: 'sync-service' },
-        });
-      } catch (err) {
-        console.error('Failed to publish sync.completed event:', err);
-      }
+    if (this.eventCtx) {
+      emitEvent(this.eventCtx, {
+        type: 'dev.tampa.sync.completed',
+        payload: {
+          total: syncAllResult.total,
+          succeeded: syncAllResult.succeeded,
+          failed: syncAllResult.failed,
+          durationMs: syncAllResult.durationMs,
+        },
+        metadata: { source: 'sync-service' },
+      });
     }
 
     return syncAllResult;
   }
 
   /**
-   * Internal sync implementation for a single group
+   * Sync a single platform connection for a group.
+   * Uses connection.platform and connection.platformId for the provider fetch,
+   * and writes sync metadata back to both the connection row and the parent group.
    */
-  private async syncGroupInternal(group: Group, startTime: number): Promise<SyncResult> {
+  private async syncConnection(
+    connection: GroupPlatformConnection,
+    group: Group,
+    startTime: number
+  ): Promise<SyncResult> {
     const logId = crypto.randomUUID();
 
     // Create sync log entry
     await this.db.insert(syncLogs).values({
       id: logId,
-      platform: group.platform,
+      platform: connection.platform,
       groupId: group.id,
       startedAt: new Date().toISOString(),
       status: SyncStatus.RUNNING,
@@ -234,15 +366,15 @@ export class SyncService {
 
     try {
       // Get the provider adapter
-      const adapter = this.registry.getAdapter(group.platform as any);
+      const adapter = this.registry.getAdapter(connection.platform as any);
       if (!adapter) {
-        throw new Error(`No adapter for platform: ${group.platform}`);
+        throw new Error(`No adapter for platform: ${connection.platform}`);
       }
 
-      // Fetch events from provider using platformId
+      // Fetch events from provider using the connection's platformId
       const fetchResult = await this.registry.fetchEvents(
-        group.platform as any,
-        group.platformId,
+        connection.platform as any,
+        connection.platformId,
         this.env,
         { maxEvents: 50 }
       );
@@ -259,7 +391,7 @@ export class SyncService {
       // Upsert events
       const eventResults = await this.upsertEvents(
         group.id,
-        group.platform,
+        connection.platform,
         fetchResult.events || []
       );
 
@@ -281,7 +413,16 @@ export class SyncService {
         })
         .where(eq(syncLogs.id, logId));
 
-      // Update group sync timestamp
+      // Update connection sync timestamp
+      await this.db
+        .update(groupPlatformConnections)
+        .set({
+          lastSyncAt: new Date().toISOString(),
+          syncError: null,
+        })
+        .where(eq(groupPlatformConnections.id, connection.id));
+
+      // Also update group sync timestamp as a denormalized convenience
       await this.db
         .update(groups)
         .set({
@@ -292,22 +433,18 @@ export class SyncService {
         .where(eq(groups.id, group.id));
 
       // Publish domain events for newly created events
-      if (this.eventBus && eventResults.created > 0) {
-        try {
-          await this.eventBus.publish({
-            type: 'events.synced',
-            payload: {
-              groupId: group.id,
-              groupUrlname: group.urlname,
-              eventsCreated: eventResults.created,
-              eventsUpdated: eventResults.updated,
-              eventsDeleted: deletedCount,
-            },
-            metadata: { source: 'sync-service' },
-          });
-        } catch (err) {
-          console.error('Failed to publish events.synced event:', err);
-        }
+      if (this.eventCtx && eventResults.created > 0) {
+        emitEvent(this.eventCtx, {
+          type: 'dev.tampa.events.synced',
+          payload: {
+            groupId: group.id,
+            groupUrlname: group.urlname,
+            eventsCreated: eventResults.created,
+            eventsUpdated: eventResults.updated,
+            eventsDeleted: deletedCount,
+          },
+          metadata: { source: 'sync-service' },
+        });
       }
 
       return {
@@ -332,7 +469,15 @@ export class SyncService {
         })
         .where(eq(syncLogs.id, logId));
 
-      // Update group with error
+      // Update connection with error
+      await this.db
+        .update(groupPlatformConnections)
+        .set({
+          syncError: errorMessage,
+        })
+        .where(eq(groupPlatformConnections.id, connection.id));
+
+      // Also update group with error
       await this.db
         .update(groups)
         .set({
@@ -426,28 +571,62 @@ export class SyncService {
           .where(eq(events.id, existing.id));
         updated++;
       } else {
-        // Insert new event
-        await this.db.insert(events).values({
-          id: crypto.randomUUID(),
-          platform,
-          platformId: event.platformId,
-          groupId,
-          venueId,
-          title: event.title,
-          description: event.description,
-          eventUrl: event.eventUrl,
-          photoUrl: event.photoUrl,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          timezone: event.timezone,
-          duration: event.duration,
-          status: event.status,
-          eventType: event.eventType,
-          rsvpCount: event.rsvpCount,
-          maxAttendees: event.maxAttendees,
-          lastSyncAt: now,
-        });
-        created++;
+        // Insert new event — handle unique constraint race condition
+        try {
+          await this.db.insert(events).values({
+            id: crypto.randomUUID(),
+            platform,
+            platformId: event.platformId,
+            groupId,
+            venueId,
+            title: event.title,
+            description: event.description,
+            eventUrl: event.eventUrl,
+            photoUrl: event.photoUrl,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            timezone: event.timezone,
+            duration: event.duration,
+            status: event.status,
+            eventType: event.eventType,
+            rsvpCount: event.rsvpCount,
+            maxAttendees: event.maxAttendees,
+            lastSyncAt: now,
+          });
+          created++;
+        } catch (insertError) {
+          // Unique constraint violation — another sync inserted this event concurrently.
+          // Fall back to update.
+          const raceExisting = await this.db.query.events.findFirst({
+            where: and(
+              eq(events.platform, platform),
+              eq(events.platformId, event.platformId)
+            ),
+          });
+          if (raceExisting) {
+            await this.db
+              .update(events)
+              .set({
+                title: event.title,
+                description: event.description,
+                eventUrl: event.eventUrl,
+                photoUrl: event.photoUrl,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                timezone: event.timezone,
+                duration: event.duration,
+                status: event.status,
+                eventType: event.eventType,
+                rsvpCount: event.rsvpCount,
+                maxAttendees: event.maxAttendees,
+                venueId,
+                lastSyncAt: now,
+                updatedAt: now,
+              })
+              .where(eq(events.id, raceExisting.id));
+            updated++;
+          }
+        }
       }
     }
 

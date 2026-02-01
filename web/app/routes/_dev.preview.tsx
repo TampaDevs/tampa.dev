@@ -108,7 +108,7 @@ function LoginPagePreview() {
 
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
           <h1 className="text-2xl font-bold text-white text-center mb-2">
-            Welcome Back
+            Welcome Back 👋
           </h1>
           <p className="text-white/60 text-center mb-8">
             Sign in to access your favorites, RSVPs, and more
@@ -343,11 +343,10 @@ export default function DevPreviewPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === tab.id
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
                   ? "bg-coral text-white"
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
+                }`}
             >
               {tab.label}
             </button>

@@ -105,7 +105,7 @@ jobs:
         run: |
           cd clients/typescript
           # Fix repository URL
-          jq '.repository = {"type": "git", "url": "https://github.com/TampaDevs/events.api.tampa.dev.git", "directory": "clients/typescript"}' package.json > package.tmp.json
+          jq '.repository = {"type": "git", "url": "https://github.com/TampaDevs/tampa.dev.git", "directory": "clients/typescript"}' package.json > package.tmp.json
           mv package.tmp.json package.json
           # Ensure correct package name
           jq '.name = "@tampadevs/events-api-client"' package.json > package.tmp.json
@@ -131,8 +131,8 @@ jobs:
         run: |
           cd clients/go
           # Fix module path placeholder
-          sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/events.api.tampa.dev/clients/go|g' go.mod
-          find . -name "*.go" -exec sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/events.api.tampa.dev/clients/go|g' {} \;
+          sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/tampa.dev/clients/go|g' go.mod
+          find . -name "*.go" -exec sed -i 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/TampaDevs/tampa.dev/clients/go|g' {} \;
 
       - name: Generate Ruby Client
         run: |

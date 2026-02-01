@@ -92,6 +92,90 @@
       "when": 1769653600000,
       "tag": "0012_add_show_achievements",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1769653700000,
+      "tag": "0013_add_achievements_table_and_directory",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1769653800000,
+      "tag": "0014_add_hero_and_theme",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1769653900000,
+      "tag": "0015_add_points_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1769654000000,
+      "tag": "0016_add_badge_claim_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1769654100000,
+      "tag": "0017_add_user_follows",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1769654200000,
+      "tag": "0018_add_onboarding",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1769654300000,
+      "tag": "0019_add_user_location",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1769654400000,
+      "tag": "0015_add_badge_hide_from_directory",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1769654500000,
+      "tag": "0021_achievement_conditions_and_claim_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1769654600000,
+      "tag": "0022_first_party_groups_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1769654700000,
+      "tag": "0023_populate_platform_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1769654800000,
+      "tag": "0024_add_missing_indexes",
+      "breakpoints": true
     }
   ]
 }

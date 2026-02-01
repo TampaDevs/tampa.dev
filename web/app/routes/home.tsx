@@ -1,23 +1,75 @@
 import type { Route } from "./+types/home";
 import { Link, useRouteLoaderData } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchEvents, fetchGroups, toLocalGroup } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";
-import { eventsToJsonLd, websiteJsonLd } from "~/lib/structured-data";
+import {
+  eventsToJsonLd,
+  websiteJsonLd,
+  organizationJsonLd,
+  faqPageJsonLd,
+  type FAQItem,
+} from "~/lib/structured-data";
 import { AddToCalendar, EventCard, EventCarousel, GroupCard, NewsletterSignup, StructuredData } from "~/components";
+import { OnboardingChecklist, type OnboardingStep } from "~/components/OnboardingChecklist";
+import { useWS } from "~/hooks/WebSocketProvider";
 import { getFavorites } from "~/lib/favorites";
 import type { Event } from "~/lib/types";
 
+interface OnboardingStepResponse {
+  key: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  dismissed: boolean;
+}
+
+const HOMEPAGE_FAQS: FAQItem[] = [
+  {
+    question: "What is the best website for tech events in Tampa Bay?",
+    answer:
+      "Tampa.dev is the Tampa Bay tech events calendar. It aggregates developer meetups, startup events, and tech community gatherings from dozens of independent groups across Tampa, St. Petersburg, Clearwater, and the wider Tampa Bay area into a single, searchable calendar.",
+  },
+  {
+    question: "Where can I find Tampa developer meetups?",
+    answer:
+      "Tampa.dev lists developer meetups from groups across Tampa Bay, including meetups focused on JavaScript, Python, cloud computing, AI/ML, cybersecurity, and more. Browse the full calendar at tampa.dev/calendar or explore groups at tampa.dev/groups.",
+  },
+  {
+    question: "How do I submit an event or add my group?",
+    answer:
+      "To add your tech group or community to Tampa.dev, open an issue on the Tampa.dev GitHub repository. Once your group is added, its events are automatically synced and displayed on the calendar.",
+  },
+  {
+    question: "Is this only Tampa events or all of Tampa Bay?",
+    answer:
+      "Tampa.dev covers the entire Tampa Bay area, including Tampa, St. Petersburg, Clearwater, Brandon, Sarasota, and surrounding cities. Both in-person and online events from the region are listed.",
+  },
+  {
+    question: "Why build in Tampa Bay?",
+    answer:
+      "Tampa Bay sits on the Eastern time zone, aligned with NYC, DC, and Boston, with a lower cost of living and a growing community of builders across software, startups, and entrepreneurship. Tampa.dev brings it all together in one calendar.",
+  },
+  {
+    question: "Are there founder meetups in Tampa Bay?",
+    answer:
+      "Yes. Tampa Bay has a growing community of founders and startup builders. Tampa.dev aggregates founder meetups, pitch nights, demo days, and startup networking events from groups across the region.",
+  },
+];
+
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
-    title: "Tampa Tech Events",
+    title: "Tampa Bay Tech Events Calendar",
     description:
-      "Discover tech meetups, developer events, and communities in Tampa Bay. Find your next networking opportunity with local software developers, engineers, and technologists.",
+      "The Tampa Bay tech events calendar for developers, founders, and startup builders. Browse meetups, tech talks, and community events across Tampa, St. Petersburg, and Clearwater.",
     url: "/",
   });
 };
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  const cookieHeader = request.headers.get("Cookie") || "";
+  const apiHost = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
+
   const [events, apiGroups] = await Promise.all([
     fetchEvents({ withinDays: 30 }),
     fetchGroups(),
@@ -33,8 +85,28 @@ export async function loader() {
     featuredGroups = [...featuredGroups, ...nonFeatured].slice(0, 4);
   }
 
-  const apiHost = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
   const apiBase = `${apiHost}/2026-01-25`;
+
+  // Fetch onboarding steps if user is authenticated
+  let onboardingSteps: OnboardingStepResponse[] = [];
+  if (cookieHeader) {
+    try {
+      const onboardingRes = await fetch(`${apiHost}/me/onboarding`, {
+        headers: {
+          Accept: "application/json",
+          Cookie: cookieHeader,
+        },
+      });
+      if (onboardingRes.ok) {
+        const onboardingData = (await onboardingRes.json()) as {
+          steps?: OnboardingStepResponse[];
+        };
+        onboardingSteps = onboardingData.steps || [];
+      }
+    } catch {
+      // Silently fail - onboarding is not critical
+    }
+  }
 
   return {
     events: events.slice(0, 12),
@@ -45,19 +117,18 @@ export async function loader() {
     totalGroups: allGroups.length,
     totalEvents: events.length,
     apiBase,
+    onboardingSteps,
   };
 }
 
 function PersonalizedDashboard({
   userName,
   events,
-  allGroups,
   totalGroups,
   totalEvents,
 }: {
   userName: string;
   events: Event[];
-  allGroups: { slug: string; name: string }[];
   totalGroups: number;
   totalEvents: number;
 }) {
@@ -75,12 +146,24 @@ function PersonalizedDashboard({
   const hasFavorites = loaded && favoriteSlugs.length > 0;
 
   return (
-    <section className="bg-gradient-to-br from-navy/5 via-coral/5 to-transparent dark:from-navy/20 dark:via-coral/10 dark:to-transparent py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden py-12">
+      {/* Coral background layer */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(135deg, #C44D44 0%, #E85A4F 40%, #F07167 100%)" }}
+      />
+      {/* Glass overlay */}
+      <div className="absolute inset-0 bg-white/[0.88] dark:bg-gray-950/[0.85] backdrop-blur-xl" />
+      {/* Subtle coral accent tint */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "linear-gradient(135deg, #E85A4F0a 0%, transparent 50%)" }}
+      />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Welcome back, {userName}
+              Welcome back, {userName} 👋
             </h1>
             <p className="mt-1 text-gray-600 dark:text-gray-400">
               {totalGroups}+ groups and {totalEvents}+ upcoming events in Tampa Bay
@@ -197,23 +280,21 @@ function HeroSection({ totalGroups, totalEvents }: { totalGroups: number; totalE
       {/* Content */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <div className="max-w-3xl">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
-            <span className="font-bold">Tampa Bay</span>
-            <span className="font-normal"> is a</span>
-            <br />
-            <span className="font-bold">Technology Hub</span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight font-bold">
+            Tampa Bay's Tech Events Hub
           </h1>
           <p className="mt-6 text-xl text-gray-200">
-            Discover <span className="font-semibold text-white">{totalGroups}+ tech groups</span> and{" "}
-            <span className="font-semibold text-white">{totalEvents}+ upcoming events</span>.
-            Connect with developers, engineers, and technologists in Tampa Bay.
+            Tampa.dev is the community events index for developers, founders, and startup builders across Tampa Bay.
+            Browse <span className="font-semibold text-white">{totalGroups}+ tech groups</span> and{" "}
+            <span className="font-semibold text-white">{totalEvents}+ upcoming events</span> from
+            independent communities in Tampa, St.&nbsp;Petersburg, and Clearwater.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
               to="/calendar"
               className="inline-flex items-center gap-2 bg-gradient-to-b from-coral to-coral-dark hover:from-coral-light hover:to-coral text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-md shadow-coral/15 hover:shadow-lg hover:shadow-coral/20 hover:-translate-y-0.5"
             >
-              Browse Events
+              Browse the Events Calendar
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -232,9 +313,107 @@ function HeroSection({ totalGroups, totalEvents }: { totalGroups: number; totalE
               to="/groups"
               className="inline-flex items-center gap-2 backdrop-blur-md bg-white/15 border border-white/20 text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/25 transition-all hover:-translate-y-0.5"
             >
-              Explore Groups
+              Explore Tech Groups
             </Link>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FAQAccordionItem({ faq }: { faq: FAQItem }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-gray-200 dark:border-gray-700 md:border-0 md:bg-white md:dark:bg-gray-800 md:rounded-xl md:border md:border-gray-200 md:dark:border-gray-700 md:p-6">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full py-4 md:py-0 text-left md:cursor-default"
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white md:mb-2 pr-4">
+          {faq.question}
+        </h3>
+        <svg
+          className={`w-5 h-5 text-gray-400 shrink-0 transition-transform md:hidden ${open ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`overflow-hidden transition-all md:block ${open ? "max-h-96 pb-4" : "max-h-0 md:max-h-none"}`}>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+          {faq.answer}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FAQSection() {
+  return (
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+        Frequently Asked Questions
+      </h2>
+      {/* Mobile: accordion list, Desktop: 2-col card grid */}
+      <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700 border-t border-gray-200 dark:border-gray-700">
+        {HOMEPAGE_FAQS.map((faq) => (
+          <FAQAccordionItem key={faq.question} faq={faq} />
+        ))}
+      </div>
+      <div className="hidden md:grid md:grid-cols-2 gap-6">
+        {HOMEPAGE_FAQS.map((faq) => (
+          <div
+            key={faq.question}
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
+          >
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+              {faq.question}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              {faq.answer}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function QuickLinks() {
+  const links = [
+    { to: "/tampa-bay-tech-events", label: "Tampa Bay tech events" },
+    { to: "/tampa-developer-meetups", label: "Developer meetups in Tampa" },
+    { to: "/tampa-startup-events", label: "Tampa startup events" },
+    { to: "/tampa-founder-meetups", label: "Founder meetups in Tampa Bay" },
+    { to: "/st-petersburg-tech-events", label: "St. Petersburg tech events" },
+    { to: "/clearwater-tech-events", label: "Clearwater tech events" },
+    { to: "/tampa-ai-meetups", label: "Tampa AI & ML meetups" },
+    { to: "/tampa-entrepreneurship-events", label: "Entrepreneurship events" },
+    { to: "/map", label: "Event map" },
+    { to: "/builders", label: "Build on Tampa.dev" },
+  ];
+
+  return (
+    <section className="bg-gray-50 dark:bg-gray-900 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Explore Tech in Tampa Bay
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="inline-flex items-center px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:border-coral/50 hover:text-coral dark:hover:text-coral transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
       </div>
     </section>
@@ -251,26 +430,102 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     totalGroups,
     totalEvents,
     apiBase,
+    onboardingSteps: initialOnboardingSteps,
   } = loaderData;
 
   const rootData = useRouteLoaderData("root") as { user?: { name: string | null; email: string } | null } | undefined;
   const user = rootData?.user;
 
+  const { personal } = useWS();
+
+  // Onboarding checklist state
+  const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>(
+    initialOnboardingSteps || []
+  );
+  const [checklistDismissed, setChecklistDismissed] = useState(false);
+
+  // Real-time onboarding step completion via WebSocket
+  useEffect(() => {
+    return personal.on('onboarding.step_completed', (msg) => {
+      setOnboardingSteps((prev) =>
+        prev.map((s) =>
+          s.key === msg.data.stepKey ? { ...s, completed: true } : s
+        )
+      );
+    });
+  }, [personal]);
+
+  const visibleSteps = onboardingSteps.filter((s) => !s.dismissed);
+  const hasIncompleteSteps = visibleSteps.some((s) => !s.completed);
+  const showChecklist = user && !checklistDismissed && hasIncompleteSteps && visibleSteps.length > 0;
+
+  const handleDismissStep = useCallback(
+    async (stepKey: string) => {
+      // Optimistic update
+      setOnboardingSteps((prev) =>
+        prev.map((s) => (s.key === stepKey ? { ...s, dismissed: true } : s))
+      );
+      try {
+        const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
+        await fetch(`${apiUrl}/me/onboarding/${encodeURIComponent(stepKey)}/dismiss`, {
+          method: "POST",
+          credentials: "include",
+          headers: { Accept: "application/json" },
+        });
+      } catch {
+        // Revert on failure
+        setOnboardingSteps((prev) =>
+          prev.map((s) => (s.key === stepKey ? { ...s, dismissed: false } : s))
+        );
+      }
+    },
+    []
+  );
+
+  const handleDismissAll = useCallback(async () => {
+    setChecklistDismissed(true);
+    try {
+      const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
+      await fetch(`${apiUrl}/me/onboarding/dismiss-all`, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+    } catch {
+      // If the API call fails, the checklist is already hidden for this session
+    }
+  }, []);
+
   return (
     <>
-      <StructuredData data={[websiteJsonLd(), eventsToJsonLd(events)]} />
+      <StructuredData
+        data={[
+          websiteJsonLd(),
+          organizationJsonLd(),
+          eventsToJsonLd(events),
+          faqPageJsonLd(HOMEPAGE_FAQS),
+        ]}
+      />
 
       {/* Hero / Personalized Dashboard */}
       {user ? (
         <PersonalizedDashboard
-          userName={user.name || user.email.split("@")[0]}
+          userName={(user.name || user.email.split("@")[0]).split(" ")[0]}
           events={events}
-          allGroups={allGroups}
           totalGroups={totalGroups}
           totalEvents={totalEvents}
         />
       ) : (
         <HeroSection totalGroups={totalGroups} totalEvents={totalEvents} />
+      )}
+
+      {/* Onboarding Checklist */}
+      {showChecklist && (
+        <OnboardingChecklist
+          steps={visibleSteps}
+          onDismiss={handleDismissStep}
+          onDismissAll={handleDismissAll}
+        />
       )}
 
       {/* Featured Event */}
@@ -328,6 +583,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       {/* Newsletter Signup */}
       <NewsletterSignup />
+
+      {/* FAQ Section */}
+      <FAQSection />
+
+      {/* Quick Links / Internal Linking */}
+      <QuickLinks />
 
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

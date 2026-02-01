@@ -6,43 +6,13 @@
  */
 
 import { Hono } from 'hono';
-import { getCookie } from 'hono/cookie';
 import { eq, and, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, groups, userFavorites } from '../db/schema';
+import { groups, userFavorites } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getSessionCookieName } from '../lib/session';
-import { EventBus } from '../lib/event-bus.js';
-
-/**
- * Helper to get the current user from session
- */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-
-  return user;
-}
+import { getCurrentUser } from '../lib/auth.js';
+import { emitEvent, emitEvents } from '../lib/event-bus.js';
+import { ok, success, unauthorized, notFound } from '../lib/responses.js';
 
 export function createFavoritesRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -53,11 +23,9 @@ export function createFavoritesRoutes() {
    * Returns list of favorited group slugs for the authenticated user.
    */
   app.get('/', async (c) => {
-    const user = await getCurrentUser(c);
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
 
@@ -73,26 +41,22 @@ export function createFavoritesRoutes() {
       .innerJoin(groups, eq(userFavorites.groupId, groups.id))
       .where(eq(userFavorites.userId, user.id));
 
-    return c.json({
-      favorites: favorites.map((f) => ({
-        groupSlug: f.urlname,
-        groupName: f.name,
-        groupPhotoUrl: f.photoUrl,
-        groupId: f.groupId,
-        createdAt: f.createdAt,
-      })),
-    });
+    return ok(c, favorites.map((f) => ({
+      groupSlug: f.urlname,
+      groupName: f.name,
+      groupPhotoUrl: f.photoUrl,
+      groupId: f.groupId,
+      createdAt: f.createdAt,
+    })));
   });
 
   /**
    * POST /api/favorites/:groupSlug - Add a group to favorites
    */
   app.post('/:groupSlug', async (c) => {
-    const user = await getCurrentUser(c);
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const groupSlug = c.req.param('groupSlug');
     const db = createDatabase(c.env.DB);
@@ -102,9 +66,7 @@ export function createFavoritesRoutes() {
       where: eq(groups.urlname, groupSlug),
     });
 
-    if (!group) {
-      return c.json({ error: 'Group not found' }, 404);
-    }
+    if (!group) return notFound(c, 'Group not found');
 
     // Check if already favorited
     const existing = await db.query.userFavorites.findFirst({
@@ -115,7 +77,7 @@ export function createFavoritesRoutes() {
     });
 
     if (existing) {
-      return c.json({ success: true, message: 'Already favorited' });
+      return success(c, { message: 'Already favorited' });
     }
 
     // Add favorite
@@ -126,27 +88,22 @@ export function createFavoritesRoutes() {
     });
 
     // Emit event for achievement tracking
-    if (c.env.EVENTS_QUEUE) {
-      const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-      eventBus.publish({
-        type: 'user.favorite_added',
-        payload: { userId: user.id, groupId: group.id },
-        metadata: { userId: user.id, source: 'favorites' },
-      }).catch(() => {}); // fire-and-forget
-    }
+    emitEvent(c, {
+      type: 'dev.tampa.user.favorite_added',
+      payload: { userId: user.id, groupId: group.id },
+      metadata: { userId: user.id, source: 'favorites' },
+    });
 
-    return c.json({ success: true });
+    return success(c);
   });
 
   /**
    * DELETE /api/favorites/:groupSlug - Remove a group from favorites
    */
   app.delete('/:groupSlug', async (c) => {
-    const user = await getCurrentUser(c);
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const groupSlug = c.req.param('groupSlug');
     const db = createDatabase(c.env.DB);
@@ -156,9 +113,7 @@ export function createFavoritesRoutes() {
       where: eq(groups.urlname, groupSlug),
     });
 
-    if (!group) {
-      return c.json({ error: 'Group not found' }, 404);
-    }
+    if (!group) return notFound(c, 'Group not found');
 
     // Remove favorite
     await db
@@ -170,7 +125,14 @@ export function createFavoritesRoutes() {
         )
       );
 
-    return c.json({ success: true });
+    // Emit event for broadcast favorite count update
+    emitEvent(c, {
+      type: 'dev.tampa.user.favorite_removed',
+      payload: { userId: user.id, groupId: group.id },
+      metadata: { userId: user.id, source: 'favorites' },
+    });
+
+    return success(c);
   });
 
   /**
@@ -180,11 +142,9 @@ export function createFavoritesRoutes() {
    * Returns the complete list of favorites after merge.
    */
   app.post('/sync', async (c) => {
-    const user = await getCurrentUser(c);
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const body = await c.req.json<{ slugs: string[] }>().catch(() => ({ slugs: [] }));
     const localSlugs = body.slugs || [];
@@ -195,8 +155,8 @@ export function createFavoritesRoutes() {
     const groupsToAdd =
       localSlugs.length > 0
         ? await db.query.groups.findMany({
-            where: inArray(groups.urlname, localSlugs),
-          })
+          where: inArray(groups.urlname, localSlugs),
+        })
         : [];
 
     // Get existing favorites
@@ -220,16 +180,11 @@ export function createFavoritesRoutes() {
       );
 
       // Emit events for achievement tracking (one per new favorite)
-      if (c.env.EVENTS_QUEUE) {
-        const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-        eventBus.publishBatch(
-          newFavorites.map((g) => ({
-            type: 'user.favorite_added',
-            payload: { userId: user.id, groupId: g.id },
-            metadata: { userId: user.id, source: 'favorites-sync' },
-          }))
-        ).catch(() => {}); // fire-and-forget
-      }
+      emitEvents(c, newFavorites.map((g) => ({
+        type: 'dev.tampa.user.favorite_added',
+        payload: { userId: user.id, groupId: g.id },
+        metadata: { userId: user.id, source: 'favorites-sync' },
+      })));
     }
 
     // Return complete list of favorites
@@ -243,7 +198,7 @@ export function createFavoritesRoutes() {
       .innerJoin(groups, eq(userFavorites.groupId, groups.id))
       .where(eq(userFavorites.userId, user.id));
 
-    return c.json({
+    return ok(c, {
       favorites: allFavorites.map((f) => ({
         groupSlug: f.urlname,
         groupId: f.groupId,

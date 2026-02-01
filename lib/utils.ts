@@ -11,13 +11,18 @@ import type { EventFilterOptions } from '../models/loaders/EventLoader.js';
  * Works with both Photo models and raw photo objects
  */
 export function photoUrl(
-  photo: Photo | { baseUrl: string; id: string } | null | undefined,
+  photo: Photo | { baseUrl?: string; id: string; directUrl?: string } | null | undefined,
   w = 676,
   h = 380,
   fmt = 'webp'
 ): string {
   if (!photo) return 'https://tampa.dev/images/default.jpg';
-  return `${photo.baseUrl}${photo.id}/${w}x${h}.${fmt}`;
+  // Non-Meetup photos store a directUrl with the full image URL
+  if ('directUrl' in photo && photo.directUrl) return photo.directUrl;
+  // Photo model instances have a .url getter
+  if (photo instanceof Photo) return photo.url;
+  if (photo.baseUrl) return `${photo.baseUrl}${photo.id}/${w}x${h}.${fmt}`;
+  return photo.id;
 }
 
 /**

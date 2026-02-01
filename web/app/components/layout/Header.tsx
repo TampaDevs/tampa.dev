@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "@tampadevs/react";
 
 interface User {
@@ -19,6 +19,8 @@ const navLinks = [
   { to: "/calendar", label: "Events" },
   { to: "/groups", label: "Groups" },
   { to: "/map", label: "Map" },
+  { to: "/leaderboard", label: "Leaderboard" },
+  { to: "/members", label: "Members" },
 ];
 
 function LogoutButton({
@@ -133,6 +135,16 @@ function UserMenu({ user }: { user: User }) {
               </svg>
               Favorites
             </Link>
+            <Link
+              to="/profile?tab=achievements"
+              onClick={closeMenu}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4h12v4a6 6 0 01-12 0V4zM12 14v4m-4 2h8M6 4H3v3a4 4 0 004 4M18 4h3v3a4 4 0 01-4 4" />
+              </svg>
+              Achievements
+            </Link>
             {(user.role === "admin" || user.role === "superadmin") && (
               <Link
                 to="/admin"
@@ -159,6 +171,20 @@ function UserMenu({ user }: { user: User }) {
 
 export function Header({ user }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [wiggleSignIn, setWiggleSignIn] = useState(false);
+
+  useEffect(() => {
+    if (user) return;
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("signin-wiggle-shown")) return;
+
+    const delay = 1500 + Math.random() * 2500;
+    const timer = setTimeout(() => {
+      setWiggleSignIn(true);
+      sessionStorage.setItem("signin-wiggle-shown", "1");
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [user]);
 
   return (
     <header className="sticky top-0 z-50 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm shadow-gray-200/20 dark:shadow-black/10">
@@ -273,7 +299,8 @@ export function Header({ user }: HeaderProps) {
 
                 <Link
                   to="/login"
-                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-coral text-white hover:bg-coral-dark transition-colors"
+                  className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-coral text-white hover:bg-coral-dark transition-colors ${wiggleSignIn ? "animate-wave-wiggle" : ""}`}
+                  onAnimationEnd={() => setWiggleSignIn(false)}
                 >
                   Sign In
                 </Link>
@@ -356,6 +383,13 @@ export function Header({ user }: HeaderProps) {
                     className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400"
                   >
                     Profile
+                  </Link>
+                  <Link
+                    to="/profile?tab=achievements"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >
+                    Achievements
                   </Link>
                   {(user.role === "admin" || user.role === "superadmin") && (
                     <Link

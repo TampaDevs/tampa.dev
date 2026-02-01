@@ -1,0 +1,575 @@
+---
+title: MCP Tools
+description: Complete MCP tool reference organized by domain
+order: 41
+category: MCP
+---
+
+# MCP Tools
+
+The Tampa.dev MCP server exposes tools organized by domain. Each tool maps to one or more REST API operations and is gated by OAuth scopes. Use `tools/list` to discover available tools at runtime, or refer to this page for the complete reference.
+
+## Scope-Filtered Discovery
+
+When you call `tools/list`, the server returns only the tools your token's scopes authorize. For example, a token with `read:events` and `read:groups` will see event and group browsing tools but not management or admin tools.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list"
+}
+```
+
+The response includes tool names, descriptions, and JSON Schema for each tool's input parameters.
+
+---
+
+## Events
+
+Scopes: `read:events` (read), `write:events` (write)
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `events_list` | `read:events` | List events with optional filters (status, group, date range) |
+| `events_get` | `read:events` | Get full details for a single event by ID |
+| `events_rsvp_status` | `read:events` | Check the authenticated user's RSVP status for an event |
+| `events_rsvp_summary` | `read:events` | Get RSVP counts and summary for an event |
+| `events_rsvp` | `write:events` | RSVP to an event |
+| `events_cancel_rsvp` | `write:events` | Cancel an existing RSVP |
+| `events_checkin` | `write:events` | Check in to an event using a check-in code |
+
+### Example: List upcoming events
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "method": "tools/call",
+  "params": {
+    "name": "events_list",
+    "arguments": {
+      "status": "upcoming",
+      "limit": 5
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":[{\"id\":\"evt_abc123\",\"title\":\"React Meetup\",\"startTime\":\"2026-02-15T18:00:00Z\",\"groupName\":\"Tampa React\"},{\"id\":\"evt_def456\",\"title\":\"Rust Workshop\",\"startTime\":\"2026-02-20T14:00:00Z\",\"groupName\":\"Tampa Rust\"}],\"pagination\":{\"total\":12,\"limit\":5,\"offset\":0,\"hasMore\":true}}"
+      }
+    ]
+  }
+}
+```
+
+### Example: RSVP to an event
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 11,
+  "method": "tools/call",
+  "params": {
+    "name": "events_rsvp",
+    "arguments": {
+      "eventId": "evt_abc123"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 11,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"success\":true}}"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Groups
+
+Scopes: `read:groups` (read), none for public data
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `groups_list` | `read:groups` | List groups with optional filters (featured, search) |
+| `groups_get` | `read:groups` | Get full details for a group by slug |
+| `groups_leaderboard` | None (public) | Get the leaderboard for a specific group |
+
+### Example: Get group details
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 20,
+  "method": "tools/call",
+  "params": {
+    "name": "groups_get",
+    "arguments": {
+      "slug": "tampadevs"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 20,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"id\":\"grp_tampadevs\",\"name\":\"Tampa Devs\",\"slug\":\"tampadevs\",\"description\":\"Tampa Bay's developer community\",\"memberCount\":1200,\"eventCount\":45}}"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Favorites
+
+Scopes: `read:favorites` (read), `write:favorites` (write)
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `favorites_list` | `read:favorites` | List the authenticated user's favorite groups |
+| `favorites_add` | `write:favorites` | Add a group to favorites by slug |
+| `favorites_remove` | `write:favorites` | Remove a group from favorites by slug |
+
+---
+
+## Profile and Users
+
+Scopes: `read:user` (read), `user` (read/write)
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `profile_get` | `read:user` | Get the authenticated user's profile |
+| `profile_update` | `user` | Update profile fields (bio, location, links) |
+| `profile_email` | `user:email` | Get the authenticated user's email address |
+| `profile_achievements` | `read:user` | List the user's achievement progress |
+| `profile_linked_accounts` | `user:linked-accounts` | List connected identity providers |
+| `profile_entitlements` | `read:user` | List the user's platform entitlements |
+| `users_followers` | `read:user` | List a user's followers |
+| `users_following` | `read:user` | List users that a user follows |
+| `users_follow` | `user` | Follow a user by username |
+| `users_unfollow` | `user` | Unfollow a user by username |
+| `users_check_following` | `read:user` | Check if the authenticated user follows a given user |
+
+### Example: Get your profile
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 30,
+  "method": "tools/call",
+  "params": {
+    "name": "profile_get",
+    "arguments": {}
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 30,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"id\":\"usr_abc123\",\"name\":\"Jane Developer\",\"username\":\"janedev\",\"bio\":\"Building cool stuff in Tampa\",\"location\":\"Tampa, FL\",\"xp\":450,\"level\":5}}"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Portfolio
+
+Scopes: `read:portfolio` (read), `write:portfolio` (write)
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `portfolio_list` | `read:portfolio` | List the authenticated user's portfolio items |
+| `portfolio_create` | `write:portfolio` | Create a new portfolio item |
+| `portfolio_update` | `write:portfolio` | Update an existing portfolio item |
+| `portfolio_delete` | `write:portfolio` | Delete a portfolio item |
+
+---
+
+## Badges and Claims
+
+Scopes: None for public badge data, `read:user` for user claims
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `badges_list` | None (public) | List all available badges with optional filters |
+| `badges_get` | None (public) | Get details for a specific badge |
+| `badges_claim_info` | None (public) | Get claim link information (remaining uses, expiry) |
+| `badges_claim` | `read:user` | Claim a badge using a claim code |
+| `users_group_badges` | None (public) | List badges earned by a user in a specific group |
+
+### Example: Claim a badge
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 40,
+  "method": "tools/call",
+  "params": {
+    "name": "badges_claim",
+    "arguments": {
+      "code": "BADGE-CODE-123"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 40,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"success\":true,\"badge\":{\"id\":\"bdg_abc123\",\"name\":\"Early Adopter\",\"description\":\"One of the first to join\"}}}"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Leaderboard
+
+Scope: None (public)
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `leaderboard_global` | None (public) | Get the global XP leaderboard |
+| `leaderboard_group` | None (public) | Get the leaderboard for a specific group |
+
+---
+
+## Onboarding
+
+Scope: `user`
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `onboarding_status` | `user` | Get the user's onboarding progress |
+| `onboarding_dismiss_step` | `user` | Mark a specific onboarding step as dismissed |
+| `onboarding_dismiss_all` | `user` | Dismiss all remaining onboarding steps |
+
+---
+
+## Token Management
+
+Scope: `user`
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `tokens_list` | `user` | List the authenticated user's Personal Access Tokens |
+| `tokens_create` | `user` | Create a new Personal Access Token |
+| `tokens_revoke` | `user` | Revoke (delete) a Personal Access Token by ID |
+
+---
+
+## Group Management
+
+Scopes: `manage:groups` + appropriate group role (owner, manager, or volunteer)
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `manage_list_groups` | `manage:groups` | List groups the user can manage |
+| `manage_get_group` | `manage:groups` | Get management details for a group |
+| `manage_update_group` | `manage:groups` | Update group settings (name, description, visibility) |
+| `manage_list_members` | `manage:groups` | List members of a managed group |
+| `manage_add_member` | `manage:groups` | Add a user to a managed group |
+| `manage_update_member_role` | `manage:groups` | Change a member's role in the group |
+| `manage_remove_member` | `manage:groups` | Remove a member from the group |
+| `manage_leave_group` | `manage:groups` | Leave a group you are a member of |
+
+### Example: List managed groups
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 50,
+  "method": "tools/call",
+  "params": {
+    "name": "manage_list_groups",
+    "arguments": {}
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 50,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":[{\"id\":\"grp_react\",\"name\":\"Tampa React\",\"role\":\"owner\"},{\"id\":\"grp_rust\",\"name\":\"Tampa Rust\",\"role\":\"manager\"}]}"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Event Management
+
+Scopes: `manage:events` + appropriate group role
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `manage_list_events` | `manage:events` | List events for a managed group |
+| `manage_get_event` | `manage:events` | Get management details for an event |
+| `manage_create_event` | `manage:events` | Create a new event in a managed group |
+| `manage_update_event` | `manage:events` | Update an existing event |
+| `manage_cancel_event` | `manage:events` | Cancel an event |
+
+### Example: Create an event
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 60,
+  "method": "tools/call",
+  "params": {
+    "name": "manage_create_event",
+    "arguments": {
+      "groupId": "grp_react",
+      "title": "TypeScript Workshop",
+      "description": "Hands-on TypeScript workshop for beginners",
+      "startTime": "2026-03-01T14:00:00-05:00",
+      "endTime": "2026-03-01T17:00:00-05:00",
+      "timezone": "America/New_York",
+      "eventType": "in_person",
+      "maxAttendees": 25
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 60,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"data\":{\"id\":\"evt_new123\",\"title\":\"TypeScript Workshop\",\"startTime\":\"2026-03-01T19:00:00Z\",\"status\":\"upcoming\"}}"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Check-in Management
+
+Scopes: `manage:checkins` + appropriate group role
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `manage_create_checkin_code` | `manage:checkins` | Generate a check-in code for an event |
+| `manage_list_checkin_codes` | `manage:checkins` | List active check-in codes for an event |
+| `manage_delete_checkin_code` | `manage:checkins` | Delete a check-in code |
+| `manage_list_attendees` | `manage:checkins` | List attendees who checked in to an event |
+
+---
+
+## Badge Management
+
+Scopes: `manage:badges` + appropriate group role
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `manage_list_badges` | `manage:badges` | List badges for a managed group |
+| `manage_create_badge` | `manage:badges` | Create a new badge for the group |
+| `manage_update_badge` | `manage:badges` | Update badge details (name, description, image) |
+| `manage_delete_badge` | `manage:badges` | Delete a badge from the group |
+| `manage_award_badge` | `manage:badges` | Award a badge to a user |
+| `manage_revoke_badge` | `manage:badges` | Revoke a badge from a user |
+| `manage_create_claim_link` | `manage:badges` | Create a claim link for a badge |
+| `manage_list_claim_links` | `manage:badges` | List claim links for a badge |
+
+---
+
+## Platform Admin
+
+Scope: `admin`
+
+All platform admin tools require the `admin` scope and an admin or superadmin user role. These tools are intended for platform operators, not regular users or group organizers.
+
+### User Administration
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_list_users` | `admin` | List all platform users with search and filters |
+| `admin_get_user` | `admin` | Get full details for a user by ID |
+| `admin_update_user_role` | `admin` | Change a user's platform role |
+| `admin_delete_user` | `admin` | Delete a user account |
+| `admin_merge_users` | `admin` | Merge duplicate user accounts |
+| `admin_grant_entitlement` | `admin` | Grant a platform entitlement to a user |
+
+### Group Administration
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_list_groups` | `admin` | List all groups on the platform |
+| `admin_get_group` | `admin` | Get full admin details for a group |
+| `admin_create_group` | `admin` | Create a new group |
+| `admin_update_group` | `admin` | Update any group's settings |
+| `admin_delete_group` | `admin` | Delete a group |
+
+### Group Member Administration
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_list_group_members` | `admin` | List members of any group |
+| `admin_add_group_member` | `admin` | Add a user to any group |
+| `admin_update_group_member` | `admin` | Update a member's role in any group |
+| `admin_remove_group_member` | `admin` | Remove a member from any group |
+
+### Platform Connections
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_list_connections` | `admin` | List external platform connections (Meetup, Eventbrite, Luma) |
+| `admin_add_connection` | `admin` | Add a new platform connection to a group |
+| `admin_remove_connection` | `admin` | Remove a platform connection |
+
+### Sync Operations
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_sync_status` | `admin` | Get the current sync status for all connections |
+| `admin_sync_all` | `admin` | Trigger a full sync for all connected platforms |
+| `admin_sync_group` | `admin` | Trigger a sync for a specific group's connections |
+| `admin_sync_logs` | `admin` | View recent sync operation logs |
+
+### Badge Administration
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_list_badges` | `admin` | List all badges across the platform |
+| `admin_create_badge` | `admin` | Create a badge for any group |
+| `admin_update_badge` | `admin` | Update any badge |
+| `admin_delete_badge` | `admin` | Delete any badge |
+| `admin_award_badge` | `admin` | Award any badge to any user |
+| `admin_revoke_badge` | `admin` | Revoke any badge from any user |
+| `admin_list_claim_links` | `admin` | List claim links for any badge |
+| `admin_create_claim_link` | `admin` | Create a claim link for any badge |
+| `admin_delete_claim_link` | `admin` | Delete any claim link |
+
+### Achievement Administration
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_list_achievements` | `admin` | List all achievement definitions |
+| `admin_create_achievement` | `admin` | Create a new achievement definition |
+| `admin_update_achievement` | `admin` | Update an achievement definition |
+| `admin_delete_achievement` | `admin` | Delete an achievement definition |
+| `admin_achievement_progress` | `admin` | View achievement progress for a user |
+
+### Webhook Administration
+
+| Tool | Required Scope | Description |
+|------|---------------|-------------|
+| `admin_list_webhooks` | `admin` | List all registered webhook endpoints |
+| `admin_webhook_deliveries` | `admin` | View recent webhook delivery logs |
+
+---
+
+## Error Handling
+
+When a tool call fails, the response includes an `isError` flag and an error message:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 99,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":\"This endpoint requires the 'read:events' scope\",\"code\":\"insufficient_scope\"}"
+      }
+    ],
+    "isError": true
+  }
+}
+```
+
+Common error codes match the [REST API error catalog](/developer/docs/error-catalog):
+
+| Code | Meaning |
+|------|---------|
+| `unauthorized` | Missing or invalid authentication |
+| `insufficient_scope` | Token lacks the required scope |
+| `forbidden` | Authenticated but not authorized for this action |
+| `not_found` | Resource does not exist |
+| `validation_error` | Invalid tool arguments |
+| `rate_limited` | Too many requests |

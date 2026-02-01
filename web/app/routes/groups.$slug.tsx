@@ -87,8 +87,8 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
 
         {/* Group Header */}
         <div className="flex flex-col md:flex-row gap-8 mb-12">
-          <div className="flex-shrink-0">
-            <div className="relative w-32 h-32 md:w-40 md:h-40">
+          <div className="flex-shrink-0 flex flex-col items-center md:items-start">
+            <div className="relative w-40 h-40">
               <img
                 src={group.logo}
                 alt={group.name}
@@ -98,9 +98,18 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
                 }}
               />
               <div className="absolute bottom-1.5 right-1.5">
-                <FavoriteButton slug={group.slug} size="small" />
+                <FavoriteButton slug={group.slug} size="small" count={group.favoritesCount} />
               </div>
             </div>
+            <Link
+              to={`/groups/${group.slug}/members`}
+              className="mt-2 inline-flex items-center justify-center gap-1.5 w-40 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Members
+            </Link>
           </div>
 
           <div className="flex-1">
@@ -131,7 +140,7 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
               </a>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
               {group.tags.map((tag) => (
                 <span
                   key={tag}

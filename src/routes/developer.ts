@@ -9,9 +9,14 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, webhooks, webhookDeliveries } from '../db/schema';
+import { webhooks, webhookDeliveries } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getSessionCookieName } from '../lib/session';
+import { getCurrentUser } from '../lib/auth.js';
+import { hasAdminRestrictedEvents, getAdminRestrictedFromList } from '../lib/webhook-events';
+import { emitEvent } from '../lib/event-bus.js';
+import { encrypt, decryptOrPassthrough } from '../lib/crypto.js';
+import { validateWebhookUrl } from '../lib/url-validation.js';
+import { rateLimit } from '../middleware/rate-limit.js';
 
 // ============== Validation Schemas ==============
 
@@ -67,33 +72,6 @@ interface OAuthClient {
 // ============== Helper Functions ==============
 
 /**
- * Get current user from session cookie
- */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  return await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-}
-
-/**
  * Generate a secure client ID
  */
 function generateClientId(): string {
@@ -120,6 +98,57 @@ function generateWebhookSecret(): string {
   return 'whsec_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Build a realistic test payload for a given event type
+ */
+function buildTestPayloadData(eventType: string): Record<string, unknown> {
+  switch (eventType) {
+    case 'dev.tampa.events.synced':
+      return {
+        groupId: 'test-group-id',
+        groupUrlname: 'tampadevs',
+        eventsCreated: 2,
+        eventsUpdated: 1,
+        eventsDeleted: 0,
+      };
+    case 'dev.tampa.sync.completed':
+      return {
+        total: 10,
+        succeeded: 9,
+        failed: 1,
+        durationMs: 3200,
+      };
+    case 'dev.tampa.user.favorite_added':
+      return {
+        userId: 'test-user-id',
+        groupId: 'test-group-id',
+      };
+    case 'dev.tampa.user.portfolio_item_created':
+      return {
+        userId: 'test-user-id',
+        portfolioItemId: 'test-item-id',
+      };
+    case 'dev.tampa.user.identity_linked':
+      return {
+        userId: 'test-user-id',
+        provider: 'github',
+      };
+    case 'dev.tampa.user.registered':
+      return {
+        userId: 'test-user-id',
+        email: 'test@example.com',
+      };
+    case 'dev.tampa.user.deleted':
+      return {
+        userId: 'test-user-id',
+      };
+    default:
+      return {
+        message: 'This is a test webhook delivery from Tampa.dev.',
+      };
+  }
+}
+
 // ============== Routes ==============
 
 export function createDeveloperRoutes() {
@@ -129,10 +158,11 @@ export function createDeveloperRoutes() {
    * GET /api/developer/apps - List user's registered apps
    */
   app.get('/apps', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const kv = c.env.OAUTH_KV;
     if (!kv) {
@@ -172,11 +202,12 @@ export function createDeveloperRoutes() {
   /**
    * POST /api/developer/apps - Register a new OAuth app
    */
-  app.post('/apps', zValidator('json', createAppSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+  app.post('/apps', rateLimit({ prefix: 'dev-app-create', maxRequests: 10, windowSeconds: 60 }), zValidator('json', createAppSchema), async (c) => {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const kv = c.env.OAUTH_KV;
     if (!kv) {
@@ -207,6 +238,13 @@ export function createDeveloperRoutes() {
     // Store in KV
     await kv.put(`client:${clientId}`, JSON.stringify(clientData));
 
+    // Emit event for achievement tracking
+    emitEvent(c, {
+      type: 'dev.tampa.developer.application_registered',
+      payload: { userId: user.id, clientId, appName: data.name },
+      metadata: { userId: user.id, source: 'developer' },
+    });
+
     // Return credentials (secret shown only once!)
     return c.json({
       clientId,
@@ -221,10 +259,11 @@ export function createDeveloperRoutes() {
    * GET /api/developer/apps/:clientId - Get app details
    */
   app.get('/apps/:clientId', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const kv = c.env.OAUTH_KV;
     const clientId = c.req.param('clientId');
@@ -273,10 +312,11 @@ export function createDeveloperRoutes() {
    * PATCH /api/developer/apps/:clientId - Update app settings
    */
   app.patch('/apps/:clientId', zValidator('json', updateAppSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const kv = c.env.OAUTH_KV;
     const clientId = c.req.param('clientId');
@@ -326,10 +366,11 @@ export function createDeveloperRoutes() {
    * POST /api/developer/apps/:clientId/regenerate-secret - Generate new client secret
    */
   app.post('/apps/:clientId/regenerate-secret', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const kv = c.env.OAUTH_KV;
     const clientId = c.req.param('clientId');
@@ -371,10 +412,11 @@ export function createDeveloperRoutes() {
    * DELETE /api/developer/apps/:clientId - Delete an app
    */
   app.delete('/apps/:clientId', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const kv = c.env.OAUTH_KV;
     const clientId = c.req.param('clientId');
@@ -434,10 +476,11 @@ export function createDeveloperRoutes() {
    * GET /api/developer/webhooks - List user's webhooks
    */
   app.get('/webhooks', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
     const userWebhooks = await db.query.webhooks.findMany({
@@ -460,26 +503,53 @@ export function createDeveloperRoutes() {
    * POST /api/developer/webhooks - Create a new webhook
    */
   app.post('/webhooks', zValidator('json', createWebhookSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const data = c.req.valid('json');
     const db = createDatabase(c.env.DB);
 
+    // Validate webhook URL against SSRF
+    const urlCheck = validateWebhookUrl(data.url);
+    if (!urlCheck.valid) {
+      return c.json({ error: urlCheck.error }, 400);
+    }
+
+    // Check admin-restricted event types
+    if (hasAdminRestrictedEvents(data.eventTypes)) {
+      if (user.role !== 'admin' && user.role !== 'superadmin') {
+        return c.json({
+          error: 'Some event types require admin role to subscribe',
+          adminRestrictedEvents: getAdminRestrictedFromList(data.eventTypes),
+        }, 403);
+      }
+    }
+
     const id = crypto.randomUUID();
     const secret = generateWebhookSecret();
+    const storedSecret = c.env.ENCRYPTION_KEY
+      ? await encrypt(secret, c.env.ENCRYPTION_KEY)
+      : secret;
 
     await db.insert(webhooks).values({
       id,
       userId: user.id,
       url: data.url,
-      secret,
+      secret: storedSecret,
       eventTypes: JSON.stringify(data.eventTypes),
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+    });
+
+    // Emit event for achievement tracking
+    emitEvent(c, {
+      type: 'dev.tampa.developer.webhook_created',
+      payload: { userId: user.id, webhookId: id, url: data.url },
+      metadata: { userId: user.id, source: 'developer' },
     });
 
     return c.json({
@@ -496,10 +566,11 @@ export function createDeveloperRoutes() {
    * PATCH /api/developer/webhooks/:id - Update a webhook
    */
   app.patch('/webhooks/:id', zValidator('json', updateWebhookSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const webhookId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -513,6 +584,25 @@ export function createDeveloperRoutes() {
     }
 
     const updates = c.req.valid('json');
+
+    // Validate webhook URL against SSRF if updating
+    if (updates.url !== undefined) {
+      const urlCheck = validateWebhookUrl(updates.url);
+      if (!urlCheck.valid) {
+        return c.json({ error: urlCheck.error }, 400);
+      }
+    }
+
+    // Check admin-restricted event types on update
+    if (updates.eventTypes && hasAdminRestrictedEvents(updates.eventTypes)) {
+      if (user.role !== 'admin' && user.role !== 'superadmin') {
+        return c.json({
+          error: 'Some event types require admin role to subscribe',
+          adminRestrictedEvents: getAdminRestrictedFromList(updates.eventTypes),
+        }, 403);
+      }
+    }
+
     const updateValues: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
     };
@@ -536,10 +626,11 @@ export function createDeveloperRoutes() {
    * DELETE /api/developer/webhooks/:id - Delete a webhook
    */
   app.delete('/webhooks/:id', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const webhookId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -560,10 +651,11 @@ export function createDeveloperRoutes() {
    * GET /api/developer/webhooks/:id/deliveries - Get recent deliveries
    */
   app.get('/webhooks/:id/deliveries', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const webhookId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -599,10 +691,11 @@ export function createDeveloperRoutes() {
    * POST /api/developer/webhooks/:id/test - Send a test event
    */
   app.post('/webhooks/:id/test', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
+    const auth = await getCurrentUser(c);
+    if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
+    const user = auth.user;
 
     const webhookId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -615,22 +708,38 @@ export function createDeveloperRoutes() {
       return c.json({ error: 'Webhook not found' }, 404);
     }
 
-    // Build a test payload
+    // SSRF pre-check before delivery
+    const urlCheck = validateWebhookUrl(webhook.url);
+    if (!urlCheck.valid) {
+      return c.json({ error: `Webhook URL failed validation: ${urlCheck.error}` }, 400);
+    }
+
+    // Parse optional event type from request body
+    let eventType = 'test.ping';
+    try {
+      const body = await c.req.json<{ eventType?: string }>().catch(() => ({}));
+      if (body.eventType) eventType = body.eventType;
+    } catch { /* use default */ }
+
+    // Build a test payload with realistic shape per event type
     const deliveryId = crypto.randomUUID();
     const testPayload = JSON.stringify({
       id: deliveryId,
-      type: 'test.ping',
+      type: eventType,
       timestamp: new Date().toISOString(),
-      data: {
-        message: 'This is a test webhook delivery from Tampa Devs.',
-      },
+      data: buildTestPayloadData(eventType),
     });
+
+    // Decrypt the secret if encrypted (handles migration period transparently)
+    const webhookSecret = c.env.ENCRYPTION_KEY
+      ? await decryptOrPassthrough(webhook.secret, c.env.ENCRYPTION_KEY)
+      : webhook.secret;
 
     // Sign the payload
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(webhook.secret),
+      encoder.encode(webhookSecret!),
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign']
@@ -649,11 +758,12 @@ export function createDeveloperRoutes() {
         headers: {
           'Content-Type': 'application/json',
           'X-Webhook-Signature': `sha256=${signature}`,
-          'X-Event-Type': 'test.ping',
+          'X-Event-Type': eventType,
           'X-Delivery-ID': deliveryId,
           'User-Agent': 'TampaDevs-Webhooks/1.0',
         },
         body: testPayload,
+        signal: AbortSignal.timeout(15_000),
       });
 
       statusCode = response.status;
@@ -670,7 +780,7 @@ export function createDeveloperRoutes() {
     await db.insert(webhookDeliveries).values({
       id: deliveryId,
       webhookId: webhook.id,
-      eventType: 'test.ping',
+      eventType,
       payload: testPayload,
       statusCode,
       responseBody,

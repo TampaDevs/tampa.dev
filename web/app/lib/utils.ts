@@ -83,6 +83,39 @@ export function stripHtml(html: string): string {
 }
 
 /**
+ * Strip Markdown syntax from text, leaving plain text
+ */
+export function stripMarkdown(md: string): string {
+  return md
+    // images ![alt](url)
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    // links [text](url)
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    // bold/italic ***text***, **text**, *text*, ___text___, __text__, _text_
+    .replace(/(\*{1,3}|_{1,3})(.+?)\1/g, "$2")
+    // strikethrough ~~text~~
+    .replace(/~~(.+?)~~/g, "$1")
+    // inline code `text`
+    .replace(/`([^`]+)`/g, "$1")
+    // headings # text
+    .replace(/^#{1,6}\s+/gm, "")
+    // blockquotes > text
+    .replace(/^>\s+/gm, "")
+    // unordered list markers - item, * item, + item
+    .replace(/^[\s]*[-*+]\s+/gm, "")
+    // ordered list markers 1. item
+    .replace(/^[\s]*\d+\.\s+/gm, "")
+    // horizontal rules ---, ***, ___
+    .replace(/^[-*_]{3,}\s*$/gm, "")
+    // reference links [text]: url
+    .replace(/^\[([^\]]+)\]:\s*.*$/gm, "")
+    // collapse multiple whitespace
+    .replace(/\n{2,}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Generate a slug from a string
  */
 export function slugify(text: string): string {

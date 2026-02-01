@@ -37,7 +37,7 @@ export interface Group {
 
 export type EventStatus = "ACTIVE" | "CANCELLED" | "DRAFT";
 export type EventType = "PHYSICAL" | "ONLINE" | "HYBRID";
-export type EventSource = "meetup" | "eventbrite" | "luma";
+export type EventSource = "meetup" | "eventbrite" | "luma" | "tampa.dev";
 
 export interface Event {
   id: string;
@@ -88,6 +88,79 @@ export interface LocalGroupCompat {
   };
   tags: string[];
   featured?: boolean;
+  favoritesCount?: number;
+}
+
+// ============== RSVP Types ==============
+
+export type RsvpStatus = "confirmed" | "waitlisted" | "cancelled";
+
+export interface RsvpSummary {
+  confirmed: number;
+  waitlisted: number;
+  capacity: number | null;
+  userRsvpStatus: RsvpStatus | null;
+}
+
+// ============== Checkin Types ==============
+
+export interface CheckinInfo {
+  eventId: string;
+  eventTitle: string;
+  eventStartTime: string;
+  groupName: string;
+  groupSlug: string;
+  groupPhotoUrl: string | null;
+  valid: boolean;
+  message?: string;
+}
+
+// ============== Group Badge Types ==============
+
+export interface GroupBadgeInfo {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  points: number;
+  rarity?: number;
+  groupId: string;
+  groupName: string;
+  groupSlug: string;
+  groupPhotoUrl: string | null;
+  awardedAt?: string;
+}
+
+export interface GroupBadgeGroup {
+  groupId: string;
+  groupName: string;
+  groupSlug: string;
+  groupPhotoUrl: string | null;
+  totalXp: number;
+  badges: GroupBadgeInfo[];
+}
+
+// ============== Group Leaderboard Types ==============
+
+export interface GroupLeaderboardEntry {
+  rank: number;
+  userId: string;
+  name: string | null;
+  username: string | null;
+  avatarUrl: string | null;
+  score: number;
+  badgeCount: number;
+}
+
+// ============== Group Claim Types ==============
+
+export interface GroupClaimInfo {
+  groupId: string;
+  groupName: string;
+  groupDescription: string | null;
+  groupPhotoUrl: string | null;
+  autoApprove: boolean;
 }
 
 /**

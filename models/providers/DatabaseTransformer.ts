@@ -131,6 +131,7 @@ export class DatabaseTransformer {
       venues,
       photo,
       group: groupData,
+      source: group.platform,
     };
 
     return new Event(eventData);
@@ -170,7 +171,9 @@ export class DatabaseTransformer {
       id: group.platformId,
       name: group.name,
       urlname: group.urlname,
-      link: group.link || `https://${group.platform}.com/${group.platformId}`,
+      link: group.link || (group.platform === 'tampa.dev'
+        ? `https://events.tampa.dev/groups/${group.urlname}`
+        : `https://${group.platform}.com/${group.platformId}`),
       memberCount: group.memberCount ?? 0,
       photo,
     };

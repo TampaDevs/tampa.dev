@@ -121,28 +121,35 @@ export const oauthProviders: Record<string, OAuthProviderConfig> = {
   slack: {
     name: 'Slack',
     provider: 'slack',
-    authUrl: 'https://slack.com/oauth/v2/authorize',
-    tokenUrl: 'https://slack.com/api/oauth.v2.access',
-    userInfoUrl: 'https://slack.com/api/users.identity',
-    scopes: ['identity.basic', 'identity.email', 'identity.avatar'],
+    authUrl: 'https://slack.com/openid/connect/authorize',
+    tokenUrl: 'https://slack.com/api/openid.connect.token',
+    userInfoUrl: 'https://slack.com/api/openid.connect.userInfo',
+    scopes: ['openid', 'profile', 'email'],
     getCredentials: (env) => {
       if (!env.SLACK_CLIENT_ID || !env.SLACK_CLIENT_SECRET || !env.SLACK_REDIRECT_URI) return null;
       return { clientId: env.SLACK_CLIENT_ID, clientSecret: env.SLACK_CLIENT_SECRET, redirectUri: env.SLACK_REDIRECT_URI };
     },
-    parseUserInfo: (data) => ({
-      id: data.user?.id || data.id,
-      email: data.user?.email || data.email || null,
-      name: data.user?.name || data.name,
-      avatarUrl: data.user?.image_192 || data.user?.image_72,
-    }),
     tokenRequestFormat: 'form',
-    tokenResponsePath: 'authed_user.access_token',
-    authParams: { user_scope: 'identity.basic,identity.email,identity.avatar' },
+    tokenResponsePath: 'access_token',
+
+    // OIDC needs nonce; state too
+    authParams: {
+      response_type: 'code',
+      // nonce should be generated per-request; if your framework supports it, inject dynamically
+    },
     userInfoHeaders: (token) => ({
       Authorization: `Bearer ${token}`,
       Accept: 'application/json',
     }),
+    parseUserInfo: (data) => ({
+      id: data.sub,
+      email: data.email || null,
+      name: data.name,
+      avatarUrl: data.picture,
+      username: data["https://slack.com/user_id"] ?? undefined
+    }),
   },
+
   meetup: {
     name: 'Meetup',
     provider: 'meetup',
@@ -219,6 +226,31 @@ export const oauthProviders: Record<string, OAuthProviderConfig> = {
       response_mode: 'form_post',
       response_type: 'code',
     },
+  },
+
+  discord: {
+    name: 'Discord',
+    provider: 'discord',
+    authUrl: 'https://discord.com/oauth2/authorize',
+    tokenUrl: 'https://discord.com/api/oauth2/token',
+    userInfoUrl: 'https://discord.com/api/users/@me',
+    scopes: ['identify', 'email'],
+    getCredentials: (env) => {
+      if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET || !env.DISCORD_REDIRECT_URI) return null;
+      return { clientId: env.DISCORD_CLIENT_ID, clientSecret: env.DISCORD_CLIENT_SECRET, redirectUri: env.DISCORD_REDIRECT_URI };
+    },
+    parseUserInfo: (data) => ({
+      id: String(data.id),
+      email: data.email || null,
+      name: data.global_name || data.username,
+      username: data.username,
+      avatarUrl: data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : undefined,
+    }),
+    tokenRequestFormat: 'form',
+    userInfoHeaders: (token) => ({
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    }),
   },
 };
 

@@ -5,9 +5,9 @@ import { EventMap } from "~/components";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
-    title: "Event Map",
+    title: "Tampa Bay Tech Events Map",
     description:
-      "View upcoming tech events in Tampa Bay on an interactive map. Find meetups and developer events near you.",
+      "View upcoming tech events in Tampa Bay on an interactive map. Find developer meetups, startup events, and tech gatherings near you across Tampa, St. Petersburg, and Clearwater.",
     url: "/map",
   });
 };

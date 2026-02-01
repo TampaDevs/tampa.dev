@@ -16,7 +16,11 @@ import { users, userIdentities, sessions, UserRole } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { getConfiguredProviders, getProvider } from '../lib/oauth-providers';
-import { EventBus } from '../lib/event-bus.js';
+import { emitEvent } from '../lib/event-bus.js';
+import { encrypt } from '../lib/crypto.js';
+import { validateReturnTo, renderRedirectInterstitial } from '../lib/redirect-validation.js';
+import { rateLimit } from '../middleware/rate-limit.js';
+import { generateDefaultUsername } from '../lib/username.js';
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -176,7 +180,7 @@ export function createAuthRoutes() {
   /**
    * GET /auth/github/callback - Handle GitHub OAuth callback
    */
-  app.get('/github/callback', async (c) => {
+  app.get('/github/callback', rateLimit({ prefix: 'auth-callback', maxRequests: 10, windowSeconds: 60 }), async (c) => {
     const { code, state } = c.req.query();
     const storedState = getCookie(c, 'oauth_state');
     const origin = new URL(c.req.url).origin;
@@ -333,12 +337,19 @@ export function createAuthRoutes() {
           const role = isOnAllowlist ? UserRole.ADMIN : UserRole.USER;
           const userId = crypto.randomUUID();
 
+          const username = await generateDefaultUsername(db, {
+            name: githubUser.name || githubUser.login,
+            providerUsername: githubUser.login,
+          });
+
           await db.insert(users).values({
             id: userId,
             email,
             name: githubUser.name || githubUser.login,
+            username,
             avatarUrl: githubUser.avatar_url,
             role,
+            profileVisibility: 'public',
             createdAt: now,
             updatedAt: now,
           });
@@ -366,10 +377,14 @@ export function createAuthRoutes() {
         ),
       });
 
+      const encryptedGhToken = c.env.ENCRYPTION_KEY
+        ? await encrypt(tokenData.access_token, c.env.ENCRYPTION_KEY)
+        : tokenData.access_token;
+
       if (existingIdentity) {
         await db.update(userIdentities).set({
           providerUsername: githubUser.login,
-          accessToken: tokenData.access_token,
+          accessToken: encryptedGhToken,
           providerEmail: email,
         }).where(eq(userIdentities.id, existingIdentity.id));
       } else {
@@ -379,23 +394,20 @@ export function createAuthRoutes() {
           provider: 'github',
           providerUserId: String(githubUser.id),
           providerUsername: githubUser.login,
-          accessToken: tokenData.access_token,
+          accessToken: encryptedGhToken,
           providerEmail: email,
           createdAt: now,
         });
 
         // Emit event for achievement tracking
-        if (c.env.EVENTS_QUEUE) {
-          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-          eventBus.publish({
-            type: 'user.identity_linked',
-            payload: { userId: user.id, provider: 'github' },
-            metadata: { userId: user.id, source: 'auth' },
-          }).catch(() => {});
-        }
+        emitEvent(c, {
+          type: 'dev.tampa.user.identity_linked',
+          payload: { userId: user.id, provider: 'github' },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      // Create session (skip if link mode — already has session)
+      // Create session (skip if link mode - already has session)
       if (!isLinkMode) {
         const sessionToken = generateSessionToken();
         const expiresAt = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
@@ -415,10 +427,24 @@ export function createAuthRoutes() {
           path: '/',
           domain: '.tampa.dev',
         });
+
+        // Emit login event
+        const daysSinceCreation = user.createdAt
+          ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        emitEvent(c, {
+          type: 'dev.tampa.user.login',
+          payload: { userId: user.id, daysSinceCreation },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      const redirectUrl = isLinkMode ? `${origin}/profile` : (returnTo || `${origin}/`);
-      return c.redirect(redirectUrl);
+      const fallback = isLinkMode ? `${origin}/profile?tab=accounts` : `${origin}/`;
+      const redirectResult = validateReturnTo(returnTo, fallback);
+      if (redirectResult.trusted) {
+        return c.redirect(redirectResult.url);
+      }
+      return c.html(renderRedirectInterstitial(redirectResult.url));
     } catch (error) {
       console.error('GitHub OAuth error:', error instanceof Error ? error.message : 'unknown error');
       return c.redirect(`${origin}/login?error=oauth_failed`);
@@ -500,6 +526,32 @@ export function createAuthRoutes() {
     return c.redirect(`${origin}/`);
   });
 
+  /**
+   * POST /auth/logout-all - Revoke all sessions for the current user
+   */
+  app.post('/logout-all', async (c) => {
+    const sessionToken = getCookie(c, getSessionCookieName(c.env));
+    if (!sessionToken) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const db = createDatabase(c.env.DB);
+
+    const session = await db.query.sessions.findFirst({
+      where: eq(sessions.id, sessionToken),
+    });
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // Delete ALL sessions for this user
+    await db.delete(sessions).where(eq(sessions.userId, session.userId));
+
+    deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
+
+    return c.json({ success: true });
+  });
+
   // ─── Identity management ──────────────────────────────────────────
 
   /**
@@ -552,22 +604,17 @@ export function createAuthRoutes() {
   /**
    * POST /auth/dev - Development-only auth bypass
    */
-  app.post('/dev', async (c) => {
-    const url = new URL(c.req.url);
-    const isLocal = url.hostname === 'localhost' ||
-      url.hostname === '127.0.0.1' ||
-      url.hostname.endsWith('.localhost') ||
-      url.hostname.includes('local');
-
-    if (!isLocal) {
-      return c.json({ error: 'Dev auth only available in local development' }, 403);
+  app.post('/dev', rateLimit({ prefix: 'auth-dev', maxRequests: 5, windowSeconds: 60 }), async (c) => {
+    // Only allow dev auth in development environments (not bypassable via hostname)
+    if (c.env.ENVIRONMENT !== 'development') {
+      return c.json({ error: 'Dev auth only available in development environment' }, 403);
     }
 
     const body = await c.req.json<{ role?: string }>().catch(() => ({} as { role?: string }));
-    const requestedRole = body.role || 'admin';
+    const requestedRole = body.role || 'user';
 
     const validRoles = ['user', 'admin', 'superadmin'];
-    const role = validRoles.includes(requestedRole) ? requestedRole : 'admin';
+    const role = validRoles.includes(requestedRole) ? requestedRole : 'user';
 
     const db = createDatabase(c.env.DB);
     const now = new Date().toISOString();
@@ -580,13 +627,20 @@ export function createAuthRoutes() {
 
     if (!user) {
       const userId = crypto.randomUUID();
+      const devName = `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+
+      const username = await generateDefaultUsername(db, {
+        name: devName,
+      });
 
       await db.insert(users).values({
         id: userId,
         email: devEmail,
-        name: `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+        name: devName,
+        username,
         avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${role}`,
         role: role as typeof UserRole.USER | typeof UserRole.ADMIN | typeof UserRole.SUPERADMIN,
+        profileVisibility: 'public',
         createdAt: now,
         updatedAt: now,
       });
@@ -677,7 +731,7 @@ export function createAuthRoutes() {
    * form-encoded body containing code, state, and optionally user info.
    * Apple only sends user info (name) on the FIRST sign-in.
    */
-  app.post('/apple/callback', async (c) => {
+  app.post('/apple/callback', rateLimit({ prefix: 'auth-callback', maxRequests: 10, windowSeconds: 60 }), async (c) => {
     const body = await c.req.parseBody();
     const code = body['code'] as string | undefined;
     const state = body['state'] as string | undefined;
@@ -808,11 +862,19 @@ export function createAuthRoutes() {
 
         if (!user) {
           const userId = crypto.randomUUID();
+          const displayName = appleName || email;
+
+          const username = await generateDefaultUsername(db, {
+            name: appleName || null,
+          });
+
           await db.insert(users).values({
             id: userId,
             email,
-            name: appleName || email,
+            name: displayName,
+            username,
             role: UserRole.USER,
+            profileVisibility: 'public',
             createdAt: now,
             updatedAt: now,
           });
@@ -837,9 +899,14 @@ export function createAuthRoutes() {
         ),
       });
 
+      const appleToken = tokenData.access_token || null;
+      const encryptedAppleToken = appleToken && c.env.ENCRYPTION_KEY
+        ? await encrypt(appleToken, c.env.ENCRYPTION_KEY)
+        : appleToken;
+
       if (existingIdentity) {
         await db.update(userIdentities).set({
-          accessToken: tokenData.access_token || null,
+          accessToken: encryptedAppleToken,
           providerEmail: email,
         }).where(eq(userIdentities.id, existingIdentity.id));
       } else {
@@ -849,20 +916,17 @@ export function createAuthRoutes() {
           provider: 'apple',
           providerUserId: appleUserId,
           providerUsername: null,
-          accessToken: tokenData.access_token || null,
+          accessToken: encryptedAppleToken,
           providerEmail: email,
           createdAt: now,
         });
 
         // Emit event for achievement tracking
-        if (c.env.EVENTS_QUEUE) {
-          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-          eventBus.publish({
-            type: 'user.identity_linked',
-            payload: { userId: user.id, provider: 'apple' },
-            metadata: { userId: user.id, source: 'auth' },
-          }).catch(() => {});
-        }
+        emitEvent(c, {
+          type: 'dev.tampa.user.identity_linked',
+          payload: { userId: user.id, provider: 'apple' },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
       // Create session (skip if link mode)
@@ -885,10 +949,24 @@ export function createAuthRoutes() {
           path: '/',
           domain: '.tampa.dev',
         });
+
+        // Emit login event
+        const daysSinceCreation = user.createdAt
+          ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        emitEvent(c, {
+          type: 'dev.tampa.user.login',
+          payload: { userId: user.id, daysSinceCreation },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      const redirectUrl = isLinkMode ? `${origin}/profile` : (stateData?.returnTo || `${origin}/`);
-      return c.redirect(redirectUrl);
+      const fallback = isLinkMode ? `${origin}/profile?tab=accounts` : `${origin}/`;
+      const redirectResult = validateReturnTo(stateData?.returnTo, fallback);
+      if (redirectResult.trusted) {
+        return c.redirect(redirectResult.url);
+      }
+      return c.html(renderRedirectInterstitial(redirectResult.url));
     } catch (error) {
       console.error('Apple Sign-In error:', error instanceof Error ? error.message : 'unknown error');
       return c.redirect(`${origin}/login?error=oauth_failed`);
@@ -898,7 +976,7 @@ export function createAuthRoutes() {
   /**
    * GET /auth/:provider/callback - Handle OAuth callback for non-GitHub providers
    */
-  app.get('/:provider/callback', async (c) => {
+  app.get('/:provider/callback', rateLimit({ prefix: 'auth-callback', maxRequests: 10, windowSeconds: 60 }), async (c) => {
     const providerKey = c.req.param('provider');
 
     if (providerKey === 'github' || providerKey === 'apple') {
@@ -1068,12 +1146,19 @@ export function createAuthRoutes() {
           const isOnAllowlist = providerUser.username ? allowlist.includes(providerUser.username.toLowerCase()) : false;
           const role = isOnAllowlist ? UserRole.ADMIN : UserRole.USER;
 
+          const username = await generateDefaultUsername(db, {
+            name: providerUser.name || null,
+            providerUsername: providerUser.username || null,
+          });
+
           await db.insert(users).values({
             id: userId,
             email: providerUser.email,
             name: providerUser.name || providerUser.email,
+            username,
             avatarUrl: providerUser.avatarUrl || null,
             role,
+            profileVisibility: 'public',
             createdAt: now,
             updatedAt: now,
           });
@@ -1094,10 +1179,14 @@ export function createAuthRoutes() {
         ),
       });
 
+      const encryptedProviderToken = accessToken && c.env.ENCRYPTION_KEY
+        ? await encrypt(accessToken, c.env.ENCRYPTION_KEY)
+        : accessToken;
+
       if (existingIdentity) {
         await db.update(userIdentities).set({
           providerUsername: providerUser.username || null,
-          accessToken: accessToken,
+          accessToken: encryptedProviderToken,
           providerEmail: providerUser.email,
         }).where(eq(userIdentities.id, existingIdentity.id));
       } else {
@@ -1107,23 +1196,20 @@ export function createAuthRoutes() {
           provider: providerKey,
           providerUserId: providerUser.id,
           providerUsername: providerUser.username || null,
-          accessToken: accessToken,
+          accessToken: encryptedProviderToken,
           providerEmail: providerUser.email,
           createdAt: now,
         });
 
         // Emit event for achievement tracking
-        if (c.env.EVENTS_QUEUE) {
-          const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-          eventBus.publish({
-            type: 'user.identity_linked',
-            payload: { userId: user.id, provider: providerKey },
-            metadata: { userId: user.id, source: 'auth' },
-          }).catch(() => {});
-        }
+        emitEvent(c, {
+          type: 'dev.tampa.user.identity_linked',
+          payload: { userId: user.id, provider: providerKey },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      // Create session (skip if link mode — already has session)
+      // Create session (skip if link mode  already has session)
       if (!isLinkMode) {
         const sessionToken = generateSessionToken();
         const expiresAt = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
@@ -1143,10 +1229,24 @@ export function createAuthRoutes() {
           path: '/',
           domain: '.tampa.dev',
         });
+
+        // Emit login event
+        const daysSinceCreation = user.createdAt
+          ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        emitEvent(c, {
+          type: 'dev.tampa.user.login',
+          payload: { userId: user.id, daysSinceCreation },
+          metadata: { userId: user.id, source: 'auth' },
+        });
       }
 
-      const redirectUrl = isLinkMode ? `${origin}/profile` : (stateData?.returnTo || `${origin}/`);
-      return c.redirect(redirectUrl);
+      const fallback = isLinkMode ? `${origin}/profile?tab=accounts` : `${origin}/`;
+      const redirectResult = validateReturnTo(stateData?.returnTo, fallback);
+      if (redirectResult.trusted) {
+        return c.redirect(redirectResult.url);
+      }
+      return c.html(renderRedirectInterstitial(redirectResult.url));
     } catch (error) {
       console.error(`${providerConfig.name} OAuth error:`, error instanceof Error ? error.message : 'unknown error');
       return c.redirect(`${origin}/login?error=oauth_failed`);

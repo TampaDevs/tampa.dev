@@ -42,6 +42,13 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 # APPLE_KEY_ID=your_key_id
 # APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 
+# Discord OAuth (for account linking)
+# Create an application at https://discord.com/developers/applications
+# Add OAuth2 redirect: https://your-domain.com/auth/discord/callback
+# Required scopes: identify, email
+# DISCORD_CLIENT_ID=your_discord_client_id
+# DISCORD_CLIENT_SECRET=your_discord_client_secret
+
 # =============================================================================
 # Session Security
 # Generate a random secret: openssl rand -base64 32
@@ -53,6 +60,25 @@ SESSION_SECRET=your_random_session_secret_here
 # Comma-separated list of GitHub usernames who should be admins
 # =============================================================================
 ADMIN_ALLOWLIST=your_github_username
+
+# =============================================================================
+# Encryption (for OAuth tokens and webhook secrets at rest)
+#
+# AES-256-GCM key, base64-encoded 32 bytes. Generate one with:
+#   npm run generate:encryption-key
+#
+# Optional: without this key, tokens are stored in plaintext (legacy mode).
+# When set, new tokens are encrypted on write. Existing plaintext records are
+# decrypted transparently via decryptOrPassthrough() and will encrypt on next
+# OAuth re-authentication or webhook secret rotation.
+#
+# IMPORTANT:
+#   - Use the SAME key for all deployments sharing a database.
+#   - Staging and production use DIFFERENT databases, so use DIFFERENT keys.
+#   - Back up securely. If lost, encrypted tokens/secrets cannot be recovered.
+#   - For staging/production, set via: wrangler secret put ENCRYPTION_KEY --env <env>
+# =============================================================================
+# ENCRYPTION_KEY=
 
 # =============================================================================
 # R2 Uploads (for avatars, app logos, media)

@@ -36,7 +36,7 @@ export function AddToCalendar({
   size = "large",
   apiBase = "https://api.tampa.dev/2026-01-25",
 }: AddToCalendarProps) {
-  // Only render after hydration — the web component mutates its own DOM
+  // Only render after hydration - the web component mutates its own DOM
   // attributes on init, which always causes a hydration mismatch.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -83,11 +83,11 @@ export function AddToCalendar({
 
   const calendarName = groupUrlname
     ? `${groupName || groupUrlname} Events`
-    : "Tampa Devs Community Calendar";
+    : "Tampa.dev Community Calendar";
 
   const calendarDescription = groupUrlname
     ? `Upcoming events from ${groupName || groupUrlname} in Tampa Bay`
-    : "All tech meetups, developer events, and community gatherings in the Tampa Bay area - curated by Tampa Devs";
+    : "All tech meetups, developer events, and community gatherings in the Tampa Bay area - curated by Tampa.dev";
 
   return (
     <AddToCalendarButton

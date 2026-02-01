@@ -23,8 +23,10 @@ jobs:
           node-version: current
           cache: "npm"
       - run: npm ci
-      - name: Run tests
+      - name: Run unit tests
         run: npm test
+      - name: Run integration tests
+        run: npm run test:integration
       - name: Publish production
         uses: cloudflare/wrangler-action@v3.14.1
         with:

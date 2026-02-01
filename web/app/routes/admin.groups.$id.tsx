@@ -16,9 +16,16 @@ import {
   addGroupMember,
   updateGroupMember,
   removeGroupMember,
+  fetchGroupConnections,
+  addGroupConnection,
+  removeGroupConnection,
+  fetchClaimInvites,
+  createClaimInvite,
   type AdminGroup,
   type UpdateGroupData,
   type GroupMember,
+  type PlatformConnection,
+  type ClaimInvite,
 } from "~/lib/admin-api.server";
 
 export const meta: Route.MetaFunction = ({ data }) => {
@@ -31,21 +38,29 @@ export const meta: Route.MetaFunction = ({ data }) => {
 export async function loader({
   params,
   request,
-}: Route.LoaderArgs): Promise<{ group: AdminGroup | null; members: GroupMember[]; error?: string }> {
+}: Route.LoaderArgs): Promise<{
+  group: AdminGroup | null;
+  members: GroupMember[];
+  connections: PlatformConnection[];
+  claimInvites: ClaimInvite[];
+  error?: string;
+}> {
   const cookieHeader = request.headers.get("Cookie") || undefined;
   try {
-    const [group, members] = await Promise.all([
-      fetchAdminGroup(params.id),
+    const [group, members, connections, claimInvites] = await Promise.all([
+      fetchAdminGroup(params.id, cookieHeader),
       fetchGroupMembers(params.id, cookieHeader).catch(() => [] as GroupMember[]),
+      fetchGroupConnections(params.id, cookieHeader).catch(() => [] as PlatformConnection[]),
+      fetchClaimInvites(params.id, cookieHeader).catch(() => [] as ClaimInvite[]),
     ]);
     if (!group) {
       throw data({ error: "Group not found" }, { status: 404 });
     }
-    return { group, members };
+    return { group, members, connections, claimInvites };
   } catch (error) {
     if (error instanceof Response) throw error;
     console.error("Failed to fetch group:", error);
-    return { group: null, members: [], error: "Failed to load group" };
+    return { group: null, members: [], connections: [], claimInvites: [], error: "Failed to load group" };
   }
 }
 
@@ -56,18 +71,18 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   try {
     if (intent === "delete") {
-      await deleteGroup(params.id);
+      await deleteGroup(params.id, cookieHeader);
       return redirect("/admin/groups");
     }
 
     if (intent === "sync") {
-      const result = await triggerGroupSync(params.id);
+      const result = await triggerGroupSync(params.id, cookieHeader);
       return { success: true, syncResult: result };
     }
 
     if (intent === "updatePhoto") {
       const photoUrl = formData.get("photoUrl") as string;
-      await updateGroup(params.id, { photoUrl } as UpdateGroupData);
+      await updateGroup(params.id, { photoUrl } as UpdateGroupData, cookieHeader);
       return { success: true };
     }
 
@@ -89,6 +104,34 @@ export async function action({ request, params }: Route.ActionArgs) {
       const memberId = formData.get("memberId") as string;
       await removeGroupMember(params.id, memberId, cookieHeader);
       return { success: true, memberAction: "removed" };
+    }
+
+    if (intent === "addConnection") {
+      const platform = formData.get("connectionPlatform") as string;
+      const platformId = formData.get("connectionPlatformId") as string;
+      const platformUrlname = formData.get("connectionUrlname") as string || undefined;
+      const platformLink = formData.get("connectionLink") as string || undefined;
+      await addGroupConnection(params.id, { platform, platformId, platformUrlname, platformLink }, cookieHeader);
+      return { success: true, connectionAction: "added" };
+    }
+
+    if (intent === "removeConnection") {
+      const connectionId = formData.get("connectionId") as string;
+      await removeGroupConnection(connectionId, cookieHeader);
+      return { success: true, connectionAction: "removed" };
+    }
+
+    if (intent === "createClaimInvite") {
+      const autoApprove = formData.get("autoApprove") === "true";
+      await createClaimInvite(params.id, { autoApprove }, cookieHeader);
+      return { success: true, inviteAction: "created" };
+    }
+
+    if (intent === "updateBadgeGovernance") {
+      const maxBadges = parseInt(formData.get("maxBadges") as string, 10);
+      const maxBadgePoints = parseInt(formData.get("maxBadgePoints") as string, 10);
+      await updateGroup(params.id, { maxBadges, maxBadgePoints } as UpdateGroupData, cookieHeader);
+      return { success: true, badgeGovernance: "updated" };
     }
 
     // Update group
@@ -130,7 +173,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
     updateData.socialLinks = Object.keys(socialLinks).length > 0 ? socialLinks : null;
 
-    await updateGroup(params.id, updateData);
+    await updateGroup(params.id, updateData, cookieHeader);
     return { success: true };
   } catch (error) {
     console.error("Action failed:", error);
@@ -397,10 +440,10 @@ function GroupMembersSection({
         credentials: "include",
       });
       if (response.ok) {
-        const data = (await response.json()) as { users: Array<{ id: string; name: string | null; email: string; username: string | null; avatarUrl: string | null }> };
+        const json = (await response.json()) as { data: Array<{ id: string; name: string | null; email: string; username: string | null; avatarUrl: string | null }> };
         // Filter out users already in members list
         const existingUserIds = new Set(members.map((m) => m.user?.id).filter(Boolean));
-        setSearchResults(data.users.filter((u) => !existingUserIds.has(u.id)));
+        setSearchResults(json.data.filter((u) => !existingUserIds.has(u.id)));
       }
     } catch {
       // ignore search errors
@@ -607,8 +650,329 @@ function GroupMembersSection({
   );
 }
 
+function PlatformConnectionsSection({
+  groupId,
+  connections,
+}: {
+  groupId: string;
+  connections: PlatformConnection[];
+}) {
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Platform Connections ({connections.length})
+        </h2>
+        <button
+          type="button"
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 bg-coral text-white text-sm rounded-lg font-medium hover:bg-coral-dark transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Add Connection
+        </button>
+      </div>
+
+      {showAddForm && (
+        <Form method="post" className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <input type="hidden" name="intent" value="addConnection" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Platform</label>
+              <select
+                name="connectionPlatform"
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+              >
+                <option value="meetup">Meetup</option>
+                <option value="eventbrite">Eventbrite</option>
+                <option value="luma">Luma</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Platform ID</label>
+              <input
+                type="text"
+                name="connectionPlatformId"
+                required
+                placeholder="e.g., 12345678"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL Name (optional)</label>
+              <input
+                type="text"
+                name="connectionUrlname"
+                placeholder="e.g., tampa-devs"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link (optional)</label>
+              <input
+                type="url"
+                name="connectionLink"
+                placeholder="https://..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-coral text-white rounded-lg font-medium hover:bg-coral-dark transition-colors"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAddForm(false)}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </Form>
+      )}
+
+      {connections.length === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400 text-sm">No platform connections configured.</p>
+      ) : (
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          {connections.map((conn) => (
+            <div key={conn.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">{conn.platform}</span>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                    conn.isActive
+                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400"
+                  }`}>
+                    {conn.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{conn.platformId}</p>
+                {conn.lastSyncAt && (
+                  <p className="text-xs text-gray-400">Last sync: {new Date(conn.lastSyncAt).toLocaleString()}</p>
+                )}
+                {conn.syncError && (
+                  <p className="text-xs text-red-500">{conn.syncError}</p>
+                )}
+              </div>
+              <Form method="post">
+                <input type="hidden" name="intent" value="removeConnection" />
+                <input type="hidden" name="connectionId" value={conn.id} />
+                <button
+                  type="submit"
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Remove connection"
+                  onClick={(e) => {
+                    if (!confirm("Remove this platform connection?")) e.preventDefault();
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </Form>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ClaimInvitesSection({
+  groupId,
+  invites,
+}: {
+  groupId: string;
+  invites: ClaimInvite[];
+}) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyLink = (token: string, id: string) => {
+    const url = `${window.location.origin}/groups/claim/${token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Claim Invites ({invites.length})
+        </h2>
+        <div className="flex items-center gap-2">
+          <Form method="post">
+            <input type="hidden" name="intent" value="createClaimInvite" />
+            <input type="hidden" name="autoApprove" value="true" />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-coral text-white text-sm rounded-lg font-medium hover:bg-coral-dark transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Auto-approve
+            </button>
+          </Form>
+          <Form method="post">
+            <input type="hidden" name="intent" value="createClaimInvite" />
+            <input type="hidden" name="autoApprove" value="false" />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Needs review
+            </button>
+          </Form>
+        </div>
+      </div>
+
+      {invites.length === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400 text-sm">No claim invites generated yet.</p>
+      ) : (
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          {invites.map((invite) => {
+            const isUsed = !!invite.usedBy;
+            const isExpired = invite.expiresAt && new Date(invite.expiresAt) < new Date();
+            return (
+              <div key={invite.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm font-mono text-gray-900 dark:text-white">{invite.token}</code>
+                    {invite.autoApprove ? (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        Auto-approve
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        Needs review
+                      </span>
+                    )}
+                    {isUsed && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                        Used
+                      </span>
+                    )}
+                    {isExpired && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                        Expired
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Created {new Date(invite.createdAt).toLocaleString()}
+                    {invite.usedAt && ` | Used ${new Date(invite.usedAt).toLocaleString()}`}
+                  </p>
+                </div>
+                {!isUsed && !isExpired && (
+                  <button
+                    type="button"
+                    onClick={() => copyLink(invite.token, invite.id)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    {copiedId === invite.id ? (
+                      <>
+                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy link
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BadgeGovernanceSection({ group }: { group: AdminGroup }) {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        Badge Governance
+      </h2>
+      <Form method="post" className="space-y-4">
+        <input type="hidden" name="intent" value="updateBadgeGovernance" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="maxBadges" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Max Badges
+            </label>
+            <input
+              type="number"
+              name="maxBadges"
+              id="maxBadges"
+              min={0}
+              max={1000}
+              defaultValue={group.maxBadges ?? 10}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+            />
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Maximum number of badges this group can create
+            </p>
+          </div>
+          <div>
+            <label htmlFor="maxBadgePoints" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Max Badge Points
+            </label>
+            <input
+              type="number"
+              name="maxBadgePoints"
+              id="maxBadgePoints"
+              min={0}
+              max={10000}
+              defaultValue={group.maxBadgePoints ?? 50}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
+            />
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Maximum points per badge for this group
+            </p>
+          </div>
+        </div>
+        <div className="pt-2">
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-coral text-white rounded-lg font-medium hover:bg-coral-dark transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Save Badge Settings
+          </button>
+        </div>
+      </Form>
+    </div>
+  );
+}
+
 export default function AdminGroupDetail({ loaderData, actionData }: Route.ComponentProps) {
-  const { group, members, error } = loaderData;
+  const { group, members, connections, claimInvites, error } = loaderData;
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -710,7 +1074,13 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
               ? "Sync completed successfully!"
               : actionData.memberAction
                 ? `Member ${actionData.memberAction} successfully!`
-                : "Group updated successfully!"}
+                : actionData.connectionAction
+                  ? `Connection ${actionData.connectionAction} successfully!`
+                  : actionData.inviteAction
+                    ? `Claim invite ${actionData.inviteAction} successfully!`
+                    : actionData.badgeGovernance
+                      ? "Badge governance settings updated!"
+                      : "Group updated successfully!"}
           </p>
         </div>
       )}
@@ -725,6 +1095,15 @@ export default function AdminGroupDetail({ loaderData, actionData }: Route.Compo
 
       {/* Members */}
       <GroupMembersSection groupId={group.id} members={members} />
+
+      {/* Platform Connections */}
+      <PlatformConnectionsSection groupId={group.id} connections={connections} />
+
+      {/* Claim Invites */}
+      <ClaimInvitesSection groupId={group.id} invites={claimInvites} />
+
+      {/* Badge Governance */}
+      <BadgeGovernanceSection group={group} />
 
       {/* Edit Form */}
       <Form method="post" className="space-y-6">

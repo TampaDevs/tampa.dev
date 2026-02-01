@@ -5,7 +5,7 @@ export function Head() {
   return (
     <>
       {/* Global metadata */}
-      <title>Tampa Devs Events API</title>
+      <title>Tampa.dev Events API</title>
       <link rel="icon" type="image/png" href="https://tampa.dev/images/favicons/favicon-32x32.png" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="description" content="Upcoming events from software development and technology meetups in Tampa Bay." />

@@ -12,9 +12,9 @@ import type { Event } from "~/lib/types";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
-    title: "Events Calendar",
+    title: "Tampa Bay Tech Events Calendar",
     description:
-      "View Tampa Bay tech events in a calendar view or list. Subscribe to get all events in your calendar app.",
+      "Browse the Tampa Bay tech events calendar. View developer meetups, startup events, and tech community gatherings in a calendar or list view. Subscribe to get events in your calendar app.",
     url: "/calendar",
   });
 };
@@ -179,11 +179,10 @@ function GroupCombobox({
               key={g.slug}
               type="button"
               onClick={() => { onChange(g.slug); setIsOpen(false); }}
-              className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                g.slug === value
+              className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${g.slug === value
                   ? "text-coral font-medium"
                   : "text-gray-900 dark:text-white"
-              }`}
+                }`}
             >
               {g.name}
             </button>
@@ -230,9 +229,9 @@ export default function Calendar({ loaderData }: Route.ComponentProps) {
   const filteredLater = filterByFavorites(later);
   const filteredCalendarEvents = isFavoritesFilter && favoritesLoaded
     ? calendarEvents.filter((ce) => {
-        const event = events.find((e) => e.id === ce.id);
-        return event && favoriteSlugs.includes(event.group.urlname.toLowerCase());
-      })
+      const event = events.find((e) => e.id === ce.id);
+      return event && favoriteSlugs.includes(event.group.urlname.toLowerCase());
+    })
     : calendarEvents;
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -294,11 +293,10 @@ export default function Calendar({ loaderData }: Route.ComponentProps) {
             <button
               type="button"
               onClick={() => setView("calendar")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                !isListView
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${!isListView
                   ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -308,11 +306,10 @@ export default function Calendar({ loaderData }: Route.ComponentProps) {
             <button
               type="button"
               onClick={() => setView("list")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                isListView
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isListView
                   ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -330,11 +327,10 @@ export default function Calendar({ loaderData }: Route.ComponentProps) {
               <button
                 type="button"
                 onClick={toggleFavoritesFilter}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                  isFavoritesFilter
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isFavoritesFilter
                     ? "bg-coral text-white border-coral"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-coral/50"
-                }`}
+                  }`}
               >
                 <svg className="w-4 h-4" fill={isFavoritesFilter ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -346,9 +342,6 @@ export default function Calendar({ loaderData }: Route.ComponentProps) {
 
           {/* Event Type Filter */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Event Type
-            </label>
             <select
               value={filters.type || ""}
               onChange={(e) => updateFilter("type", e.target.value || null)}
@@ -362,9 +355,6 @@ export default function Calendar({ loaderData }: Route.ComponentProps) {
 
           {/* Group Filter (Searchable Combobox) */}
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Group
-            </label>
             <GroupCombobox
               groups={groups}
               value={filters.groups || ""}

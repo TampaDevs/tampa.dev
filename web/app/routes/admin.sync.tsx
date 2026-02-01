@@ -19,15 +19,16 @@ export const meta: Route.MetaFunction = () => [
   { title: "Sync Management | Tampa.dev Admin" },
 ];
 
-export async function loader(): Promise<{
+export async function loader({ request }: Route.LoaderArgs): Promise<{
   status: SyncStatusResponse | null;
   logs: SyncLog[];
   error?: string;
 }> {
+  const cookieHeader = request.headers.get("Cookie") || undefined;
   try {
     const [status, logs] = await Promise.all([
-      fetchSyncStatus(),
-      fetchSyncLogs({ limit: 50 }),
+      fetchSyncStatus(cookieHeader),
+      fetchSyncLogs({ limit: 50 }, cookieHeader),
     ]);
     return { status, logs };
   } catch (error) {
@@ -37,12 +38,13 @@ export async function loader(): Promise<{
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const cookieHeader = request.headers.get("Cookie") || undefined;
   const formData = await request.formData();
   const intent = formData.get("intent");
 
   try {
     if (intent === "sync-all") {
-      const result = await triggerSyncAll();
+      const result = await triggerSyncAll(cookieHeader);
       return { success: true, result };
     }
     return { error: "Unknown action" };

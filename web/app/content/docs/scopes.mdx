@@ -2,6 +2,7 @@
 title: Scopes
 description: OAuth scope definitions for the Tampa.dev API
 order: 2
+category: Getting Started
 ---
 
 # Scopes
@@ -19,13 +20,18 @@ Scopes follow the GitHub model. The `user` scope implicitly includes `read:user`
 | `write:favorites` | Manage your favorite groups |
 | `read:portfolio` | Read your portfolio items |
 | `write:portfolio` | Manage your portfolio items |
+| `user:linked-accounts` | Read your connected identity providers |
+| `manage:groups` | Manage groups you own or co-manage |
+| `manage:events` | Create and manage events in your groups |
+| `manage:checkins` | Manage checkin codes and view attendees |
+| `manage:badges` | Create, award, and manage group badges |
 | `admin` | Full admin access |
 
 ## Scope Hierarchy
 
 The `user` scope is a parent scope that automatically grants:
-- `read:user` — read-only access to profile data
-- `user:email` — read access to email addresses
+- `read:user` - read-only access to profile data
+- `user:email` - read access to email addresses
 
 When requesting scopes during authorization, only request what your application needs. Users will see the full list of requested permissions on the consent screen.
 
@@ -36,3 +42,33 @@ Include scopes as a space-separated string in the `scope` parameter of the autho
 ```
 https://tampa.dev/oauth/authorize?scope=read:user read:events read:groups
 ```
+
+## Management Scopes
+
+Group management, event management, checkin, and badge management endpoints accept all three authentication methods: **session cookies**, **Personal Access Tokens**, and **OAuth Bearer tokens**. When using PATs or OAuth, include the appropriate `manage:*` scope.
+
+For example, to manage groups via a PAT:
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/groups/manage
+```
+
+Or request the scope during OAuth authorization:
+
+```
+https://tampa.dev/oauth/authorize?scope=manage:groups manage:events
+```
+
+## Recommended Scopes for MCP
+
+When connecting an AI assistant via [MCP](/developer/docs/mcp-overview), the scopes you request determine which tools the agent can discover and use. Here are common configurations:
+
+| Use Case | Recommended Scopes |
+|----------|-------------------|
+| Read-only browsing | `read:events read:groups read:user` |
+| Personal assistant (full) | `user read:events write:events read:groups read:favorites write:favorites read:portfolio write:portfolio` |
+| Group management bot | `manage:groups manage:events manage:checkins manage:badges` |
+| Platform admin | `admin` |
+
+The MCP server's `tools/list` response is automatically filtered to only include tools your token's scopes allow. This means an agent can introspect its own capabilities by listing available tools.

@@ -1,68 +1,162 @@
 ---
-title: API Reference
-description: Complete API endpoint reference for Tampa.dev
-order: 3
+title: API Overview
+description: API overview, authentication, response format, error codes, and pagination
+order: 10
+category: API Reference
 ---
 
 # API Reference
 
-All API endpoints are accessible at `https://api.tampa.dev/v1/` with a valid Bearer token.
+The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. The full OpenAPI spec is available at [`/openapi.json`](https://api.tampa.dev/openapi.json) and interactive docs at [`/docs`](https://api.tampa.dev/docs).
 
-## Profile
+## Base URL
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/profile` | `read:user` | Get current user profile |
-| `PATCH` | `/v1/profile` | `user` | Update profile |
-| `GET` | `/v1/profile/email` | `user:email` | Get email address |
+All authenticated API endpoints live under `/v1/`:
 
-## Events
+```
+https://api.tampa.dev/v1/
+```
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/events` | `read:events` | List upcoming events |
-| `GET` | `/v1/events/:id` | `read:events` | Get event details |
+## Authentication
 
-## Groups
+Include a Bearer token in the `Authorization` header:
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/groups` | `read:groups` | List groups |
-| `GET` | `/v1/groups/:slug` | `read:groups` | Get group details |
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile
+```
 
-## Favorites
+Two token types are supported:
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/favorites` | `read:favorites` | List favorite groups |
-| `POST` | `/v1/favorites/:groupId` | `write:favorites` | Add favorite |
-| `DELETE` | `/v1/favorites/:groupId` | `write:favorites` | Remove favorite |
+| Type | Format | How to get |
+|------|--------|-----------|
+| **Personal Access Token** | `td_pat_` + 40 hex chars | Create at [tampa.dev/developer](/developer) or via `POST /v1/profile/tokens` |
+| **OAuth Access Token** | Opaque string | Obtained via the [OAuth 2.0 flow](/developer/docs/authentication) |
 
-## Portfolio
+Both token types use the same [scope system](/developer/docs/scopes) to control access. Session cookies are also accepted for first-party web UI requests.
 
-| Method | Endpoint | Scope | Description |
-|--------|----------|-------|-------------|
-| `GET` | `/v1/portfolio` | `read:portfolio` | List portfolio items |
-| `POST` | `/v1/portfolio` | `write:portfolio` | Create portfolio item |
-| `PATCH` | `/v1/portfolio/:id` | `write:portfolio` | Update portfolio item |
-| `DELETE` | `/v1/portfolio/:id` | `write:portfolio` | Delete portfolio item |
+## API Sub-Pages
+
+- **[Profile & Users](/developer/docs/api-profile)** -- Profile, portfolio, tokens, achievements, linked accounts, following, uploads, and onboarding
+- **[Events & RSVP](/developer/docs/api-events)** -- Events, RSVP, and checkin
+- **[Groups & Badges](/developer/docs/api-groups)** -- Groups, favorites, badges, leaderboard, and claims
+- **[Management](/developer/docs/api-management)** -- Group management, event management, badge management, and checkin codes
+- **[Error Catalog](/developer/docs/error-catalog)** -- Comprehensive error code reference with example payloads
 
 ## Response Format
 
-All endpoints return JSON. Successful responses include the data directly. Error responses follow this format:
+All `/v1/` endpoints return JSON with standardized envelopes.
+
+### Detail / Mutation Responses
+
+Single-item responses wrap the object in a `data` field:
 
 ```json
 {
-  "error": "Description of what went wrong"
+  "data": {
+    "id": "usr_abc123",
+    "name": "Jane Developer",
+    "username": "janedev"
+  }
 }
 ```
 
-HTTP status codes follow standard conventions:
-- `200` — Success
-- `201` — Created
-- `400` — Bad request (invalid input)
-- `401` — Unauthorized (missing or invalid token)
-- `403` — Forbidden (insufficient scope)
-- `404` — Not found
-- `409` — Conflict (e.g., duplicate username)
-- `429` — Rate limited
+### List Responses
+
+List responses include a `data` array and `pagination` metadata:
+
+```json
+{
+  "data": [
+    { "id": "evt_1", "title": "React Meetup" },
+    { "id": "evt_2", "title": "Rust Workshop" }
+  ],
+  "pagination": {
+    "total": 42,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+### Action Responses
+
+Endpoints that perform an action without returning a resource:
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### Error Responses
+
+All errors include a human-readable `error` message and a machine-readable `code`:
+
+```json
+{
+  "error": "This endpoint requires the 'read:events' scope",
+  "code": "insufficient_scope"
+}
+```
+
+See the [Error Catalog](/developer/docs/error-catalog) for the full list of error codes.
+
+## Pagination
+
+List endpoints accept `limit` and `offset` query parameters:
+
+| Parameter | Type | Default | Max | Description |
+|-----------|------|---------|-----|-------------|
+| `limit` | integer | 20 | 100 | Maximum items per page |
+| `offset` | integer | 0 | -- | Number of items to skip |
+
+Example:
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/events?limit=10&offset=20"
+```
+
+## HTTP Status Codes
+
+| Status | Meaning |
+|--------|---------|
+| `200` | Success |
+| `201` | Created |
+| `204` | No content (successful deletion) |
+| `400` | Bad request -- invalid input |
+| `401` | Unauthorized -- missing or invalid token |
+| `403` | Forbidden -- insufficient scope or permissions |
+| `404` | Not found |
+| `409` | Conflict -- duplicate or state conflict |
+| `410` | Gone -- resource expired or exhausted |
+| `429` | Rate limited (includes `Retry-After` header) |
+| `500` | Internal server error |
+
+## Scope Headers
+
+When a token lacks a required scope, the response includes a `WWW-Authenticate` header:
+
+```
+HTTP/1.1 403 Forbidden
+WWW-Authenticate: Bearer error="insufficient_scope", scope="read:events"
+
+{
+  "error": "This endpoint requires the 'read:events' scope",
+  "code": "insufficient_scope"
+}
+```
+
+## Rate Limiting
+
+Most endpoints are rate-limited. When the limit is exceeded, the response includes a `Retry-After` header with the number of seconds to wait. See [Rate Limits](/developer/docs/rate-limits) for details.
+
+## MCP Server
+
+In addition to the REST API, Tampa.dev exposes a [Model Context Protocol](/developer/docs/mcp-overview) (MCP) server at `POST /mcp`. MCP provides a standardized JSON-RPC 2.0 interface for AI agents, personal assistants, and automation tools to interact with the same platform capabilities available through the REST API.
+
+MCP clients use the same authentication (OAuth or PAT) and scope system. The server automatically filters available tools based on token scopes. See the [MCP documentation](/developer/docs/mcp-overview) for details.

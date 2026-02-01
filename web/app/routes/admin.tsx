@@ -7,6 +7,7 @@
 
 import { Outlet, NavLink, Link, Form, redirect } from "react-router";
 import { Avatar } from "@tampadevs/react";
+import { useState, useRef, useEffect } from "react";
 import type { Route } from "./+types/admin";
 import { fetchCurrentUser, type AuthUser } from "~/lib/admin-api.server";
 
@@ -96,6 +97,76 @@ const adminNavLinks = [
     ),
   },
   {
+    to: "/admin/achievements",
+    label: "Achievements",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+        />
+      </svg>
+    ),
+  },
+  {
+    to: "/admin/entitlements",
+    label: "Entitlements",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+        />
+      </svg>
+    ),
+  },
+  {
+    to: "/admin/webhooks",
+    label: "Webhooks",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M13 10V3L4 14h7v7l9-11h-7z"
+        />
+      </svg>
+    ),
+  },
+  {
+    to: "/admin/claims",
+    label: "Claims",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+    ),
+  },
+  {
+    to: "/admin/group-requests",
+    label: "Requests",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+        />
+      </svg>
+    ),
+  },
+  {
     to: "/admin/flags",
     label: "Flags",
     icon: (
@@ -126,9 +197,30 @@ const adminNavLinks = [
 ];
 
 function UserMenu({ user }: { user: AuthUser }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [open]);
+
   return (
-    <div className="relative group">
-      <button className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
+      >
         <Avatar
           src={user.avatarUrl || undefined}
           name={user.name || user.email}
@@ -137,35 +229,36 @@ function UserMenu({ user }: { user: AuthUser }) {
         <span className="hidden sm:block text-sm font-medium text-white/90 max-w-32 truncate">
           {user.name || user.email}
         </span>
-        <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className={`w-4 h-4 text-white/60 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
-      {/* Dropdown */}
-      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {user.name || "User"}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-            {user.email}
-          </p>
-          <p className="text-xs text-coral mt-1 capitalize">
-            {user.role}
-          </p>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+              {user.name || "User"}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {user.email}
+            </p>
+            <p className="text-xs text-coral mt-1 capitalize">
+              {user.role}
+            </p>
+          </div>
+          <div className="py-1">
+            <Form action="/auth/logout" method="post">
+              <button
+                type="submit"
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Sign out
+              </button>
+            </Form>
+          </div>
         </div>
-        <div className="py-1">
-          <Form action="/auth/logout" method="post">
-            <button
-              type="submit"
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              Sign out
-            </button>
-          </Form>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -192,7 +285,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
           <div className="flex items-center gap-4">
             <Link
               to="/"
-              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -202,7 +295,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
                   d="M10 19l-7-7m0 0l7-7m-7 7h18"
                 />
               </svg>
-              Back to Site
+              <span className="hidden sm:inline">Back to Site</span>
             </Link>
             <UserMenu user={user} />
           </div>
@@ -237,14 +330,14 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
 
         {/* Mobile nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-          <nav className="flex justify-around py-2">
+          <nav className="flex overflow-x-auto py-2 px-2 gap-1 scrollbar-hide">
             {adminNavLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 end={link.end}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-1 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  `flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${
                     isActive
                       ? "text-coral"
                       : "text-gray-600 dark:text-gray-400"

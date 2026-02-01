@@ -9,7 +9,7 @@ This repository contains both the **Events API** and the **tampa.dev** website f
 
 Want your group included in the Tampa Bay events feed?
 
-[![Add Your Group](https://img.shields.io/badge/Add_Your_Group-Click_Here-green?style=for-the-badge&logo=meetup)](https://github.com/TampaDevs/events.api.tampa.dev/issues/new/choose)
+[![Add Your Group](https://img.shields.io/badge/Add_Your_Group-Click_Here-green?style=for-the-badge&logo=meetup)](https://github.com/TampaDevs/tampa.dev/issues/new/choose)
 
 ---
 
@@ -43,7 +43,7 @@ const events = await api.getEvents();
 ### Go
 
 ```bash
-go get github.com/TampaDevs/events.api.tampa.dev/clients/go
+go get github.com/TampaDevs/tampa.dev/clients/go
 ```
 
 ```go
@@ -52,7 +52,7 @@ package main
 import (
     "context"
     "fmt"
-    tampaevents "github.com/TampaDevs/events.api.tampa.dev/clients/go"
+    tampaevents "github.com/TampaDevs/tampa.dev/clients/go"
 )
 
 func main() {
@@ -73,7 +73,7 @@ func main() {
 ### Python
 
 ```bash
-pip install git+https://github.com/TampaDevs/events.api.tampa.dev.git#subdirectory=clients/python
+pip install git+https://github.com/TampaDevs/tampa.dev.git#subdirectory=clients/python
 ```
 
 ```python
@@ -103,6 +103,19 @@ events.each do |event|
   puts event.title
 end
 ```
+
+## Sign in with Tampa.dev
+
+Add Tampa.dev authentication to your app with OAuth 2.1 + PKCE. Give your users single sign-on with the Tampa Bay tech community.
+
+[![Sign in with Tampa.dev](https://api.tampa.dev/assets/signin-button.svg)](https://api.tampa.dev/developer/docs/signin-with-tampadev) [![Sign in with Tampa.dev](https://api.tampa.dev/assets/signin-button.svg?theme=dark)](https://api.tampa.dev/developer/docs/signin-with-tampadev)
+
+1. Register your app in the [Developer Portal](https://tampa.dev/developer) or via the dynamic client registration API
+2. Redirect users to `https://tampa.dev/oauth/authorize` with PKCE parameters
+3. Exchange the authorization code for an access token at `https://tampa.dev/oauth/token`
+4. Use the token to call the Tampa.dev API (`https://api.tampa.dev/v1/me`, etc.)
+
+Full integration guide: **https://api.tampa.dev/developer/docs/signin-with-tampadev**
 
 ## JSON Schemas
 
@@ -247,4 +260,4 @@ Data is served from a cache in Workers KV. This cache data is updated every 30 m
 
 ## Changelog
 
-See [CHANGELOG.md](./CHANGELOG.md) for recent updates and new features.
+See [CHANGELOG.md](./.claude/CHANGELOG.md) for recent updates and new features.

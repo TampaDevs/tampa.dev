@@ -4,7 +4,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
-    environment: "node",
-    include: ["app/**/*.test.ts"],
+    environment: "happy-dom",
+    include: ["app/**/*.test.{ts,tsx}"],
+    setupFiles: ["app/test/setup.ts"],
+    css: false,
   },
 });

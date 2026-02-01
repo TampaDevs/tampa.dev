@@ -1,0 +1,247 @@
+---
+title: "Events & RSVP"
+description: API endpoints for events, RSVP, and checkin
+order: 12
+category: API Reference
+---
+
+# Events & RSVP
+
+## Events
+
+### GET /v1/events
+
+List upcoming events. Scope: `read:events`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  "https://api.tampa.dev/v1/events?status=upcoming&limit=10"
+```
+
+Query parameters:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `status` | string | `upcoming` (default), `past`, or `all` |
+| `groupId` | string | Filter by group ID |
+| `limit` | integer | Max 100, default 20 |
+| `offset` | integer | Pagination offset |
+
+```json
+{
+  "data": [
+    {
+      "id": "evt_abc123",
+      "title": "React Tampa Monthly Meetup",
+      "description": "Join us for talks on React Server Components and the latest in the React ecosystem.",
+      "startTime": "2026-02-15T18:30:00-05:00",
+      "endTime": "2026-02-15T20:30:00-05:00",
+      "timezone": "America/New_York",
+      "eventUrl": "https://meetup.com/react-tampa/events/123",
+      "photoUrl": "https://cdn.tampa.dev/events/react-feb.jpg",
+      "eventType": "in_person",
+      "rsvpCount": 24,
+      "maxAttendees": 30,
+      "group": {
+        "id": "grp_react",
+        "name": "React Tampa",
+        "urlname": "react-tampa"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 42,
+    "limit": 10,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+### GET /v1/events/:id
+
+Get event details. Scope: `read:events`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/events/evt_abc123
+```
+
+```json
+{
+  "data": {
+    "id": "evt_abc123",
+    "title": "React Tampa Monthly Meetup",
+    "description": "Join us for talks on React Server Components...",
+    "startTime": "2026-02-15T18:30:00-05:00",
+    "endTime": "2026-02-15T20:30:00-05:00",
+    "timezone": "America/New_York",
+    "eventUrl": "https://meetup.com/react-tampa/events/123",
+    "photoUrl": "https://cdn.tampa.dev/events/react-feb.jpg",
+    "eventType": "in_person",
+    "rsvpCount": 24,
+    "maxAttendees": 30,
+    "group": {
+      "id": "grp_react",
+      "name": "React Tampa",
+      "urlname": "react-tampa"
+    }
+  }
+}
+```
+
+---
+
+## RSVP
+
+### GET /v1/events/:eventId/rsvp
+
+Get the authenticated user's RSVP status for an event. Scope: `read:events`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/events/evt_abc123/rsvp
+```
+
+```json
+{
+  "data": {
+    "id": "rsvp_xyz789",
+    "eventId": "evt_abc123",
+    "status": "confirmed",
+    "rsvpAt": "2026-02-01T10:00:00Z",
+    "waitlistPosition": null
+  }
+}
+```
+
+If the user has not RSVPed, returns `404`.
+
+### GET /v1/events/:eventId/rsvp-summary
+
+Get RSVP counts for an event. Scope: `read:events`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/events/evt_abc123/rsvp-summary
+```
+
+```json
+{
+  "data": {
+    "total": 27,
+    "confirmed": 24,
+    "waitlisted": 3,
+    "cancelled": 0,
+    "capacity": 30
+  }
+}
+```
+
+### POST /v1/events/:eventId/rsvp
+
+RSVP to an event. Scope: `write:events`. If the event is at capacity, the RSVP is automatically waitlisted.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/events/evt_abc123/rsvp
+```
+
+**Confirmed:**
+```json
+{
+  "data": {
+    "id": "rsvp_xyz789",
+    "eventId": "evt_abc123",
+    "status": "confirmed",
+    "rsvpAt": "2026-02-01T10:00:00Z",
+    "waitlistPosition": null
+  }
+}
+```
+
+**Waitlisted:**
+```json
+{
+  "data": {
+    "id": "rsvp_xyz789",
+    "eventId": "evt_abc123",
+    "status": "waitlisted",
+    "rsvpAt": "2026-02-01T10:00:00Z",
+    "waitlistPosition": 3
+  }
+}
+```
+
+### DELETE /v1/events/:eventId/rsvp
+
+Cancel your RSVP. Scope: `write:events`. If a confirmed user cancels and there are waitlisted users, the next waitlisted user is automatically promoted to confirmed.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/events/evt_abc123/rsvp
+```
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+## Checkin
+
+### GET /v1/checkin/:code
+
+Get event info for a checkin code. No authentication required, but returns more detail if authenticated.
+
+```bash
+curl https://api.tampa.dev/v1/checkin/ABC123
+```
+
+```json
+{
+  "data": {
+    "event": {
+      "id": "evt_abc123",
+      "title": "React Tampa Monthly Meetup",
+      "startTime": "2026-02-15T18:30:00-05:00",
+      "group": {
+        "name": "React Tampa",
+        "urlname": "react-tampa"
+      }
+    },
+    "valid": true
+  }
+}
+```
+
+### POST /v1/checkin/:code
+
+Check in to an event. Requires authentication. Accepts an optional `method` field.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"method": "qr"}' \
+  https://api.tampa.dev/v1/checkin/ABC123
+```
+
+```json
+{
+  "data": {
+    "id": "chk_abc123",
+    "eventId": "evt_abc123",
+    "checkedInAt": "2026-02-15T18:45:00Z",
+    "method": "qr"
+  }
+}
+```
+
+**Checkin methods:** `link`, `qr`, `nfc`. Each user can only check in once per event. Duplicate checkin attempts return `409 Conflict`.

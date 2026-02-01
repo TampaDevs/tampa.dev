@@ -5,6 +5,17 @@ send_metrics = true
 compatibility_date = "2024-09-23"
 compatibility_flags = [ "nodejs_compat", "global_fetch_strictly_public" ]
 
+# Durable Objects for real-time WebSocket notifications
+[durable_objects]
+bindings = [
+  { name = "USER_NOTIFICATIONS", class_name = "UserNotificationDO" },
+  { name = "BROADCAST", class_name = "BroadcastDO" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["UserNotificationDO", "BroadcastDO"]
+
 kv_namespaces = [
   { binding = "kv", id = "791983cf109c43eaa21ff4f3406de811" },
   { binding = "OAUTH_KV", id = "791983cf109c43eaa21ff4f3406de811" }
@@ -106,6 +117,12 @@ zone_name = "tampa.dev"
 [[env.staging.routes]]
 pattern = "staging.tampa.dev/.well-known/oauth-authorization-server*"
 zone_name = "tampa.dev"
+
+[env.staging.durable_objects]
+bindings = [
+  { name = "USER_NOTIFICATIONS", class_name = "UserNotificationDO" },
+  { name = "BROADCAST", class_name = "BroadcastDO" }
+]
 
 [env.staging.vars]
 ADMIN_ALLOWLIST = "chtzvt"
@@ -213,6 +230,12 @@ zone_name = "tampa.dev"
 [[env.production.routes]]
 pattern = "tampa.dev/.well-known/oauth-authorization-server*"
 zone_name = "tampa.dev"
+
+[env.production.durable_objects]
+bindings = [
+  { name = "USER_NOTIFICATIONS", class_name = "UserNotificationDO" },
+  { name = "BROADCAST", class_name = "BroadcastDO" }
+]
 
 # Environment variables
 [env.production.vars]

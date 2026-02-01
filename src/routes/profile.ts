@@ -7,23 +7,30 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress } from '../db/schema';
+import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements, groups } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { deleteCookie } from 'hono/cookie';
-import { ACHIEVEMENTS } from '../lib/achievements.js';
-import { EventBus } from '../lib/event-bus.js';
+import { getCurrentUser } from '../lib/auth.js';
+import { emitEvent } from '../lib/event-bus.js';
+import { ok, created, success, unauthorized, forbidden, notFound, badRequest, conflict } from '../lib/responses.js';
+import { RESERVED_USERNAMES } from '../lib/username.js';
+
+// ============== Rarity Helper ==============
+
+function getRarityTierName(percentage: number): string {
+  if (percentage < 1) return 'legendary';
+  if (percentage < 5) return 'epic';
+  if (percentage < 15) return 'rare';
+  if (percentage < 50) return 'uncommon';
+  return 'common';
+}
 
 // ============== Validation Schemas ==============
 
-const RESERVED_USERNAMES = [
-  'admin', 'api', 'auth', 'login', 'logout', 'profile', 'settings',
-  'help', 'support', 'about', 'tampa', 'tampadevs', 'developer',
-  'oauth', 'groups', 'events', 'calendar', 'map', 'favorites',
-  'p', 'u', 'user', 'users', 'new', 'edit', 'delete', 'search',
-];
+// RESERVED_USERNAMES imported from '../lib/username.js' (single source of truth)
 
 const usernameSchema = z.string()
   .min(3, 'Username must be at least 3 characters')
@@ -34,50 +41,36 @@ const usernameSchema = z.string()
   )
   .transform((val) => val.toLowerCase());
 
-const userSocialLinksSchema = z.object({
-  github: z.string().url().optional().or(z.literal('')),
-  twitter: z.string().url().optional().or(z.literal('')),
-  linkedin: z.string().url().optional().or(z.literal('')),
-  website: z.string().url().optional().or(z.literal('')),
-  discord: z.string().url().optional().or(z.literal('')),
-}).optional().nullable();
+const userSocialLinksSchema = z.array(z.string().url()).max(5).optional().nullable();
 
 const updateProfileSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   avatarUrl: z.string().url().optional().nullable(),
+  heroImageUrl: z.string().url().optional().nullable(),
+  themeColor: z.enum(['coral', 'ocean', 'sunset', 'forest', 'violet', 'rose', 'slate', 'sky']).optional().nullable(),
   username: usernameSchema.optional(),
   bio: z.string().max(500).optional().nullable(),
+  location: z.string().max(100).optional().nullable(),
   socialLinks: userSocialLinksSchema,
   showAchievements: z.boolean().optional(),
+  profileVisibility: z.enum(['public', 'private']).optional(),
 });
 
 // ============== Helper Functions ==============
 
 /**
- * Get current user from session cookie
+ * Normalize social links from DB (handles legacy object format → array)
  */
-async function getCurrentUser(c: { env: Env; req: { raw: Request } }) {
-  const cookieHeader = c.req.raw.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookieName = getSessionCookieName(c.env);
-  const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
-  const sessionToken = sessionMatch?.[1];
-  if (!sessionToken) return null;
-
-  const db = createDatabase(c.env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
+export function normalizeSocialLinks(raw: string | null): string[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    if (typeof parsed === 'object' && parsed !== null) {
+      return Object.values(parsed).filter((v): v is string => typeof v === 'string' && v.length > 0);
+    }
     return null;
-  }
-
-  return await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
+  } catch { return null; }
 }
 
 function serializeUser(user: typeof users.$inferSelect) {
@@ -87,10 +80,14 @@ function serializeUser(user: typeof users.$inferSelect) {
     name: user.name,
     username: user.username,
     bio: user.bio,
-    socialLinks: user.socialLinks ? JSON.parse(user.socialLinks) : null,
+    location: user.location,
+    socialLinks: normalizeSocialLinks(user.socialLinks),
     avatarUrl: user.avatarUrl,
+    heroImageUrl: user.heroImageUrl,
+    themeColor: user.themeColor,
     role: user.role,
     showAchievements: user.showAchievements,
+    profileVisibility: user.profileVisibility,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -105,10 +102,9 @@ export function createProfileRoutes() {
    * GET /api/profile - Get current user's profile
    */
   app.get('/', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     // Fetch user's badges
     const db = createDatabase(c.env.DB);
@@ -116,17 +112,86 @@ export function createProfileRoutes() {
       where: eq(userBadges.userId, user.id),
     });
 
-    let userBadgeList: Array<{ id: string; name: string; slug: string; description: string | null; icon: string; color: string }> = [];
+    type BadgeWithRarity = { id: string; name: string; slug: string; description: string | null; icon: string; color: string; points: number; awardedAt: string | null; groupId: string | null; rarity: { tier: string; percentage: number } };
+    let allBadges: BadgeWithRarity[] = [];
     if (ub.length > 0) {
       const badgeResults = await Promise.all(
         ub.map((b) => db.query.badges.findFirst({ where: eq(badges.id, b.badgeId) }))
       );
-      userBadgeList = badgeResults
-        .filter((b): b is NonNullable<typeof b> => b !== null)
-        .map((b) => ({ id: b.id, name: b.name, slug: b.slug, description: b.description, icon: b.icon, color: b.color }));
+
+      // Get total public users count for rarity computation
+      const totalUsersResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(users)
+        .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
+      const totalUsers = totalUsersResult[0]?.count ?? 0;
+
+      // Count holders per badge in a single batch query
+      const badgeIds = ub.map(b => b.badgeId);
+      const holderCounts = await db
+        .select({ badgeId: userBadges.badgeId, count: sql<number>`COUNT(*)` })
+        .from(userBadges)
+        .where(sql`${userBadges.badgeId} IN (${sql.join(badgeIds.map(id => sql`${id}`), sql`, `)})`)
+        .groupBy(userBadges.badgeId);
+
+      const holderCountMap = new Map(holderCounts.map(h => [h.badgeId, h.count]));
+
+      allBadges = ub
+        .map((ubEntry) => {
+          const badge = badgeResults.find((b) => b?.id === ubEntry.badgeId);
+          if (!badge) return null;
+          const awardedCount = holderCountMap.get(badge.id) ?? 0;
+          const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
+          return {
+            id: badge.id,
+            name: badge.name,
+            slug: badge.slug,
+            description: badge.description,
+            icon: badge.icon,
+            color: badge.color,
+            points: badge.points,
+            awardedAt: ubEntry.awardedAt,
+            groupId: badge.groupId,
+            rarity: {
+              tier: getRarityTierName(rarityPercentage),
+              percentage: Math.round(rarityPercentage * 10) / 10,
+            },
+          };
+        })
+        .filter((b): b is NonNullable<typeof b> => b !== null);
     }
 
-    return c.json({ ...serializeUser(user), badges: userBadgeList });
+    // Separate platform badges (no groupId) from group badges
+    const platformBadges = allBadges.filter(b => !b.groupId).map(({ groupId, ...rest }) => rest);
+    const groupBadgeEntries = allBadges.filter(b => b.groupId);
+
+    // Group badges by group with XP subtotals
+    const groupBadgeMap = new Map<string, BadgeWithRarity[]>();
+    for (const b of groupBadgeEntries) {
+      const existing = groupBadgeMap.get(b.groupId!) || [];
+      existing.push(b);
+      groupBadgeMap.set(b.groupId!, existing);
+    }
+
+    // Fetch group info for all groups
+    const groupIds = [...groupBadgeMap.keys()];
+    let groupBadges: Array<{ group: { id: string; name: string; urlname: string; photoUrl: string | null }; badges: Array<Omit<BadgeWithRarity, 'groupId'>>; xpSubtotal: number }> = [];
+    if (groupIds.length > 0) {
+      const groupResults = await Promise.all(
+        groupIds.map((gid) => db.query.groups.findFirst({ where: eq(groups.id, gid) }))
+      );
+      groupBadges = groupIds.map((gid, idx) => {
+        const g = groupResults[idx];
+        const badgesInGroup = groupBadgeMap.get(gid) || [];
+        return {
+          group: g ? { id: g.id, name: g.name, urlname: g.urlname, photoUrl: g.photoUrl } : { id: gid, name: 'Unknown Group', urlname: '', photoUrl: null },
+          badges: badgesInGroup.map(({ groupId, ...rest }) => rest),
+          xpSubtotal: badgesInGroup.reduce((sum, b) => sum + b.points, 0),
+        };
+      });
+    }
+
+    return ok(c, { ...serializeUser(user), badges: platformBadges, groupBadges });
   });
 
   /**
@@ -138,11 +203,11 @@ export function createProfileRoutes() {
 
     // Basic validation
     if (username.length < 3 || username.length > 30 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(username)) {
-      return c.json({ available: false, reason: 'Invalid username format' });
+      return ok(c, { available: false, reason: 'Invalid username format' });
     }
 
     if (RESERVED_USERNAMES.includes(username)) {
-      return c.json({ available: false, reason: 'This username is reserved' });
+      return ok(c, { available: false, reason: 'This username is reserved' });
     }
 
     const db = createDatabase(c.env.DB);
@@ -151,22 +216,22 @@ export function createProfileRoutes() {
     });
 
     // If the requester is logged in, allow their own current username
-    const currentUser = await getCurrentUser(c);
+    const currentAuth = await getCurrentUser(c);
+    const currentUser = currentAuth?.user ?? null;
     if (existing && currentUser && existing.id === currentUser.id) {
-      return c.json({ available: true });
+      return ok(c, { available: true });
     }
 
-    return c.json({ available: !existing });
+    return ok(c, { available: !existing });
   });
 
   /**
    * PATCH /api/profile - Update current user's profile
    */
   app.patch('/', zValidator('json', updateProfileSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const updates = c.req.valid('json');
     const db = createDatabase(c.env.DB);
@@ -184,19 +249,25 @@ export function createProfileRoutes() {
       updateData.avatarUrl = updates.avatarUrl;
     }
 
+    if (updates.heroImageUrl !== undefined) {
+      updateData.heroImageUrl = updates.heroImageUrl;
+    }
+
+    if (updates.themeColor !== undefined) {
+      updateData.themeColor = updates.themeColor;
+    }
+
     if (updates.bio !== undefined) {
       updateData.bio = updates.bio;
     }
 
+    if (updates.location !== undefined) {
+      updateData.location = updates.location;
+    }
+
     if (updates.socialLinks !== undefined) {
-      if (updates.socialLinks) {
-        // Filter out empty strings
-        const filtered = Object.fromEntries(
-          Object.entries(updates.socialLinks).filter(([, v]) => v && v.length > 0)
-        );
-        updateData.socialLinks = Object.keys(filtered).length > 0
-          ? JSON.stringify(filtered)
-          : null;
+      if (updates.socialLinks && updates.socialLinks.length > 0) {
+        updateData.socialLinks = JSON.stringify(updates.socialLinks);
       } else {
         updateData.socialLinks = null;
       }
@@ -206,17 +277,21 @@ export function createProfileRoutes() {
       updateData.showAchievements = updates.showAchievements;
     }
 
+    if (updates.profileVisibility !== undefined) {
+      updateData.profileVisibility = updates.profileVisibility;
+    }
+
     // Username uniqueness check
     if (updates.username !== undefined) {
       if (RESERVED_USERNAMES.includes(updates.username)) {
-        return c.json({ error: 'This username is reserved' }, 409);
+        return conflict(c, 'This username is reserved');
       }
 
       const existing = await db.query.users.findFirst({
         where: eq(users.username, updates.username),
       });
       if (existing && existing.id !== user.id) {
-        return c.json({ error: 'Username is already taken' }, 409);
+        return conflict(c, 'Username is already taken');
       }
       updateData.username = updates.username;
     }
@@ -231,11 +306,16 @@ export function createProfileRoutes() {
       where: eq(users.id, user.id),
     });
 
-    if (!updatedUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!updatedUser) return notFound(c, 'User not found');
 
-    return c.json(serializeUser(updatedUser));
+    // Emit profile_updated event for achievement tracking and onboarding
+    emitEvent(c, {
+      type: 'dev.tampa.user.profile_updated',
+      payload: { userId: user.id, fields: Object.keys(updates) },
+      metadata: { userId: user.id, source: 'profile' },
+    });
+
+    return ok(c, serializeUser(updatedUser));
   });
 
   /**
@@ -244,10 +324,9 @@ export function createProfileRoutes() {
   app.patch('/primary-email', zValidator('json', z.object({
     provider: z.string().min(1),
   })), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const { provider } = c.req.valid('json');
     const db = createDatabase(c.env.DB);
@@ -260,12 +339,10 @@ export function createProfileRoutes() {
       ),
     });
 
-    if (!identity) {
-      return c.json({ error: 'No linked identity for this provider' }, 404);
-    }
+    if (!identity) return notFound(c, 'No linked identity for this provider');
 
     if (!identity.providerEmail) {
-      return c.json({ error: 'No email available from this provider' }, 400);
+      return badRequest(c, 'No email available from this provider');
     }
 
     // Update the user's primary email
@@ -280,21 +357,18 @@ export function createProfileRoutes() {
       where: eq(users.id, user.id),
     });
 
-    if (!updatedUser) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    if (!updatedUser) return notFound(c, 'User not found');
 
-    return c.json(serializeUser(updatedUser));
+    return ok(c, serializeUser(updatedUser));
   });
 
   /**
    * DELETE /api/profile - Delete current user's account and all data
    */
   app.delete('/', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
 
@@ -325,7 +399,7 @@ export function createProfileRoutes() {
     // 6. Clear session cookie
     deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
 
-    return c.json({ success: true, message: 'Account deleted' });
+    return success(c, { message: 'Account deleted' });
   });
 
   // ============== Portfolio ==============
@@ -342,10 +416,9 @@ export function createProfileRoutes() {
    * GET /api/profile/portfolio - List user's portfolio items
    */
   app.get('/portfolio', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
     const items = await db.query.userPortfolioItems.findMany({
@@ -353,17 +426,16 @@ export function createProfileRoutes() {
       orderBy: [userPortfolioItems.sortOrder],
     });
 
-    return c.json({ items });
+    return ok(c, items);
   });
 
   /**
    * POST /api/profile/portfolio - Create a portfolio item
    */
   app.post('/portfolio', zValidator('json', portfolioItemSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const data = c.req.valid('json');
     const db = createDatabase(c.env.DB);
@@ -382,31 +454,27 @@ export function createProfileRoutes() {
       updatedAt: now,
     });
 
-    const created = await db.query.userPortfolioItems.findFirst({
+    const createdItem = await db.query.userPortfolioItems.findFirst({
       where: eq(userPortfolioItems.id, id),
     });
 
     // Emit event for achievement tracking
-    if (c.env.EVENTS_QUEUE) {
-      const eventBus = new EventBus(c.env.EVENTS_QUEUE);
-      eventBus.publish({
-        type: 'user.portfolio_item_created',
-        payload: { userId: user.id, portfolioItemId: id },
-        metadata: { userId: user.id, source: 'profile' },
-      }).catch(() => {}); // fire-and-forget
-    }
+    emitEvent(c, {
+      type: 'dev.tampa.user.portfolio_item_created',
+      payload: { userId: user.id, portfolioItemId: id },
+      metadata: { userId: user.id, source: 'profile' },
+    });
 
-    return c.json(created, 201);
+    return created(c, createdItem);
   });
 
   /**
    * PATCH /api/profile/portfolio/:id - Update a portfolio item
    */
   app.patch('/portfolio/:id', zValidator('json', portfolioItemSchema.partial()), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const itemId = c.req.param('id');
     const data = c.req.valid('json');
@@ -416,9 +484,7 @@ export function createProfileRoutes() {
       where: and(eq(userPortfolioItems.id, itemId), eq(userPortfolioItems.userId, user.id)),
     });
 
-    if (!existing) {
-      return c.json({ error: 'Portfolio item not found' }, 404);
-    }
+    if (!existing) return notFound(c, 'Portfolio item not found');
 
     await db.update(userPortfolioItems)
       .set({ ...data, updatedAt: new Date().toISOString() })
@@ -428,17 +494,16 @@ export function createProfileRoutes() {
       where: eq(userPortfolioItems.id, itemId),
     });
 
-    return c.json(updated);
+    return ok(c, updated);
   });
 
   /**
    * DELETE /api/profile/portfolio/:id - Delete a portfolio item
    */
   app.delete('/portfolio/:id', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const itemId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -447,13 +512,11 @@ export function createProfileRoutes() {
       where: and(eq(userPortfolioItems.id, itemId), eq(userPortfolioItems.userId, user.id)),
     });
 
-    if (!existing) {
-      return c.json({ error: 'Portfolio item not found' }, 404);
-    }
+    if (!existing) return notFound(c, 'Portfolio item not found');
 
     await db.delete(userPortfolioItems).where(eq(userPortfolioItems.id, itemId));
 
-    return c.json({ success: true, message: 'Portfolio item deleted' });
+    return success(c, { message: 'Portfolio item deleted' });
   });
 
   // ============== API Tokens (Personal Access Tokens) ==============
@@ -468,10 +531,9 @@ export function createProfileRoutes() {
    * GET /api/profile/tokens - List user's API tokens
    */
   app.get('/tokens', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
     const tokens = await db.query.apiTokens.findMany({
@@ -479,17 +541,15 @@ export function createProfileRoutes() {
       orderBy: [apiTokens.createdAt],
     });
 
-    return c.json({
-      tokens: tokens.map((t) => ({
-        id: t.id,
-        name: t.name,
-        tokenPrefix: t.tokenPrefix,
-        scopes: JSON.parse(t.scopes),
-        lastUsedAt: t.lastUsedAt,
-        expiresAt: t.expiresAt,
-        createdAt: t.createdAt,
-      })),
-    });
+    return ok(c, tokens.map((t) => ({
+      id: t.id,
+      name: t.name,
+      tokenPrefix: t.tokenPrefix,
+      scopes: JSON.parse(t.scopes),
+      lastUsedAt: t.lastUsedAt,
+      expiresAt: t.expiresAt,
+      createdAt: t.createdAt,
+    })));
   });
 
   /**
@@ -497,13 +557,17 @@ export function createProfileRoutes() {
    * Returns the full token ONCE in the response.
    */
   app.post('/tokens', zValidator('json', createTokenSchema), async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const data = c.req.valid('json');
     const db = createDatabase(c.env.DB);
+
+    // Admin scope requires admin/superadmin role
+    if (data.scopes.includes('admin') && user.role !== 'admin' && user.role !== 'superadmin') {
+      return forbidden(c, 'Admin scope requires admin or superadmin role');
+    }
 
     // Generate token: td_pat_ + 40 hex chars
     const randomBytes = new Uint8Array(20);
@@ -537,7 +601,14 @@ export function createProfileRoutes() {
       createdAt: now,
     });
 
-    return c.json({
+    // Emit event for achievement tracking
+    emitEvent(c, {
+      type: 'dev.tampa.developer.api_token_created',
+      payload: { userId: user.id, tokenId: id, tokenName: data.name },
+      metadata: { userId: user.id, source: 'profile' },
+    });
+
+    return created(c, {
       id,
       name: data.name,
       token: fullToken, // Only shown once!
@@ -545,17 +616,16 @@ export function createProfileRoutes() {
       scopes: data.scopes,
       expiresAt,
       createdAt: now,
-    }, 201);
+    });
   });
 
   /**
    * DELETE /api/profile/tokens/:id - Revoke an API token
    */
   app.delete('/tokens/:id', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const tokenId = c.req.param('id');
     const db = createDatabase(c.env.DB);
@@ -564,13 +634,11 @@ export function createProfileRoutes() {
       where: and(eq(apiTokens.id, tokenId), eq(apiTokens.userId, user.id)),
     });
 
-    if (!existing) {
-      return c.json({ error: 'Token not found' }, 404);
-    }
+    if (!existing) return notFound(c, 'Token not found');
 
     await db.delete(apiTokens).where(eq(apiTokens.id, tokenId));
 
-    return c.json({ success: true, message: 'Token revoked' });
+    return success(c, { message: 'Token revoked' });
   });
 
   // ============== Achievements ==============
@@ -579,31 +647,70 @@ export function createProfileRoutes() {
    * GET /api/profile/achievements - Get user's achievement progress
    */
   app.get('/achievements', async (c) => {
-    const user = await getCurrentUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
 
     const db = createDatabase(c.env.DB);
-    const progress = await db.query.achievementProgress.findMany({
-      where: eq(achievementProgress.userId, user.id),
-    });
+
+    const [allAchievements, progress] = await Promise.all([
+      db.query.achievements.findMany({
+        orderBy: [achievements.sortOrder],
+      }),
+      db.query.achievementProgress.findMany({
+        where: eq(achievementProgress.userId, user.id),
+      }),
+    ]);
 
     // Merge definitions with progress
-    const achievements = ACHIEVEMENTS.map((def) => {
+    const result = allAchievements.map((def) => {
       const p = progress.find((p) => p.achievementKey === def.key);
       return {
         key: def.key,
         name: def.name,
         description: def.description,
+        icon: def.icon,
+        color: def.color,
         targetValue: def.targetValue,
         currentValue: p?.currentValue ?? 0,
         completedAt: p?.completedAt ?? null,
         badgeSlug: def.badgeSlug ?? null,
+        hidden: def.hidden === 1,
       };
     });
 
-    return c.json({ achievements });
+    return ok(c, result);
+  });
+
+  // ============== Entitlements ==============
+
+  /**
+   * GET /api/profile/entitlements - Get user's active entitlements
+   */
+  app.get('/entitlements', async (c) => {
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+    const user = auth.user;
+
+    const db = createDatabase(c.env.DB);
+    const now = new Date().toISOString();
+
+    // Get active entitlements: expiresAt is null or > now
+    const allEntitlements = await db.query.userEntitlements.findMany({
+      where: eq(userEntitlements.userId, user.id),
+    });
+
+    const activeEntitlements = allEntitlements.filter(
+      (ent) => !ent.expiresAt || ent.expiresAt > now
+    );
+
+    return ok(c, activeEntitlements.map((ent) => ({
+      id: ent.id,
+      entitlement: ent.entitlement,
+      grantedAt: ent.grantedAt,
+      expiresAt: ent.expiresAt,
+      source: ent.source,
+    })));
   });
 
   return app;

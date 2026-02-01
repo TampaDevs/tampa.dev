@@ -33,6 +33,7 @@ export async function loader({
   const limit = 20;
   const offset = (page - 1) * limit;
 
+  const cookieHeader = request.headers.get("Cookie") || undefined;
   try {
     const result = await fetchAdminGroups({
       platform: platform || undefined,
@@ -41,12 +42,12 @@ export async function loader({
       search,
       limit,
       offset,
-    });
+    }, cookieHeader);
     return result;
   } catch (error) {
     console.error("Failed to fetch groups:", error);
     return {
-      groups: [],
+      data: [],
       pagination: { total: 0, limit, offset, hasMore: false },
       error: "Failed to load groups",
     };
@@ -179,7 +180,7 @@ function GroupRow({ group }: { group: AdminGroup }) {
 }
 
 export default function AdminGroupsList({ loaderData }: Route.ComponentProps) {
-  const { groups, pagination, error } = loaderData;
+  const { data: groups, pagination, error } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
 

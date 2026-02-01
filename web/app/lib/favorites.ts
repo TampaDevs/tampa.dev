@@ -107,10 +107,13 @@ export async function syncFavoritesWithServer(): Promise<{
       throw new Error("Failed to sync favorites");
     }
 
-    const data = await response.json() as {
-      favorites: Array<{ groupSlug: string }>;
-      added: number;
+    const json = await response.json() as {
+      data: {
+        favorites: Array<{ groupSlug: string }>;
+        added: number;
+      };
     };
+    const data = json.data;
 
     // Update localStorage with merged favorites
     const serverSlugs = data.favorites.map((f) => f.groupSlug);
@@ -212,11 +215,11 @@ export async function getFavoritesFromServer(): Promise<string[] | null> {
       throw new Error("Failed to fetch favorites");
     }
 
-    const data = await response.json() as {
-      favorites: Array<{ groupSlug: string }>;
+    const json = await response.json() as {
+      data: Array<{ groupSlug: string }>;
     };
 
-    return data.favorites.map((f) => f.groupSlug);
+    return json.data.map((f) => f.groupSlug);
   } catch (error) {
     console.error("Failed to fetch favorites from server:", error);
     return null;

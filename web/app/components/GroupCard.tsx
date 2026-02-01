@@ -11,13 +11,13 @@ export function GroupCard({ group, eventCount }: GroupCardProps) {
   return (
     <Link
       to={`/groups/${group.slug}`}
-      className="block glass-card rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
+      className="flex flex-col glass-card rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
     >
-      <div className="aspect-video relative bg-gray-100 dark:bg-gray-800">
+      <div className="aspect-video relative bg-gray-100 dark:bg-gray-800 shrink-0">
         <img
           src={group.logo}
           alt={group.name}
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => {
             e.currentTarget.src = "/images/placeholder-group.svg";
           }}
@@ -28,27 +28,29 @@ export function GroupCard({ group, eventCount }: GroupCardProps) {
           </div>
         )}
         <div className="absolute bottom-1.5 right-1.5">
-          <FavoriteButton slug={group.slug} size="small" />
+          <FavoriteButton slug={group.slug} size="small" count={group.favoritesCount} />
         </div>
       </div>
 
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+      <div className="p-4 flex flex-col flex-1 min-h-0">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
           {group.name}
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
           {group.description}
         </p>
 
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {group.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-navy/5 dark:bg-white/10 text-navy/70 dark:text-gray-300 border border-navy/10 dark:border-white/10"
-            >
-              {tag}
-            </span>
-          ))}
+        <div className="mt-auto pt-3">
+          <div className="flex gap-1.5 overflow-hidden">
+            {group.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-navy/5 dark:bg-white/10 text-navy/70 dark:text-gray-300 border border-navy/10 dark:border-white/10 shrink-0"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </Link>
