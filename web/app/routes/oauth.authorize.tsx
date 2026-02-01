@@ -5,7 +5,7 @@
  * Users approve third-party apps to access their Tampa.dev account here.
  */
 
-import { type ReactNode } from "react";
+import { type ReactNode, useState, useEffect, useCallback } from "react";
 import { redirect, useLoaderData, useFetcher } from "react-router";
 import { Button, Avatar } from "@tampadevs/react";
 import type { Route } from "./+types/oauth.authorize";
@@ -233,6 +233,65 @@ export default function OAuthAuthorizePage() {
   const { error, user, oauthRequest, client, requestedScopes } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
+  const [hasApproved, setHasApproved] = useState(false);
+
+  // Track when the user clicks approve via fetcher's submitted form data
+  useEffect(() => {
+    if (fetcher.formData?.get("intent") === "approve") {
+      setHasApproved(true);
+    }
+  }, [fetcher.formData]);
+
+  // If we approved and the fetcher settled back to idle, the redirect target
+  // was likely a protocol handler (e.g. claude-desktop://) that opened a popup
+  // but left this page sitting here. Redirect to home after a short delay.
+  const handleRedirectHome = useCallback(() => {
+    window.location.href = "/";
+  }, []);
+
+  useEffect(() => {
+    if (hasApproved && fetcher.state === "idle") {
+      const timer = setTimeout(handleRedirectHome, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasApproved, fetcher.state, handleRedirectHome]);
+
+  // Show a completion screen if we're stuck on the page after approving
+  if (hasApproved && fetcher.state === "idle") {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-navy to-navy-dark flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white">
+              Tampa<span className="text-coral">.dev</span>
+            </h1>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Authorization Complete
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              You've granted access to <strong>{client?.clientName || "the app"}</strong>. You can close this tab or you'll be redirected shortly.
+            </p>
+            <button
+              onClick={handleRedirectHome}
+              className="inline-block py-2 px-6 rounded-xl bg-coral hover:bg-coral-dark text-white font-semibold transition-colors"
+            >
+              Go to Tampa.dev
+            </button>
+          </div>
+          <p className="text-center text-white/40 text-xs mt-6">
+            You can revoke access at any time from your account settings
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

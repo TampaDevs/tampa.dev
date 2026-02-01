@@ -7,6 +7,7 @@
 
 import { DOCS_BY_SLUG } from "~/content/docs";
 import { fetchCurrentUser } from "~/lib/api.server";
+import { generateMetaTags } from "~/lib/seo";
 import type { Route } from "./+types/developer.docs.$slug";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -30,10 +31,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 export const meta: Route.MetaFunction = ({ data }) => {
   if (!data) return [];
-  return [
-    { title: `${data.title} | Tampa.dev API Docs` },
-    { name: "description", content: data.description },
-  ];
+  return generateMetaTags({
+    title: `${data.title} | API Docs`,
+    description: data.description,
+    url: `/developer/docs/${data.slug}`,
+  });
 };
 
 export default function DocsPage({ loaderData }: Route.ComponentProps) {

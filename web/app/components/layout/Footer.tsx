@@ -154,6 +154,14 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link
+                  to="/developer/docs/mcp-overview"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white"
+                >
+                  MCP Server
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://github.com/TampaDevs/tampa.dev"
                   target="_blank"

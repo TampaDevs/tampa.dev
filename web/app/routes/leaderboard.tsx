@@ -321,42 +321,16 @@ function CompactEntry({
 }
 
 function CompactList({ entries }: { entries: LeaderboardEntry[] }) {
-  const { ref, hovered, onMouseMove, onMouseEnter, onMouseLeave } = useTilt(3);
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div
-        style={{ perspective: "1000px" }}
-        onMouseMove={onMouseMove}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-      >
-        <div
-          ref={ref}
-          className="glass-card rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/[0.92] dark:bg-gray-900/[0.88] backdrop-blur-xl overflow-hidden relative"
-          style={{
-            transformStyle: "preserve-3d",
-            transform: "rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))",
-            transition: "transform 0.15s ease-out, box-shadow 0.3s ease",
-          }}
-        >
-          {entries.map((entry, i) => (
-            <CompactEntry
-              key={entry.username}
-              entry={entry}
-              isLast={i === entries.length - 1}
-            />
-          ))}
-          {/* Shine overlay */}
-          <div
-            className="absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-300"
-            style={{
-              background:
-                "radial-gradient(circle at var(--sx, 50%) var(--sy, 50%), rgba(255,255,255,0.08) 0%, transparent 60%)",
-              opacity: hovered ? 1 : 0,
-            }}
+      <div className="rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/[0.92] dark:bg-gray-900/[0.88] backdrop-blur-xl overflow-hidden">
+        {entries.map((entry, i) => (
+          <CompactEntry
+            key={entry.username}
+            entry={entry}
+            isLast={i === entries.length - 1}
           />
-        </div>
+        ))}
       </div>
     </div>
   );

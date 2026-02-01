@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <!-- Maskable icons need a safe zone: the inner 80% circle is guaranteed visible.
-       That means 10% padding on each side = 51.2px. Content stays within the center 409.6x409.6 area. -->
+       Content stays within the center 409.6x409.6 area (51.2px padding each side). -->
   <rect width="512" height="512" fill="#F97066"/>
-  <text x="256" y="330" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="240" font-weight="800" fill="white" text-anchor="middle" dominant-baseline="auto">T</text>
-  <text x="334" y="355" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="70" font-weight="700" fill="white" text-anchor="middle" dominant-baseline="auto" opacity="0.95">.</text>
+  <text x="256" y="230" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="130" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="auto">Tampa</text>
+  <text x="310" y="340" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="100" font-weight="700" fill="rgba(255,255,255,0.85)" text-anchor="middle" dominant-baseline="auto">.dev</text>
 </svg>
