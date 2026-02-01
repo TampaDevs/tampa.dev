@@ -51,7 +51,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     fetch(`${apiUrl}/leaderboard?limit=50`, {
       headers: { Accept: "application/json" },
     }),
-    fetch(`${apiUrl}/me`, {
+    fetch(`${apiUrl}/auth/me`, {
       headers: { Cookie: cookie, Accept: "application/json" },
     }).catch(() => null),
   ]);
@@ -59,9 +59,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   let currentUser: CurrentUser | null = null;
   if (meResponse && meResponse.ok) {
     try {
-      const meData = (await meResponse.json()) as { username?: string };
-      if (meData.username) {
-        currentUser = { username: meData.username };
+      const meData = (await meResponse.json()) as { user: { username?: string } | null };
+      if (meData.user?.username) {
+        currentUser = { username: meData.user.username };
       }
     } catch { }
   }

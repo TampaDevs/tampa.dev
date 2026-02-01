@@ -239,14 +239,14 @@ describe("fetchCurrentUser", () => {
     role: "user",
   };
 
-  it("calls /me with the cookie header and returns user", async () => {
-    mockFetch.mockResolvedValue(jsonResponse(mockUser));
+  it("calls /auth/me with the cookie header and returns user", async () => {
+    mockFetch.mockResolvedValue(jsonResponse({ user: mockUser }));
 
     const result = await fetchCurrentUser("session=abc123");
 
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, init] = mockFetch.mock.calls[0];
-    expect(url).toBe(`${API_HOST}/me`);
+    expect(url).toBe(`${API_HOST}/auth/me`);
     expect(init.headers.Accept).toBe("application/json");
     expect(init.headers.Cookie).toBe("session=abc123");
     expect(result).toEqual(mockUser);
