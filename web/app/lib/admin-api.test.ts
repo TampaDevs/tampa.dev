@@ -112,7 +112,7 @@ describe("fetchClaimRequests", () => {
 
 describe("approveClaimRequest", () => {
   it("sends POST to the approve endpoint", async () => {
-    const body = { success: true, message: "Approved" };
+    const body = { data: { success: true, message: "Approved" } };
     mockFetch.mockResolvedValue(jsonResponse(body));
 
     const result = await approveClaimRequest("cr-1", "session=abc");
@@ -137,7 +137,7 @@ describe("approveClaimRequest", () => {
 
 describe("rejectClaimRequest", () => {
   it("sends POST with notes in the body", async () => {
-    const body = { success: true, message: "Rejected" };
+    const body = { data: { success: true, message: "Rejected" } };
     mockFetch.mockResolvedValue(jsonResponse(body));
 
     const result = await rejectClaimRequest("cr-2", "Not eligible", "session=abc");
@@ -161,7 +161,7 @@ describe("rejectClaimRequest", () => {
 
 describe("fetchClaimInvites", () => {
   const mockInvites = {
-    invites: [
+    data: [
       {
         id: "inv-1",
         groupId: "g-1",
@@ -207,15 +207,17 @@ describe("fetchClaimInvites", () => {
 
 describe("createClaimInvite", () => {
   const mockInvite = {
-    id: "inv-2",
-    groupId: "g-1",
-    token: "tok-def",
-    autoApprove: false,
-    expiresAt: "2025-12-31T00:00:00Z",
-    createdBy: "u-admin",
-    usedBy: null,
-    usedAt: null,
-    createdAt: "2025-06-01T00:00:00Z",
+    data: {
+      id: "inv-2",
+      groupId: "g-1",
+      token: "tok-def",
+      autoApprove: false,
+      expiresAt: "2025-12-31T00:00:00Z",
+      createdBy: "u-admin",
+      usedBy: null,
+      usedAt: null,
+      createdAt: "2025-06-01T00:00:00Z",
+    },
   };
 
   it("sends POST with options in the body", async () => {
@@ -313,10 +315,12 @@ describe("fetchGroupCreationRequests", () => {
 describe("approveGroupCreationRequest", () => {
   it("sends POST and returns result with groupId", async () => {
     const body = {
-      success: true,
-      message: "Group created",
-      groupId: "g-new",
-      urlname: "new-group",
+      data: {
+        success: true,
+        message: "Group created",
+        groupId: "g-new",
+        urlname: "new-group",
+      },
     };
     mockFetch.mockResolvedValue(jsonResponse(body));
 
@@ -344,7 +348,7 @@ describe("approveGroupCreationRequest", () => {
 
 describe("rejectGroupCreationRequest", () => {
   it("sends POST with notes", async () => {
-    const body = { success: true, message: "Rejected" };
+    const body = { data: { success: true, message: "Rejected" } };
     mockFetch.mockResolvedValue(jsonResponse(body));
 
     await rejectGroupCreationRequest("gcr-2", "Does not meet criteria", "session=abc");
@@ -373,7 +377,7 @@ describe("rejectGroupCreationRequest", () => {
 
 describe("fetchGroupConnections", () => {
   const mockConnections = {
-    connections: [
+    data: [
       {
         id: "conn-1",
         groupId: "g-1",
@@ -401,7 +405,7 @@ describe("fetchGroupConnections", () => {
   });
 
   it("encodes special characters in groupId", async () => {
-    mockFetch.mockResolvedValue(jsonResponse({ connections: [] }));
+    mockFetch.mockResolvedValue(jsonResponse({ data: [] }));
 
     await fetchGroupConnections("g/special id");
 
@@ -437,12 +441,14 @@ describe("addGroupConnection", () => {
   };
 
   const mockConnection = {
-    id: "conn-2",
-    groupId: "g-1",
-    ...connectionData,
-    lastSyncAt: null,
-    syncError: null,
-    createdAt: "2025-06-01T00:00:00Z",
+    data: {
+      id: "conn-2",
+      groupId: "g-1",
+      ...connectionData,
+      lastSyncAt: null,
+      syncError: null,
+      createdAt: "2025-06-01T00:00:00Z",
+    },
   };
 
   it("sends POST with connection data in the body", async () => {

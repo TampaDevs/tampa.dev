@@ -93,7 +93,7 @@ describe("resolveGroupIdFromSlug", () => {
 
 describe("fetchManagedGroups", () => {
   const mockGroups = {
-    groups: [
+    data: [
       { id: "g-1", name: "Tampa Devs", urlname: "tampadevs" },
       { id: "g-2", name: "React Tampa", urlname: "react-tampa" },
     ],
@@ -127,7 +127,7 @@ describe("fetchManagedGroups", () => {
 });
 
 describe("fetchManagedGroup", () => {
-  const mockGroup = { id: "g-1", name: "Tampa Devs", urlname: "tampadevs" };
+  const mockGroup = { data: { id: "g-1", name: "Tampa Devs", urlname: "tampadevs" } };
 
   it("calls the correct URL with groupId", async () => {
     mockFetch.mockResolvedValue(jsonResponse(mockGroup));
@@ -159,13 +159,15 @@ describe("fetchManagedGroup", () => {
 
 describe("fetchMyRole", () => {
   const mockRole = {
-    role: "manager",
-    permissions: {
-      canEditSettings: true,
-      canManageMembers: true,
-      canManageEvents: true,
-      canCheckIn: true,
-      canViewDashboard: true,
+    data: {
+      role: "manager",
+      permissions: {
+        canEditSettings: true,
+        canManageMembers: true,
+        canManageEvents: true,
+        canCheckIn: true,
+        canViewDashboard: true,
+      },
     },
   };
 
@@ -188,7 +190,7 @@ describe("fetchMyRole", () => {
 
 describe("updateGroupSettings", () => {
   const updateData = { name: "Tampa Devs Updated", description: "New desc" };
-  const mockUpdated = { id: "g-1", name: "Tampa Devs Updated" };
+  const mockUpdated = { data: { id: "g-1", name: "Tampa Devs Updated" } };
 
   it("sends PUT with JSON body to the correct URL", async () => {
     mockFetch.mockResolvedValue(jsonResponse(mockUpdated));
@@ -219,7 +221,7 @@ describe("updateGroupSettings", () => {
 
 describe("fetchMembers", () => {
   const mockMembers = {
-    members: [
+    data: [
       { id: "m-1", userId: "u-1", role: "owner" },
       { id: "m-2", userId: "u-2", role: "member" },
     ],
@@ -254,7 +256,7 @@ describe("fetchMembers", () => {
 
 describe("inviteMember", () => {
   it("sends POST with userId in the body", async () => {
-    const mockMember = { id: "m-3", userId: "u-3", role: "member" };
+    const mockMember = { data: { id: "m-3", userId: "u-3", role: "member" } };
     mockFetch.mockResolvedValue(jsonResponse(mockMember));
 
     const result = await inviteMember("g-1", "u-3", "session=abc");
@@ -350,7 +352,7 @@ describe("leaveGroup", () => {
 
 describe("fetchManagedEvents", () => {
   const mockEvents = {
-    events: [
+    data: [
       { id: "e-1", title: "Monthly Meetup", status: "active" },
       { id: "e-2", title: "Workshop", status: "draft" },
     ],
@@ -384,7 +386,7 @@ describe("fetchManagedEvents", () => {
 });
 
 describe("fetchManagedEvent", () => {
-  const mockEvent = { id: "e-1", title: "Monthly Meetup" };
+  const mockEvent = { data: { id: "e-1", title: "Monthly Meetup" } };
 
   it("calls the correct URL with groupId and eventId", async () => {
     mockFetch.mockResolvedValue(jsonResponse(mockEvent));
@@ -413,7 +415,7 @@ describe("createEvent", () => {
     startTime: "2025-07-01T18:00:00Z",
     eventType: "physical" as const,
   };
-  const mockCreated = { event: { id: "e-new", title: "New Meetup" } };
+  const mockCreated = { data: { event: { id: "e-new", title: "New Meetup" } } };
 
   it("sends POST with JSON body to the correct URL", async () => {
     mockFetch.mockResolvedValue(jsonResponse(mockCreated));
@@ -442,7 +444,7 @@ describe("createEvent", () => {
 
 describe("updateEvent", () => {
   const updateData = { title: "Updated Meetup" };
-  const mockUpdated = { id: "e-1", title: "Updated Meetup" };
+  const mockUpdated = { data: { id: "e-1", title: "Updated Meetup" } };
 
   it("sends PUT with JSON body to the correct URL", async () => {
     mockFetch.mockResolvedValue(jsonResponse(mockUpdated));
@@ -495,7 +497,7 @@ describe("cancelEvent", () => {
 
 describe("fetchBadges", () => {
   const mockBadges = {
-    badges: [
+    data: [
       { id: "b-1", name: "Early Bird", points: 10 },
       { id: "b-2", name: "Contributor", points: 25 },
     ],
@@ -530,7 +532,7 @@ describe("fetchBadges", () => {
 
 describe("createBadge", () => {
   const badgeData = { name: "Speaker", points: 50 };
-  const mockCreated = { id: "b-new", name: "Speaker", points: 50 };
+  const mockCreated = { data: { id: "b-new", name: "Speaker", points: 50 } };
 
   it("sends POST with JSON body to the correct URL", async () => {
     mockFetch.mockResolvedValue(jsonResponse(mockCreated));
@@ -558,7 +560,7 @@ describe("createBadge", () => {
 
 describe("updateBadge", () => {
   it("sends PATCH with JSON body to the correct URL", async () => {
-    const mockUpdated = { id: "b-1", name: "Updated Badge", points: 20 };
+    const mockUpdated = { data: { id: "b-1", name: "Updated Badge", points: 20 } };
     mockFetch.mockResolvedValue(jsonResponse(mockUpdated));
 
     const result = await updateBadge(
@@ -614,12 +616,14 @@ describe("deleteBadge", () => {
 
 describe("generateBadgeClaimLink", () => {
   const mockLink = {
-    id: "cl-1",
-    code: "ABC123",
-    maxUses: 10,
-    currentUses: 0,
-    expiresAt: "2025-12-31T00:00:00Z",
-    createdAt: "2025-06-01T00:00:00Z",
+    data: {
+      id: "cl-1",
+      code: "ABC123",
+      maxUses: 10,
+      currentUses: 0,
+      expiresAt: "2025-12-31T00:00:00Z",
+      createdAt: "2025-06-01T00:00:00Z",
+    },
   };
 
   it("sends POST with options in the body", async () => {
@@ -665,7 +669,7 @@ describe("generateBadgeClaimLink", () => {
 
 describe("fetchBadgeClaimLinks", () => {
   const mockLinks = {
-    claimLinks: [
+    data: [
       { id: "cl-1", code: "ABC123", maxUses: 10, currentUses: 3 },
       { id: "cl-2", code: "DEF456", maxUses: null, currentUses: 0 },
     ],
@@ -702,7 +706,7 @@ describe("fetchBadgeClaimLinks", () => {
 
 describe("fetchCheckinCodes", () => {
   const mockCodes = {
-    codes: [
+    data: [
       { id: "cc-1", code: "CHECK1", eventId: "e-1", maxUses: 100 },
     ],
   };
@@ -736,13 +740,15 @@ describe("fetchCheckinCodes", () => {
 
 describe("generateCheckinCode", () => {
   const mockCode = {
-    id: "cc-new",
-    code: "NEWCODE",
-    eventId: "e-1",
-    maxUses: 50,
-    currentUses: 0,
-    expiresAt: null,
-    createdAt: "2025-06-01T00:00:00Z",
+    data: {
+      id: "cc-new",
+      code: "NEWCODE",
+      eventId: "e-1",
+      maxUses: 50,
+      currentUses: 0,
+      expiresAt: null,
+      createdAt: "2025-06-01T00:00:00Z",
+    },
   };
 
   it("sends POST with options in the body", async () => {
@@ -820,7 +826,7 @@ describe("deleteCheckinCode", () => {
 
 describe("fetchAttendees", () => {
   const mockAttendees = {
-    attendees: [
+    data: [
       {
         rsvpId: "r-1",
         userId: "u-1",

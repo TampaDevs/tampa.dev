@@ -544,7 +544,7 @@ export default function PublicProfilePage({
         {/* Floating Profile Card */}
         <div className="-mt-28 sm:-mt-32 relative z-10">
           <div
-            className="glass-card rounded-2xl p-6 sm:p-8 border border-gray-200/60 dark:border-gray-700/60 shadow-lg bg-white/[0.92] dark:bg-gray-900/[0.88] backdrop-blur-xl relative overflow-hidden"
+            className="glass-card rounded-2xl p-6 sm:p-8 border border-gray-200/60 dark:border-gray-700/60 shadow-lg bg-white/[0.94] dark:bg-gray-900/[0.90] backdrop-blur-xl relative overflow-hidden"
           >
             {/* Subtle accent tint */}
             <div
