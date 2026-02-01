@@ -10,13 +10,6 @@ interface Follower {
   followedAt: string | null;
 }
 
-interface FollowersResponse {
-  followers: Follower[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
 interface UserProfile {
   username: string;
   name: string | null;
@@ -75,25 +68,25 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const profile = (await profileRes.json()) as UserProfile;
+  const profile = ((await profileRes.json()) as { data: UserProfile }).data;
 
-  let followersData: FollowersResponse = {
-    followers: [],
-    total: 0,
-    limit: PAGE_SIZE,
-    offset,
-  };
+  let followers: Follower[] = [];
+  let total = 0;
+  let limit = PAGE_SIZE;
 
   if (followersRes.ok) {
-    followersData = (await followersRes.json()) as FollowersResponse;
+    const body = (await followersRes.json()) as { data: Follower[]; pagination: { total: number; limit: number; offset: number } };
+    followers = body.data ?? [];
+    total = body.pagination.total ?? 0;
+    limit = body.pagination.limit ?? PAGE_SIZE;
   }
 
   return {
     profile,
-    followers: followersData.followers ?? [],
-    total: followersData.total ?? 0,
-    limit: followersData.limit ?? PAGE_SIZE,
-    offset: followersData.offset ?? offset,
+    followers,
+    total,
+    limit,
+    offset,
   };
 }
 
