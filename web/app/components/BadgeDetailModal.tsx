@@ -44,11 +44,11 @@ export function BadgeDetailModal({ badge, onClose }: BadgeDetailModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ animation: "badgeModalFadeIn 0.2s ease-out" }}
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0"
+        style={{ animation: "badgeModalBackdropIn 0.2s ease-out forwards" }}
         onClick={onClose}
       />
 
@@ -163,9 +163,9 @@ export function BadgeDetailModal({ badge, onClose }: BadgeDetailModalProps) {
 
       {/* Animations */}
       <style>{`
-        @keyframes badgeModalFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes badgeModalBackdropIn {
+          from { background-color: rgba(0,0,0,0); backdrop-filter: blur(0); }
+          to { background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
         }
         @keyframes badgeModalScaleIn {
           from { opacity: 0; transform: scale(0.95); }
