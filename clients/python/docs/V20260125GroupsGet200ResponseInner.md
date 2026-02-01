@@ -18,6 +18,7 @@ Name | Type | Description | Notes
 **display_on_site** | **bool** |  | 
 **tags** | **List[str]** |  | 
 **social_links** | [**V20260125GroupsGet200ResponseInnerSocialLinks**](V20260125GroupsGet200ResponseInnerSocialLinks.md) |  | 
+**favorites_count** | **float** |  | [optional] 
 
 ## Example
 

@@ -1,7 +1,7 @@
 /*
-Tampa Events API
+Tampa.dev Platform API
 
-Community events aggregation API for Tampa Bay tech meetups and events
+The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 API version: 2026-01-25
 */
@@ -28,6 +28,9 @@ func (c contextKey) String() string {
 }
 
 var (
+	// ContextAccessToken takes a string oauth2 access token as authentication for the request.
+	ContextAccessToken = contextKey("accesstoken")
+
 	// ContextServerIndex uses a server configuration from the index.
 	ContextServerIndex = contextKey("serverIndex")
 

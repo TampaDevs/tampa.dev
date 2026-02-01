@@ -21,6 +21,11 @@ Returns metadata about all available JSON schemas for the API models
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::SchemasApi.new
 
@@ -61,7 +66,7 @@ This endpoint does not need any parameter.
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -82,6 +87,11 @@ Returns the JSON Schema for a specific model type
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::SchemasApi.new
 name = 'event' # String | 
@@ -125,7 +135,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

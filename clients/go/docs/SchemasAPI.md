@@ -58,7 +58,7 @@ Other parameters are passed through a pointer to a apiCall20260125SchemasGetRequ
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -128,7 +128,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

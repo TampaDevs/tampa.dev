@@ -17,6 +17,7 @@
 | **display_on_site** | **Boolean** |  |  |
 | **tags** | **Array&lt;String&gt;** |  |  |
 | **social_links** | [**V20260125GroupsGet200ResponseInnerSocialLinks**](V20260125GroupsGet200ResponseInnerSocialLinks.md) |  |  |
+| **favorites_count** | **Float** |  | [optional] |
 
 ## Example
 
@@ -36,7 +37,8 @@ instance = TampaEventsAPI::V20260125GroupsGet200ResponseInner.new(
   is_featured: null,
   display_on_site: null,
   tags: null,
-  social_links: null
+  social_links: null,
+  favorites_count: null
 )
 ```
 

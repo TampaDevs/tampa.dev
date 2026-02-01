@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Tampa Events API
- * Community events aggregation API for Tampa Bay tech meetups and events
+ * Tampa.dev Platform API
+ * The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
  *
  * The version of the OpenAPI document: 2026-01-25
  * 
@@ -72,6 +72,7 @@ export interface V20260125GroupsGet200ResponseInner {
     'displayOnSite': boolean;
     'tags': Array<string>;
     'socialLinks': V20260125GroupsGet200ResponseInnerSocialLinks;
+    'favoritesCount'?: number;
 }
 
 export const V20260125GroupsGet200ResponseInnerPlatformEnum = {
@@ -107,6 +108,584 @@ export interface V20260125SchemasNameGet404Response {
     'error': string;
     'available': Array<string>;
 }
+export interface VAchievementProgress {
+    'key': string;
+    'name': string;
+    'description': string;
+    'icon': string;
+    'color': string;
+    'targetValue': number;
+    'currentValue': number;
+    'completedAt': string;
+    'badgeSlug': string;
+    'hidden': boolean;
+}
+export interface VCheckinResult {
+    'id': string;
+    'eventId': string;
+    'checkedInAt': string;
+    'method': string;
+}
+export interface VClaimBadgeResponse {
+    'badge': VClaimBadgeResponseBadge;
+}
+export interface VClaimBadgeResponseBadge {
+    'name': string;
+    'slug': string;
+}
+export interface VClaimInfo {
+    'badge': VClaimInfoBadge;
+    'group': VClaimInfoGroup;
+    'claimable': boolean;
+    'reason'?: string;
+}
+export interface VClaimInfoBadge {
+    'name': string;
+    'slug': string;
+    'description': string;
+    'icon': string;
+    'color': string;
+    'points': number;
+}
+export interface VClaimInfoGroup {
+    'name': string;
+    'urlname': string;
+    'photoUrl': string;
+}
+export interface VCreateTokenRequest {
+    /**
+     * Human-readable name for the token
+     */
+    'name': string;
+    /**
+     * OAuth scopes to grant to this token
+     */
+    'scopes': Array<string>;
+    /**
+     * Token expiry in days (1-365, default: no expiry)
+     */
+    'expiresInDays'?: number;
+}
+export interface VErrorResponse {
+    /**
+     * Human-readable error message
+     */
+    'error': string;
+    /**
+     * Machine-readable error code
+     */
+    'code': string;
+}
+export interface VEventListItem {
+    'id': string;
+    'title': string;
+    'description': string;
+    'startTime': string;
+    'endTime': string;
+    'timezone': string;
+    'eventUrl': string;
+    'photoUrl': string;
+    'eventType': string;
+    'rsvpCount': number;
+    'maxAttendees': number;
+    'group': VEventListItemGroup;
+}
+export interface VEventListItemGroup {
+    'id': string;
+    'name': string;
+    'urlname': string;
+}
+export interface VFollowEntry {
+    'username': string;
+    'name': string;
+    'avatarUrl': string;
+    'followedAt': string;
+}
+export interface VGroupDetail {
+    'id': string;
+    'urlname': string;
+    'name': string;
+    'description': string;
+    'link': string;
+    'website': string;
+    'memberCount': number;
+    'photoUrl': string;
+    'tags'?: any;
+    'socialLinks'?: any;
+    'upcomingEvents': Array<VGroupDetailAllOfUpcomingEvents>;
+}
+export interface VGroupDetailAllOfUpcomingEvents {
+    'id': string;
+    'title': string;
+    'startTime': string;
+    'eventUrl': string;
+}
+export interface VGroupListItem {
+    'id': string;
+    'urlname': string;
+    'name': string;
+    'description': string;
+    'link': string;
+    'website': string;
+    'memberCount': number;
+    'photoUrl': string;
+    'tags'?: any;
+    'socialLinks'?: any;
+}
+export interface VLinkedAccount {
+    'provider': string;
+    'providerUsername': string;
+    'providerEmail': string;
+    'createdAt': string;
+}
+export interface VMcpError {
+    'error': string;
+    'code': string;
+}
+export interface VPagination {
+    /**
+     * Total number of items (may be absent if count is expensive)
+     */
+    'total'?: number;
+    /**
+     * Maximum items per page
+     */
+    'limit': number;
+    /**
+     * Number of items skipped
+     */
+    'offset': number;
+    /**
+     * Whether more items exist beyond this page
+     */
+    'hasMore': boolean;
+}
+export interface VPortfolioItem {
+    'id': string;
+    'userId': string;
+    'title': string;
+    'description': string;
+    'url': string;
+    'imageUrl': string;
+    'sortOrder': number;
+    'createdAt': string;
+}
+export interface VPortfolioItemRequest {
+    'title': string;
+    'description'?: string;
+    'url'?: string;
+    'imageUrl'?: string;
+    'sortOrder'?: number;
+}
+export interface VPortfolioItemUpdateRequest {
+    'title'?: string;
+    'description'?: string;
+    'url'?: string;
+    'imageUrl'?: string;
+    'sortOrder'?: number;
+}
+export interface VRsvp {
+    'id': string;
+    'eventId': string;
+    'status': VRsvpStatusEnum;
+    'rsvpAt': string;
+    'waitlistPosition': number;
+}
+
+export const VRsvpStatusEnum = {
+    Confirmed: 'confirmed',
+    Waitlisted: 'waitlisted',
+    Cancelled: 'cancelled'
+} as const;
+
+export type VRsvpStatusEnum = typeof VRsvpStatusEnum[keyof typeof VRsvpStatusEnum];
+
+export interface VRsvpStatusResponse {
+    'rsvp': VRsvp;
+}
+export interface VRsvpSummary {
+    'total': number;
+    'confirmed': number;
+    'waitlisted': number;
+    'cancelled': number;
+    'capacity': number;
+}
+export interface VScope {
+    'name': string;
+    'description': string;
+    'implies': Array<string>;
+}
+export interface VToken {
+    'id': string;
+    'name': string;
+    'tokenPrefix': string;
+    'scopes': string;
+    'expiresAt': string;
+    'createdAt': string;
+    'lastUsedAt': string;
+}
+export interface VTokenCreated {
+    'id': string;
+    'name': string;
+    /**
+     * Full token value. Store securely — it cannot be retrieved again.
+     */
+    'token': string;
+    'tokenPrefix': string;
+    'scopes': string;
+    'expiresAt': string;
+    'createdAt': string;
+}
+export interface VUpdateProfileRequest {
+    'name'?: string;
+    'avatarUrl'?: string;
+    'heroImageUrl'?: string;
+    'themeColor'?: VUpdateProfileRequestThemeColorEnum;
+    'username'?: string;
+    'bio'?: string;
+    'location'?: string;
+    'socialLinks'?: Array<string>;
+    'showAchievements'?: boolean;
+    'profileVisibility'?: VUpdateProfileRequestProfileVisibilityEnum;
+}
+
+export const VUpdateProfileRequestThemeColorEnum = {
+    Coral: 'coral',
+    Ocean: 'ocean',
+    Sunset: 'sunset',
+    Forest: 'forest',
+    Violet: 'violet',
+    Rose: 'rose',
+    Slate: 'slate',
+    Sky: 'sky'
+} as const;
+
+export type VUpdateProfileRequestThemeColorEnum = typeof VUpdateProfileRequestThemeColorEnum[keyof typeof VUpdateProfileRequestThemeColorEnum];
+export const VUpdateProfileRequestProfileVisibilityEnum = {
+    Public: 'public',
+    Private: 'private'
+} as const;
+
+export type VUpdateProfileRequestProfileVisibilityEnum = typeof VUpdateProfileRequestProfileVisibilityEnum[keyof typeof VUpdateProfileRequestProfileVisibilityEnum];
+
+export interface VUserBasic {
+    'id': string;
+    'name': string;
+    'avatarUrl': string;
+    'username': string;
+    'email'?: string;
+}
+export interface VUserProfile {
+    'id': string;
+    'name': string;
+    'username': string;
+    'avatarUrl': string;
+    'heroImageUrl': string;
+    'themeColor': string;
+    'bio': string;
+    'location': string;
+    'socialLinks': Array<string>;
+    'role': string;
+    'profileVisibility': VUserProfileProfileVisibilityEnum;
+    'showAchievements': boolean;
+    'createdAt': string;
+    'email'?: string;
+}
+
+export const VUserProfileProfileVisibilityEnum = {
+    Public: 'public',
+    Private: 'private'
+} as const;
+
+export type VUserProfileProfileVisibilityEnum = typeof VUserProfileProfileVisibilityEnum[keyof typeof VUserProfileProfileVisibilityEnum];
+
+export interface VV1CheckinCodePost201Response {
+    'data': VCheckinResult;
+}
+export interface VV1ClaimCodeGet200Response {
+    'data': VClaimInfo;
+}
+export interface VV1ClaimCodePost201Response {
+    'data': VClaimBadgeResponse;
+}
+export interface VV1EventsEventIdRsvpDelete200Response {
+    'data': VV1EventsEventIdRsvpDelete200ResponseData;
+}
+export interface VV1EventsEventIdRsvpDelete200ResponseData {
+    'success': VV1EventsEventIdRsvpDelete200ResponseDataSuccessEnum;
+}
+
+export const VV1EventsEventIdRsvpDelete200ResponseDataSuccessEnum = {
+    True: true
+} as const;
+
+export type VV1EventsEventIdRsvpDelete200ResponseDataSuccessEnum = typeof VV1EventsEventIdRsvpDelete200ResponseDataSuccessEnum[keyof typeof VV1EventsEventIdRsvpDelete200ResponseDataSuccessEnum];
+
+export interface VV1EventsEventIdRsvpGet200Response {
+    'data': VRsvpStatusResponse;
+}
+export interface VV1EventsEventIdRsvpPost201Response {
+    'data': VRsvp;
+}
+export interface VV1EventsEventIdRsvpSummaryGet200Response {
+    'data': VRsvpSummary;
+}
+export interface VV1EventsGet200Response {
+    'data': Array<VEventListItem>;
+    'pagination': VPagination;
+}
+export interface VV1FavoritesGet200Response {
+    'data': Array<any>;
+}
+export interface VV1FavoritesGroupSlugPost200Response {
+    'data': VV1FavoritesGroupSlugPost200ResponseData;
+}
+export interface VV1FavoritesGroupSlugPost200ResponseData {
+    'alreadyFavorited': boolean;
+}
+export interface VV1FavoritesGroupSlugPost201Response {
+    'data': VV1FavoritesGroupSlugPost201ResponseData;
+}
+export interface VV1FavoritesGroupSlugPost201ResponseData {
+    'groupSlug': string;
+}
+export interface VV1GroupsGet200Response {
+    'data': Array<VGroupListItem>;
+    'pagination': VPagination;
+}
+export interface VV1GroupsSlugGet200Response {
+    'data': VGroupDetail;
+}
+export interface VV1MeGet200Response {
+    'data': VUserBasic;
+}
+export interface VV1MeLinkedAccountsGet200Response {
+    'data': Array<VLinkedAccount>;
+}
+export interface VV1ProfileAchievementsGet200Response {
+    'data': Array<VAchievementProgress>;
+}
+export interface VV1ProfileGet200Response {
+    'data': VUserProfile;
+}
+export interface VV1ProfilePortfolioGet200Response {
+    'data': Array<VPortfolioItem>;
+}
+export interface VV1ProfilePortfolioPost201Response {
+    'data': VPortfolioItem;
+}
+export interface VV1ProfileTokensGet200Response {
+    'data': Array<VToken>;
+}
+export interface VV1ProfileTokensPost201Response {
+    'data': VTokenCreated;
+}
+export interface VV1ScopesGet200Response {
+    'data': Array<VScope>;
+}
+export interface VV1UsersUsernameFollowPost200Response {
+    'data': VV1UsersUsernameFollowPost200ResponseData;
+}
+export interface VV1UsersUsernameFollowPost200ResponseData {
+    'alreadyFollowing': VV1UsersUsernameFollowPost200ResponseDataAlreadyFollowingEnum;
+}
+
+export const VV1UsersUsernameFollowPost200ResponseDataAlreadyFollowingEnum = {
+    True: true
+} as const;
+
+export type VV1UsersUsernameFollowPost200ResponseDataAlreadyFollowingEnum = typeof VV1UsersUsernameFollowPost200ResponseDataAlreadyFollowingEnum[keyof typeof VV1UsersUsernameFollowPost200ResponseDataAlreadyFollowingEnum];
+
+export interface VV1UsersUsernameFollowPost201Response {
+    'data': VV1UsersUsernameFollowPost201ResponseData;
+}
+export interface VV1UsersUsernameFollowPost201ResponseData {
+    'following': VV1UsersUsernameFollowPost201ResponseDataFollowingEnum;
+}
+
+export const VV1UsersUsernameFollowPost201ResponseDataFollowingEnum = {
+    True: true
+} as const;
+
+export type VV1UsersUsernameFollowPost201ResponseDataFollowingEnum = typeof VV1UsersUsernameFollowPost201ResponseDataFollowingEnum[keyof typeof VV1UsersUsernameFollowPost201ResponseDataFollowingEnum];
+
+export interface VV1UsersUsernameFollowersGet200Response {
+    'data': Array<VFollowEntry>;
+    'pagination': VPagination;
+}
+
+/**
+ * ClaimsApi - axios parameter creator
+ */
+export const ClaimsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns information about a badge claim link. No authentication required.
+         * @summary Get badge claim info
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ClaimCodeGet: async (code: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'code' is not null or undefined
+            assertParamExists('v1ClaimCodeGet', 'code', code)
+            const localVarPath = `/v1/claim/{code}`
+                .replace(`{${"code"}}`, encodeURIComponent(String(code)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Claims a badge using a claim link code. Requires authentication.
+         * @summary Claim a badge
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ClaimCodePost: async (code: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'code' is not null or undefined
+            assertParamExists('v1ClaimCodePost', 'code', code)
+            const localVarPath = `/v1/claim/{code}`
+                .replace(`{${"code"}}`, encodeURIComponent(String(code)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * ClaimsApi - functional programming interface
+ */
+export const ClaimsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ClaimsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns information about a badge claim link. No authentication required.
+         * @summary Get badge claim info
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ClaimCodeGet(code: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ClaimCodeGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ClaimCodeGet(code, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ClaimsApi.v1ClaimCodeGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Claims a badge using a claim link code. Requires authentication.
+         * @summary Claim a badge
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ClaimCodePost(code: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ClaimCodePost201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ClaimCodePost(code, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ClaimsApi.v1ClaimCodePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * ClaimsApi - factory interface
+ */
+export const ClaimsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = ClaimsApiFp(configuration)
+    return {
+        /**
+         * Returns information about a badge claim link. No authentication required.
+         * @summary Get badge claim info
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ClaimCodeGet(code: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1ClaimCodeGet200Response> {
+            return localVarFp.v1ClaimCodeGet(code, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Claims a badge using a claim link code. Requires authentication.
+         * @summary Claim a badge
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ClaimCodePost(code: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1ClaimCodePost201Response> {
+            return localVarFp.v1ClaimCodePost(code, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * ClaimsApi - object-oriented interface
+ */
+export class ClaimsApi extends BaseAPI {
+    /**
+     * Returns information about a badge claim link. No authentication required.
+     * @summary Get badge claim info
+     * @param {string} code 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ClaimCodeGet(code: string, options?: RawAxiosRequestConfig) {
+        return ClaimsApiFp(this.configuration).v1ClaimCodeGet(code, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Claims a badge using a claim link code. Requires authentication.
+     * @summary Claim a badge
+     * @param {string} code 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ClaimCodePost(code: string, options?: RawAxiosRequestConfig) {
+        return ClaimsApiFp(this.configuration).v1ClaimCodePost(code, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
 
 /**
  * EventsApi - axios parameter creator
@@ -136,6 +715,10 @@ export const EventsApiAxiosParamCreator = function (configuration?: Configuratio
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
@@ -192,6 +775,10 @@ export const EventsApiAxiosParamCreator = function (configuration?: Configuratio
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
             }
@@ -213,6 +800,240 @@ export const EventsApiAxiosParamCreator = function (configuration?: Configuratio
             }
 
             localVarHeaderParameter['Accept'] = 'application/json,text/plain';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Self check-in using a check-in code. Optionally specify the check-in method (link, qr, nfc).
+         * @summary Check in to event
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1CheckinCodePost: async (code: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'code' is not null or undefined
+            assertParamExists('v1CheckinCodePost', 'code', code)
+            const localVarPath = `/v1/checkin/{code}`
+                .replace(`{${"code"}}`, encodeURIComponent(String(code)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Cancels the authenticated user\'s RSVP. If a waitlisted user exists, they are automatically promoted.
+         * @summary Cancel RSVP
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpDelete: async (eventId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'eventId' is not null or undefined
+            assertParamExists('v1EventsEventIdRsvpDelete', 'eventId', eventId)
+            const localVarPath = `/v1/events/{eventId}/rsvp`
+                .replace(`{${"eventId"}}`, encodeURIComponent(String(eventId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns the authenticated user\'s RSVP status for the specified event.
+         * @summary Get RSVP status
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpGet: async (eventId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'eventId' is not null or undefined
+            assertParamExists('v1EventsEventIdRsvpGet', 'eventId', eventId)
+            const localVarPath = `/v1/events/{eventId}/rsvp`
+                .replace(`{${"eventId"}}`, encodeURIComponent(String(eventId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates an RSVP for the authenticated user. If the event is at capacity, the user is placed on the waitlist.
+         * @summary RSVP to event
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpPost: async (eventId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'eventId' is not null or undefined
+            assertParamExists('v1EventsEventIdRsvpPost', 'eventId', eventId)
+            const localVarPath = `/v1/events/{eventId}/rsvp`
+                .replace(`{${"eventId"}}`, encodeURIComponent(String(eventId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns aggregate RSVP counts (confirmed, waitlisted, cancelled) for the specified event.
+         * @summary Get RSVP summary
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpSummaryGet: async (eventId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'eventId' is not null or undefined
+            assertParamExists('v1EventsEventIdRsvpSummaryGet', 'eventId', eventId)
+            const localVarPath = `/v1/events/{eventId}/rsvp-summary`
+                .replace(`{${"eventId"}}`, encodeURIComponent(String(eventId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns a paginated list of upcoming events across all groups, ordered by start time.
+         * @summary List upcoming events
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsGet: async (limit?: number, offset?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/events`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -266,6 +1087,85 @@ export const EventsApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['EventsApi._20260125eventsNextGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Self check-in using a check-in code. Optionally specify the check-in method (link, qr, nfc).
+         * @summary Check in to event
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1CheckinCodePost(code: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1CheckinCodePost201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1CheckinCodePost(code, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['EventsApi.v1CheckinCodePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Cancels the authenticated user\'s RSVP. If a waitlisted user exists, they are automatically promoted.
+         * @summary Cancel RSVP
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1EventsEventIdRsvpDelete(eventId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1EventsEventIdRsvpDelete200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1EventsEventIdRsvpDelete(eventId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['EventsApi.v1EventsEventIdRsvpDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns the authenticated user\'s RSVP status for the specified event.
+         * @summary Get RSVP status
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1EventsEventIdRsvpGet(eventId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1EventsEventIdRsvpGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1EventsEventIdRsvpGet(eventId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['EventsApi.v1EventsEventIdRsvpGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates an RSVP for the authenticated user. If the event is at capacity, the user is placed on the waitlist.
+         * @summary RSVP to event
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1EventsEventIdRsvpPost(eventId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1EventsEventIdRsvpPost201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1EventsEventIdRsvpPost(eventId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['EventsApi.v1EventsEventIdRsvpPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns aggregate RSVP counts (confirmed, waitlisted, cancelled) for the specified event.
+         * @summary Get RSVP summary
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1EventsEventIdRsvpSummaryGet(eventId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1EventsEventIdRsvpSummaryGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1EventsEventIdRsvpSummaryGet(eventId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['EventsApi.v1EventsEventIdRsvpSummaryGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns a paginated list of upcoming events across all groups, ordered by start time.
+         * @summary List upcoming events
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1EventsGet(limit?: number, offset?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1EventsGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1EventsGet(limit, offset, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['EventsApi.v1EventsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -303,6 +1203,67 @@ export const EventsApiFactory = function (configuration?: Configuration, basePat
         _20260125eventsNextGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<V20260125EventsGet200ResponseInner>> {
             return localVarFp._20260125eventsNextGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(axios, basePath));
         },
+        /**
+         * Self check-in using a check-in code. Optionally specify the check-in method (link, qr, nfc).
+         * @summary Check in to event
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1CheckinCodePost(code: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1CheckinCodePost201Response> {
+            return localVarFp.v1CheckinCodePost(code, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Cancels the authenticated user\'s RSVP. If a waitlisted user exists, they are automatically promoted.
+         * @summary Cancel RSVP
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpDelete(eventId: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1EventsEventIdRsvpDelete200Response> {
+            return localVarFp.v1EventsEventIdRsvpDelete(eventId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns the authenticated user\'s RSVP status for the specified event.
+         * @summary Get RSVP status
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpGet(eventId: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1EventsEventIdRsvpGet200Response> {
+            return localVarFp.v1EventsEventIdRsvpGet(eventId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates an RSVP for the authenticated user. If the event is at capacity, the user is placed on the waitlist.
+         * @summary RSVP to event
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpPost(eventId: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1EventsEventIdRsvpPost201Response> {
+            return localVarFp.v1EventsEventIdRsvpPost(eventId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns aggregate RSVP counts (confirmed, waitlisted, cancelled) for the specified event.
+         * @summary Get RSVP summary
+         * @param {string} eventId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsEventIdRsvpSummaryGet(eventId: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1EventsEventIdRsvpSummaryGet200Response> {
+            return localVarFp.v1EventsEventIdRsvpSummaryGet(eventId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns a paginated list of upcoming events across all groups, ordered by start time.
+         * @summary List upcoming events
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1EventsGet(limit?: number, offset?: number, options?: RawAxiosRequestConfig): AxiosPromise<VV1EventsGet200Response> {
+            return localVarFp.v1EventsGet(limit, offset, options).then((request) => request(axios, basePath));
+        },
     };
 };
 
@@ -339,6 +1300,73 @@ export class EventsApi extends BaseAPI {
     public _20260125eventsNextGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig) {
         return EventsApiFp(this.configuration)._20260125eventsNextGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(this.axios, this.basePath));
     }
+
+    /**
+     * Self check-in using a check-in code. Optionally specify the check-in method (link, qr, nfc).
+     * @summary Check in to event
+     * @param {string} code 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1CheckinCodePost(code: string, options?: RawAxiosRequestConfig) {
+        return EventsApiFp(this.configuration).v1CheckinCodePost(code, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Cancels the authenticated user\'s RSVP. If a waitlisted user exists, they are automatically promoted.
+     * @summary Cancel RSVP
+     * @param {string} eventId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1EventsEventIdRsvpDelete(eventId: string, options?: RawAxiosRequestConfig) {
+        return EventsApiFp(this.configuration).v1EventsEventIdRsvpDelete(eventId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the authenticated user\'s RSVP status for the specified event.
+     * @summary Get RSVP status
+     * @param {string} eventId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1EventsEventIdRsvpGet(eventId: string, options?: RawAxiosRequestConfig) {
+        return EventsApiFp(this.configuration).v1EventsEventIdRsvpGet(eventId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates an RSVP for the authenticated user. If the event is at capacity, the user is placed on the waitlist.
+     * @summary RSVP to event
+     * @param {string} eventId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1EventsEventIdRsvpPost(eventId: string, options?: RawAxiosRequestConfig) {
+        return EventsApiFp(this.configuration).v1EventsEventIdRsvpPost(eventId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns aggregate RSVP counts (confirmed, waitlisted, cancelled) for the specified event.
+     * @summary Get RSVP summary
+     * @param {string} eventId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1EventsEventIdRsvpSummaryGet(eventId: string, options?: RawAxiosRequestConfig) {
+        return EventsApiFp(this.configuration).v1EventsEventIdRsvpSummaryGet(eventId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns a paginated list of upcoming events across all groups, ordered by start time.
+     * @summary List upcoming events
+     * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1EventsGet(limit?: number, offset?: number, options?: RawAxiosRequestConfig) {
+        return EventsApiFp(this.configuration).v1EventsGet(limit, offset, options).then((request) => request(this.axios, this.basePath));
+    }
 }
 
 
@@ -371,6 +1399,10 @@ export const FeedsApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
@@ -427,6 +1459,10 @@ export const FeedsApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
             }
@@ -481,6 +1517,10 @@ export const FeedsApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
@@ -537,6 +1577,10 @@ export const FeedsApiAxiosParamCreator = function (configuration?: Configuration
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
             }
@@ -591,6 +1635,10 @@ export const FeedsApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
@@ -882,6 +1930,359 @@ export class FeedsApi extends BaseAPI {
 
 
 /**
+ * FollowsApi - axios parameter creator
+ */
+export const FollowsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Unfollows the specified user.
+         * @summary Unfollow user
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowDelete: async (username: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('v1UsersUsernameFollowDelete', 'username', username)
+            const localVarPath = `/v1/users/{username}/follow`
+                .replace(`{${"username"}}`, encodeURIComponent(String(username)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Follows the specified user. Returns 200 if already following.
+         * @summary Follow user
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowPost: async (username: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('v1UsersUsernameFollowPost', 'username', username)
+            const localVarPath = `/v1/users/{username}/follow`
+                .replace(`{${"username"}}`, encodeURIComponent(String(username)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns a paginated list of users following the specified user.
+         * @summary List followers
+         * @param {string} username 
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowersGet: async (username: string, limit?: number, offset?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('v1UsersUsernameFollowersGet', 'username', username)
+            const localVarPath = `/v1/users/{username}/followers`
+                .replace(`{${"username"}}`, encodeURIComponent(String(username)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns a paginated list of users the specified user is following.
+         * @summary List following
+         * @param {string} username 
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowingGet: async (username: string, limit?: number, offset?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('v1UsersUsernameFollowingGet', 'username', username)
+            const localVarPath = `/v1/users/{username}/following`
+                .replace(`{${"username"}}`, encodeURIComponent(String(username)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * FollowsApi - functional programming interface
+ */
+export const FollowsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = FollowsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Unfollows the specified user.
+         * @summary Unfollow user
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1UsersUsernameFollowDelete(username: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1UsersUsernameFollowDelete(username, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FollowsApi.v1UsersUsernameFollowDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Follows the specified user. Returns 200 if already following.
+         * @summary Follow user
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1UsersUsernameFollowPost(username: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1UsersUsernameFollowPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1UsersUsernameFollowPost(username, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FollowsApi.v1UsersUsernameFollowPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns a paginated list of users following the specified user.
+         * @summary List followers
+         * @param {string} username 
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1UsersUsernameFollowersGet(username: string, limit?: number, offset?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1UsersUsernameFollowersGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1UsersUsernameFollowersGet(username, limit, offset, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FollowsApi.v1UsersUsernameFollowersGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns a paginated list of users the specified user is following.
+         * @summary List following
+         * @param {string} username 
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1UsersUsernameFollowingGet(username: string, limit?: number, offset?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1UsersUsernameFollowersGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1UsersUsernameFollowingGet(username, limit, offset, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FollowsApi.v1UsersUsernameFollowingGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * FollowsApi - factory interface
+ */
+export const FollowsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = FollowsApiFp(configuration)
+    return {
+        /**
+         * Unfollows the specified user.
+         * @summary Unfollow user
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowDelete(username: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.v1UsersUsernameFollowDelete(username, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Follows the specified user. Returns 200 if already following.
+         * @summary Follow user
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowPost(username: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1UsersUsernameFollowPost200Response> {
+            return localVarFp.v1UsersUsernameFollowPost(username, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns a paginated list of users following the specified user.
+         * @summary List followers
+         * @param {string} username 
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowersGet(username: string, limit?: number, offset?: number, options?: RawAxiosRequestConfig): AxiosPromise<VV1UsersUsernameFollowersGet200Response> {
+            return localVarFp.v1UsersUsernameFollowersGet(username, limit, offset, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns a paginated list of users the specified user is following.
+         * @summary List following
+         * @param {string} username 
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1UsersUsernameFollowingGet(username: string, limit?: number, offset?: number, options?: RawAxiosRequestConfig): AxiosPromise<VV1UsersUsernameFollowersGet200Response> {
+            return localVarFp.v1UsersUsernameFollowingGet(username, limit, offset, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * FollowsApi - object-oriented interface
+ */
+export class FollowsApi extends BaseAPI {
+    /**
+     * Unfollows the specified user.
+     * @summary Unfollow user
+     * @param {string} username 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1UsersUsernameFollowDelete(username: string, options?: RawAxiosRequestConfig) {
+        return FollowsApiFp(this.configuration).v1UsersUsernameFollowDelete(username, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Follows the specified user. Returns 200 if already following.
+     * @summary Follow user
+     * @param {string} username 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1UsersUsernameFollowPost(username: string, options?: RawAxiosRequestConfig) {
+        return FollowsApiFp(this.configuration).v1UsersUsernameFollowPost(username, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns a paginated list of users following the specified user.
+     * @summary List followers
+     * @param {string} username 
+     * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1UsersUsernameFollowersGet(username: string, limit?: number, offset?: number, options?: RawAxiosRequestConfig) {
+        return FollowsApiFp(this.configuration).v1UsersUsernameFollowersGet(username, limit, offset, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns a paginated list of users the specified user is following.
+     * @summary List following
+     * @param {string} username 
+     * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1UsersUsernameFollowingGet(username: string, limit?: number, offset?: number, options?: RawAxiosRequestConfig) {
+        return FollowsApiFp(this.configuration).v1UsersUsernameFollowingGet(username, limit, offset, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * GroupsApi - axios parameter creator
  */
 export const GroupsApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -906,6 +2307,10 @@ export const GroupsApiAxiosParamCreator = function (configuration?: Configuratio
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (featured !== undefined) {
                 localVarQueryParameter['featured'] = featured;
@@ -948,6 +2353,202 @@ export const GroupsApiAxiosParamCreator = function (configuration?: Configuratio
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns the groups the authenticated user has favorited.
+         * @summary List favorite groups
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1FavoritesGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/favorites`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Removes a group from the authenticated user\'s favorites.
+         * @summary Remove group from favorites
+         * @param {string} groupSlug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1FavoritesGroupSlugDelete: async (groupSlug: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'groupSlug' is not null or undefined
+            assertParamExists('v1FavoritesGroupSlugDelete', 'groupSlug', groupSlug)
+            const localVarPath = `/v1/favorites/{groupSlug}`
+                .replace(`{${"groupSlug"}}`, encodeURIComponent(String(groupSlug)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Adds a group to the authenticated user\'s favorites. Returns 200 if already favorited.
+         * @summary Add group to favorites
+         * @param {string} groupSlug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1FavoritesGroupSlugPost: async (groupSlug: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'groupSlug' is not null or undefined
+            assertParamExists('v1FavoritesGroupSlugPost', 'groupSlug', groupSlug)
+            const localVarPath = `/v1/favorites/{groupSlug}`
+                .replace(`{${"groupSlug"}}`, encodeURIComponent(String(groupSlug)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns a paginated list of groups displayed on the site, ordered by member count.
+         * @summary List groups
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1GroupsGet: async (limit?: number, offset?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/groups`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns detailed information about a group including its upcoming events.
+         * @summary Get group details
+         * @param {string} slug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1GroupsSlugGet: async (slug: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'slug' is not null or undefined
+            assertParamExists('v1GroupsSlugGet', 'slug', slug)
+            const localVarPath = `/v1/groups/{slug}`
+                .replace(`{${"slug"}}`, encodeURIComponent(String(slug)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Accept'] = 'application/json';
 
@@ -996,6 +2597,71 @@ export const GroupsApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['GroupsApi._20260125groupsSlugGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Returns the groups the authenticated user has favorited.
+         * @summary List favorite groups
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1FavoritesGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1FavoritesGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1FavoritesGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GroupsApi.v1FavoritesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Removes a group from the authenticated user\'s favorites.
+         * @summary Remove group from favorites
+         * @param {string} groupSlug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1FavoritesGroupSlugDelete(groupSlug: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1FavoritesGroupSlugDelete(groupSlug, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GroupsApi.v1FavoritesGroupSlugDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Adds a group to the authenticated user\'s favorites. Returns 200 if already favorited.
+         * @summary Add group to favorites
+         * @param {string} groupSlug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1FavoritesGroupSlugPost(groupSlug: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1FavoritesGroupSlugPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1FavoritesGroupSlugPost(groupSlug, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GroupsApi.v1FavoritesGroupSlugPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns a paginated list of groups displayed on the site, ordered by member count.
+         * @summary List groups
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1GroupsGet(limit?: number, offset?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1GroupsGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1GroupsGet(limit, offset, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GroupsApi.v1GroupsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns detailed information about a group including its upcoming events.
+         * @summary Get group details
+         * @param {string} slug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1GroupsSlugGet(slug: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1GroupsSlugGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1GroupsSlugGet(slug, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GroupsApi.v1GroupsSlugGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -1026,6 +2692,56 @@ export const GroupsApiFactory = function (configuration?: Configuration, basePat
         _20260125groupsSlugGet(slug: string, options?: RawAxiosRequestConfig): AxiosPromise<V20260125GroupsGet200ResponseInner> {
             return localVarFp._20260125groupsSlugGet(slug, options).then((request) => request(axios, basePath));
         },
+        /**
+         * Returns the groups the authenticated user has favorited.
+         * @summary List favorite groups
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1FavoritesGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1FavoritesGet200Response> {
+            return localVarFp.v1FavoritesGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Removes a group from the authenticated user\'s favorites.
+         * @summary Remove group from favorites
+         * @param {string} groupSlug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1FavoritesGroupSlugDelete(groupSlug: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.v1FavoritesGroupSlugDelete(groupSlug, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Adds a group to the authenticated user\'s favorites. Returns 200 if already favorited.
+         * @summary Add group to favorites
+         * @param {string} groupSlug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1FavoritesGroupSlugPost(groupSlug: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1FavoritesGroupSlugPost200Response> {
+            return localVarFp.v1FavoritesGroupSlugPost(groupSlug, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns a paginated list of groups displayed on the site, ordered by member count.
+         * @summary List groups
+         * @param {number} [limit] 
+         * @param {number} [offset] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1GroupsGet(limit?: number, offset?: number, options?: RawAxiosRequestConfig): AxiosPromise<VV1GroupsGet200Response> {
+            return localVarFp.v1GroupsGet(limit, offset, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns detailed information about a group including its upcoming events.
+         * @summary Get group details
+         * @param {string} slug 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1GroupsSlugGet(slug: string, options?: RawAxiosRequestConfig): AxiosPromise<VV1GroupsSlugGet200Response> {
+            return localVarFp.v1GroupsSlugGet(slug, options).then((request) => request(axios, basePath));
+        },
     };
 };
 
@@ -1054,6 +2770,288 @@ export class GroupsApi extends BaseAPI {
      */
     public _20260125groupsSlugGet(slug: string, options?: RawAxiosRequestConfig) {
         return GroupsApiFp(this.configuration)._20260125groupsSlugGet(slug, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the groups the authenticated user has favorited.
+     * @summary List favorite groups
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1FavoritesGet(options?: RawAxiosRequestConfig) {
+        return GroupsApiFp(this.configuration).v1FavoritesGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Removes a group from the authenticated user\'s favorites.
+     * @summary Remove group from favorites
+     * @param {string} groupSlug 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1FavoritesGroupSlugDelete(groupSlug: string, options?: RawAxiosRequestConfig) {
+        return GroupsApiFp(this.configuration).v1FavoritesGroupSlugDelete(groupSlug, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Adds a group to the authenticated user\'s favorites. Returns 200 if already favorited.
+     * @summary Add group to favorites
+     * @param {string} groupSlug 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1FavoritesGroupSlugPost(groupSlug: string, options?: RawAxiosRequestConfig) {
+        return GroupsApiFp(this.configuration).v1FavoritesGroupSlugPost(groupSlug, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns a paginated list of groups displayed on the site, ordered by member count.
+     * @summary List groups
+     * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1GroupsGet(limit?: number, offset?: number, options?: RawAxiosRequestConfig) {
+        return GroupsApiFp(this.configuration).v1GroupsGet(limit, offset, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns detailed information about a group including its upcoming events.
+     * @summary Get group details
+     * @param {string} slug 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1GroupsSlugGet(slug: string, options?: RawAxiosRequestConfig) {
+        return GroupsApiFp(this.configuration).v1GroupsSlugGet(slug, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * MCPApi - axios parameter creator
+ */
+export const MCPApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Terminates an MCP session. Sessions are stateless on the server side, so this is a no-op that always returns 204.
+         * @summary MCP session termination
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mcpDelete: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/mcp`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Server-Sent Events endpoint for server-initiated messages. Not implemented — use `POST /mcp` for all MCP communication.
+         * @summary MCP SSE endpoint (not supported)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mcpGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/mcp`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Model Context Protocol (MCP) endpoint using Streamable HTTP transport (spec version `2025-03-26`). Accepts JSON-RPC 2.0 requests for MCP protocol methods. Supports batch requests (up to 10). Notifications (requests without `id`) return 204 No Content.  **Supported methods:** - `initialize` — Capability negotiation and protocol version exchange - `tools/list` — List available tools (filtered by token scopes) - `tools/call` — Execute a tool with validated arguments - `resources/list` — List available resources - `resources/read` — Read a resource by URI - `resources/templates/list` — List URI templates for parameterized resources - `prompts/list` — List available prompt templates - `prompts/get` — Get a prompt template with arguments - `ping` — Health check  **Headers:** Include `Mcp-Session-Id` to maintain session context (echoed back in response).
+         * @summary MCP JSON-RPC endpoint
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mcpPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/mcp`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * MCPApi - functional programming interface
+ */
+export const MCPApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = MCPApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Terminates an MCP session. Sessions are stateless on the server side, so this is a no-op that always returns 204.
+         * @summary MCP session termination
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mcpDelete(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mcpDelete(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MCPApi.mcpDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Server-Sent Events endpoint for server-initiated messages. Not implemented — use `POST /mcp` for all MCP communication.
+         * @summary MCP SSE endpoint (not supported)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mcpGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mcpGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MCPApi.mcpGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Model Context Protocol (MCP) endpoint using Streamable HTTP transport (spec version `2025-03-26`). Accepts JSON-RPC 2.0 requests for MCP protocol methods. Supports batch requests (up to 10). Notifications (requests without `id`) return 204 No Content.  **Supported methods:** - `initialize` — Capability negotiation and protocol version exchange - `tools/list` — List available tools (filtered by token scopes) - `tools/call` — Execute a tool with validated arguments - `resources/list` — List available resources - `resources/read` — Read a resource by URI - `resources/templates/list` — List URI templates for parameterized resources - `prompts/list` — List available prompt templates - `prompts/get` — Get a prompt template with arguments - `ping` — Health check  **Headers:** Include `Mcp-Session-Id` to maintain session context (echoed back in response).
+         * @summary MCP JSON-RPC endpoint
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async mcpPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.mcpPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MCPApi.mcpPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * MCPApi - factory interface
+ */
+export const MCPApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = MCPApiFp(configuration)
+    return {
+        /**
+         * Terminates an MCP session. Sessions are stateless on the server side, so this is a no-op that always returns 204.
+         * @summary MCP session termination
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mcpDelete(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.mcpDelete(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Server-Sent Events endpoint for server-initiated messages. Not implemented — use `POST /mcp` for all MCP communication.
+         * @summary MCP SSE endpoint (not supported)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mcpGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.mcpGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Model Context Protocol (MCP) endpoint using Streamable HTTP transport (spec version `2025-03-26`). Accepts JSON-RPC 2.0 requests for MCP protocol methods. Supports batch requests (up to 10). Notifications (requests without `id`) return 204 No Content.  **Supported methods:** - `initialize` — Capability negotiation and protocol version exchange - `tools/list` — List available tools (filtered by token scopes) - `tools/call` — Execute a tool with validated arguments - `resources/list` — List available resources - `resources/read` — Read a resource by URI - `resources/templates/list` — List URI templates for parameterized resources - `prompts/list` — List available prompt templates - `prompts/get` — Get a prompt template with arguments - `ping` — Health check  **Headers:** Include `Mcp-Session-Id` to maintain session context (echoed back in response).
+         * @summary MCP JSON-RPC endpoint
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        mcpPost(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.mcpPost(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * MCPApi - object-oriented interface
+ */
+export class MCPApi extends BaseAPI {
+    /**
+     * Terminates an MCP session. Sessions are stateless on the server side, so this is a no-op that always returns 204.
+     * @summary MCP session termination
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mcpDelete(options?: RawAxiosRequestConfig) {
+        return MCPApiFp(this.configuration).mcpDelete(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Server-Sent Events endpoint for server-initiated messages. Not implemented — use `POST /mcp` for all MCP communication.
+     * @summary MCP SSE endpoint (not supported)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mcpGet(options?: RawAxiosRequestConfig) {
+        return MCPApiFp(this.configuration).mcpGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Model Context Protocol (MCP) endpoint using Streamable HTTP transport (spec version `2025-03-26`). Accepts JSON-RPC 2.0 requests for MCP protocol methods. Supports batch requests (up to 10). Notifications (requests without `id`) return 204 No Content.  **Supported methods:** - `initialize` — Capability negotiation and protocol version exchange - `tools/list` — List available tools (filtered by token scopes) - `tools/call` — Execute a tool with validated arguments - `resources/list` — List available resources - `resources/read` — Read a resource by URI - `resources/templates/list` — List URI templates for parameterized resources - `prompts/list` — List available prompt templates - `prompts/get` — Get a prompt template with arguments - `ping` — Health check  **Headers:** Include `Mcp-Session-Id` to maintain session context (echoed back in response).
+     * @summary MCP JSON-RPC endpoint
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public mcpPost(options?: RawAxiosRequestConfig) {
+        return MCPApiFp(this.configuration).mcpPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1087,6 +3085,10 @@ export const PagesApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
@@ -1142,6 +3144,10 @@ export const PagesApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
@@ -1318,6 +3324,10 @@ export const SchemasApiAxiosParamCreator = function (configuration?: Configurati
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
             localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1351,6 +3361,10 @@ export const SchemasApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Accept'] = 'application/schema+json,application/json';
 
@@ -1457,6 +3471,958 @@ export class SchemasApi extends BaseAPI {
 
 
 /**
+ * ScopesApi - axios parameter creator
+ */
+export const ScopesApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns all available OAuth scopes with descriptions and hierarchy. No authentication required.
+         * @summary List OAuth scopes
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ScopesGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/scopes`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * ScopesApi - functional programming interface
+ */
+export const ScopesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ScopesApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns all available OAuth scopes with descriptions and hierarchy. No authentication required.
+         * @summary List OAuth scopes
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ScopesGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ScopesGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ScopesGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ScopesApi.v1ScopesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * ScopesApi - factory interface
+ */
+export const ScopesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = ScopesApiFp(configuration)
+    return {
+        /**
+         * Returns all available OAuth scopes with descriptions and hierarchy. No authentication required.
+         * @summary List OAuth scopes
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ScopesGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1ScopesGet200Response> {
+            return localVarFp.v1ScopesGet(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * ScopesApi - object-oriented interface
+ */
+export class ScopesApi extends BaseAPI {
+    /**
+     * Returns all available OAuth scopes with descriptions and hierarchy. No authentication required.
+     * @summary List OAuth scopes
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ScopesGet(options?: RawAxiosRequestConfig) {
+        return ScopesApiFp(this.configuration).v1ScopesGet(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * UserApi - axios parameter creator
+ */
+export const UserApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns basic identity information for the authenticated user. Email is included only if the `user:email` scope is granted.
+         * @summary Get current user identity
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1MeGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/me`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns the OAuth providers (GitHub, Discord, etc.) connected to the authenticated user\'s account.
+         * @summary List linked OAuth accounts
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1MeLinkedAccountsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/me/linked-accounts`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns all achievements with the authenticated user\'s progress toward each.
+         * @summary Get achievement progress
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileAchievementsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile/achievements`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns the full profile for the authenticated user including bio, social links, and settings.
+         * @summary Get current user profile
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Updates the authenticated user\'s profile fields. Only provided fields are updated.
+         * @summary Update current user profile
+         * @param {VUpdateProfileRequest} [vUpdateProfileRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePatch: async (vUpdateProfileRequest?: VUpdateProfileRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(vUpdateProfileRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns all portfolio items for the authenticated user, ordered by sort order.
+         * @summary List portfolio items
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile/portfolio`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Permanently removes a portfolio item from the authenticated user\'s profile.
+         * @summary Delete portfolio item
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioIdDelete: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('v1ProfilePortfolioIdDelete', 'id', id)
+            const localVarPath = `/v1/profile/portfolio/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Updates an existing portfolio item. Only provided fields are changed.
+         * @summary Update portfolio item
+         * @param {string} id 
+         * @param {VPortfolioItemUpdateRequest} [vPortfolioItemUpdateRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioIdPatch: async (id: string, vPortfolioItemUpdateRequest?: VPortfolioItemUpdateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('v1ProfilePortfolioIdPatch', 'id', id)
+            const localVarPath = `/v1/profile/portfolio/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(vPortfolioItemUpdateRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Adds a new portfolio item to the authenticated user\'s profile.
+         * @summary Create portfolio item
+         * @param {VPortfolioItemRequest} [vPortfolioItemRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioPost: async (vPortfolioItemRequest?: VPortfolioItemRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile/portfolio`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(vPortfolioItemRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns all personal access tokens for the authenticated user. Token values are not included.
+         * @summary List personal access tokens
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileTokensGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile/tokens`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Permanently revokes a personal access token. The token can no longer be used for authentication.
+         * @summary Revoke personal access token
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileTokensIdDelete: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('v1ProfileTokensIdDelete', 'id', id)
+            const localVarPath = `/v1/profile/tokens/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates a new personal access token. The full token value is returned only once in the response -- store it securely.
+         * @summary Create personal access token
+         * @param {VCreateTokenRequest} [vCreateTokenRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileTokensPost: async (vCreateTokenRequest?: VCreateTokenRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile/tokens`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(vCreateTokenRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * UserApi - functional programming interface
+ */
+export const UserApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = UserApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns basic identity information for the authenticated user. Email is included only if the `user:email` scope is granted.
+         * @summary Get current user identity
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1MeGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1MeGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1MeGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1MeGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns the OAuth providers (GitHub, Discord, etc.) connected to the authenticated user\'s account.
+         * @summary List linked OAuth accounts
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1MeLinkedAccountsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1MeLinkedAccountsGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1MeLinkedAccountsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1MeLinkedAccountsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns all achievements with the authenticated user\'s progress toward each.
+         * @summary Get achievement progress
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfileAchievementsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfileAchievementsGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfileAchievementsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfileAchievementsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns the full profile for the authenticated user including bio, social links, and settings.
+         * @summary Get current user profile
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfileGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfileGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfileGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfileGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Updates the authenticated user\'s profile fields. Only provided fields are updated.
+         * @summary Update current user profile
+         * @param {VUpdateProfileRequest} [vUpdateProfileRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfilePatch(vUpdateProfileRequest?: VUpdateProfileRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfileGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfilePatch(vUpdateProfileRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfilePatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns all portfolio items for the authenticated user, ordered by sort order.
+         * @summary List portfolio items
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfilePortfolioGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfilePortfolioGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfilePortfolioGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfilePortfolioGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Permanently removes a portfolio item from the authenticated user\'s profile.
+         * @summary Delete portfolio item
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfilePortfolioIdDelete(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfilePortfolioIdDelete(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfilePortfolioIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Updates an existing portfolio item. Only provided fields are changed.
+         * @summary Update portfolio item
+         * @param {string} id 
+         * @param {VPortfolioItemUpdateRequest} [vPortfolioItemUpdateRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfilePortfolioIdPatch(id: string, vPortfolioItemUpdateRequest?: VPortfolioItemUpdateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfilePortfolioPost201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfilePortfolioIdPatch(id, vPortfolioItemUpdateRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfilePortfolioIdPatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Adds a new portfolio item to the authenticated user\'s profile.
+         * @summary Create portfolio item
+         * @param {VPortfolioItemRequest} [vPortfolioItemRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfilePortfolioPost(vPortfolioItemRequest?: VPortfolioItemRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfilePortfolioPost201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfilePortfolioPost(vPortfolioItemRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfilePortfolioPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns all personal access tokens for the authenticated user. Token values are not included.
+         * @summary List personal access tokens
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfileTokensGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfileTokensGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfileTokensGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfileTokensGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Permanently revokes a personal access token. The token can no longer be used for authentication.
+         * @summary Revoke personal access token
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfileTokensIdDelete(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfileTokensIdDelete(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfileTokensIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates a new personal access token. The full token value is returned only once in the response -- store it securely.
+         * @summary Create personal access token
+         * @param {VCreateTokenRequest} [vCreateTokenRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfileTokensPost(vCreateTokenRequest?: VCreateTokenRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfileTokensPost201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfileTokensPost(vCreateTokenRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfileTokensPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * UserApi - factory interface
+ */
+export const UserApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = UserApiFp(configuration)
+    return {
+        /**
+         * Returns basic identity information for the authenticated user. Email is included only if the `user:email` scope is granted.
+         * @summary Get current user identity
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1MeGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1MeGet200Response> {
+            return localVarFp.v1MeGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns the OAuth providers (GitHub, Discord, etc.) connected to the authenticated user\'s account.
+         * @summary List linked OAuth accounts
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1MeLinkedAccountsGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1MeLinkedAccountsGet200Response> {
+            return localVarFp.v1MeLinkedAccountsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns all achievements with the authenticated user\'s progress toward each.
+         * @summary Get achievement progress
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileAchievementsGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfileAchievementsGet200Response> {
+            return localVarFp.v1ProfileAchievementsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns the full profile for the authenticated user including bio, social links, and settings.
+         * @summary Get current user profile
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfileGet200Response> {
+            return localVarFp.v1ProfileGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates the authenticated user\'s profile fields. Only provided fields are updated.
+         * @summary Update current user profile
+         * @param {VUpdateProfileRequest} [vUpdateProfileRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePatch(vUpdateProfileRequest?: VUpdateProfileRequest, options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfileGet200Response> {
+            return localVarFp.v1ProfilePatch(vUpdateProfileRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns all portfolio items for the authenticated user, ordered by sort order.
+         * @summary List portfolio items
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfilePortfolioGet200Response> {
+            return localVarFp.v1ProfilePortfolioGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Permanently removes a portfolio item from the authenticated user\'s profile.
+         * @summary Delete portfolio item
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioIdDelete(id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.v1ProfilePortfolioIdDelete(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates an existing portfolio item. Only provided fields are changed.
+         * @summary Update portfolio item
+         * @param {string} id 
+         * @param {VPortfolioItemUpdateRequest} [vPortfolioItemUpdateRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioIdPatch(id: string, vPortfolioItemUpdateRequest?: VPortfolioItemUpdateRequest, options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfilePortfolioPost201Response> {
+            return localVarFp.v1ProfilePortfolioIdPatch(id, vPortfolioItemUpdateRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Adds a new portfolio item to the authenticated user\'s profile.
+         * @summary Create portfolio item
+         * @param {VPortfolioItemRequest} [vPortfolioItemRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfilePortfolioPost(vPortfolioItemRequest?: VPortfolioItemRequest, options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfilePortfolioPost201Response> {
+            return localVarFp.v1ProfilePortfolioPost(vPortfolioItemRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns all personal access tokens for the authenticated user. Token values are not included.
+         * @summary List personal access tokens
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileTokensGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfileTokensGet200Response> {
+            return localVarFp.v1ProfileTokensGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Permanently revokes a personal access token. The token can no longer be used for authentication.
+         * @summary Revoke personal access token
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileTokensIdDelete(id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.v1ProfileTokensIdDelete(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates a new personal access token. The full token value is returned only once in the response -- store it securely.
+         * @summary Create personal access token
+         * @param {VCreateTokenRequest} [vCreateTokenRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileTokensPost(vCreateTokenRequest?: VCreateTokenRequest, options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfileTokensPost201Response> {
+            return localVarFp.v1ProfileTokensPost(vCreateTokenRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * UserApi - object-oriented interface
+ */
+export class UserApi extends BaseAPI {
+    /**
+     * Returns basic identity information for the authenticated user. Email is included only if the `user:email` scope is granted.
+     * @summary Get current user identity
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1MeGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1MeGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the OAuth providers (GitHub, Discord, etc.) connected to the authenticated user\'s account.
+     * @summary List linked OAuth accounts
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1MeLinkedAccountsGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1MeLinkedAccountsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns all achievements with the authenticated user\'s progress toward each.
+     * @summary Get achievement progress
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfileAchievementsGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfileAchievementsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the full profile for the authenticated user including bio, social links, and settings.
+     * @summary Get current user profile
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfileGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfileGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Updates the authenticated user\'s profile fields. Only provided fields are updated.
+     * @summary Update current user profile
+     * @param {VUpdateProfileRequest} [vUpdateProfileRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfilePatch(vUpdateProfileRequest?: VUpdateProfileRequest, options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfilePatch(vUpdateProfileRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns all portfolio items for the authenticated user, ordered by sort order.
+     * @summary List portfolio items
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfilePortfolioGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfilePortfolioGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Permanently removes a portfolio item from the authenticated user\'s profile.
+     * @summary Delete portfolio item
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfilePortfolioIdDelete(id: string, options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfilePortfolioIdDelete(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Updates an existing portfolio item. Only provided fields are changed.
+     * @summary Update portfolio item
+     * @param {string} id 
+     * @param {VPortfolioItemUpdateRequest} [vPortfolioItemUpdateRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfilePortfolioIdPatch(id: string, vPortfolioItemUpdateRequest?: VPortfolioItemUpdateRequest, options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfilePortfolioIdPatch(id, vPortfolioItemUpdateRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Adds a new portfolio item to the authenticated user\'s profile.
+     * @summary Create portfolio item
+     * @param {VPortfolioItemRequest} [vPortfolioItemRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfilePortfolioPost(vPortfolioItemRequest?: VPortfolioItemRequest, options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfilePortfolioPost(vPortfolioItemRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns all personal access tokens for the authenticated user. Token values are not included.
+     * @summary List personal access tokens
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfileTokensGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfileTokensGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Permanently revokes a personal access token. The token can no longer be used for authentication.
+     * @summary Revoke personal access token
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfileTokensIdDelete(id: string, options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfileTokensIdDelete(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates a new personal access token. The full token value is returned only once in the response -- store it securely.
+     * @summary Create personal access token
+     * @param {VCreateTokenRequest} [vCreateTokenRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfileTokensPost(vCreateTokenRequest?: VCreateTokenRequest, options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfileTokensPost(vCreateTokenRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * WidgetsApi - axios parameter creator
  */
 export const WidgetsApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -1480,6 +4446,10 @@ export const WidgetsApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;
@@ -1515,6 +4485,10 @@ export const WidgetsApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (groups !== undefined) {
                 localVarQueryParameter['groups'] = groups;

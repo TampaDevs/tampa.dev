@@ -36,7 +36,7 @@ This endpoint does not have any parameters.
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -87,7 +87,7 @@ const { status, data } = await apiInstance._20260125schemasNameGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

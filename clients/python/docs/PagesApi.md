@@ -17,6 +17,7 @@ Returns a formatted HTML page displaying upcoming events
 
 ### Example
 
+* Bearer Authentication (BearerToken):
 
 ```python
 import tampa_events_api
@@ -29,6 +30,15 @@ configuration = tampa_events_api.Configuration(
     host = "https://api.tampa.dev"
 )
 
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure Bearer authorization: BearerToken
+configuration = tampa_events_api.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
 
 # Enter a context with an instance of the API client
 with tampa_events_api.ApiClient(configuration) as api_client:
@@ -68,7 +78,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -92,6 +102,7 @@ Alias for /html - returns a formatted HTML page displaying upcoming events
 
 ### Example
 
+* Bearer Authentication (BearerToken):
 
 ```python
 import tampa_events_api
@@ -104,6 +115,15 @@ configuration = tampa_events_api.Configuration(
     host = "https://api.tampa.dev"
 )
 
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure Bearer authorization: BearerToken
+configuration = tampa_events_api.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
 
 # Enter a context with an instance of the API client
 with tampa_events_api.ApiClient(configuration) as api_client:
@@ -143,7 +163,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

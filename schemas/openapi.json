@@ -1,11 +1,11 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Tampa Events API",
+    "title": "Tampa.dev Platform API",
     "version": "2026-01-25",
-    "description": "Community events aggregation API for Tampa Bay tech meetups and events",
+    "description": "The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.",
     "contact": {
-      "name": "Tampa Devs",
+      "name": "Tampa.dev",
       "url": "https://tampa.dev"
     }
   },
@@ -23,8 +23,997 @@
       "description": "Development"
     }
   ],
+  "security": [
+    {
+      "BearerToken": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "User",
+      "description": "User identity and profile management"
+    },
+    {
+      "name": "Events",
+      "description": "Event discovery, RSVP, and check-in"
+    },
+    {
+      "name": "Groups",
+      "description": "Group discovery and favorites"
+    },
+    {
+      "name": "Follows",
+      "description": "User follow relationships"
+    },
+    {
+      "name": "Claims",
+      "description": "Badge claim links"
+    },
+    {
+      "name": "Scopes",
+      "description": "OAuth scope discovery"
+    },
+    {
+      "name": "Admin",
+      "description": "Platform administration (admin role required)"
+    },
+    {
+      "name": "Management",
+      "description": "Group management (group role required)"
+    },
+    {
+      "name": "Public",
+      "description": "Public endpoints (no authentication required)"
+    },
+    {
+      "name": "MCP",
+      "description": "Model Context Protocol (JSON-RPC 2.0) endpoint for AI agents and automation tools"
+    }
+  ],
   "components": {
-    "schemas": {},
+    "securitySchemes": {
+      "BearerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Personal Access Token (td_pat_...) or OAuth 2.0 access token. Create PATs at https://tampa.dev/developer. OAuth tokens are obtained via the /oauth/authorize flow."
+      }
+    },
+    "schemas": {
+      "McpError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ]
+      },
+      "UserBasic": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "avatarUrl",
+          "username"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable error code"
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ]
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "heroImageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "themeColor": {
+            "type": "string",
+            "nullable": true
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "nullable": true
+          },
+          "socialLinks": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "role": {
+            "type": "string"
+          },
+          "profileVisibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "showAchievements": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "username",
+          "avatarUrl",
+          "heroImageUrl",
+          "themeColor",
+          "bio",
+          "location",
+          "socialLinks",
+          "role",
+          "profileVisibility",
+          "showAchievements",
+          "createdAt"
+        ]
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "heroImageUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "themeColor": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "coral",
+              "ocean",
+              "sunset",
+              "forest",
+              "violet",
+              "rose",
+              "slate",
+              "sky"
+            ]
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$"
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "socialLinks": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "maxItems": 5
+          },
+          "showAchievements": {
+            "type": "boolean"
+          },
+          "profileVisibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          }
+        }
+      },
+      "LinkedAccount": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "providerUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "providerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "provider",
+          "providerUsername",
+          "providerEmail",
+          "createdAt"
+        ]
+      },
+      "PortfolioItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "title",
+          "description",
+          "url",
+          "imageUrl",
+          "sortOrder",
+          "createdAt"
+        ]
+      },
+      "PortfolioItemRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "PortfolioItemUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        }
+      },
+      "AchievementProgress": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetValue": {
+            "type": "number"
+          },
+          "currentValue": {
+            "type": "number"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "badgeSlug": {
+            "type": "string",
+            "nullable": true
+          },
+          "hidden": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "description",
+          "icon",
+          "color",
+          "targetValue",
+          "currentValue",
+          "completedAt",
+          "badgeSlug",
+          "hidden"
+        ]
+      },
+      "Token": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tokenPrefix": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "tokenPrefix",
+          "scopes",
+          "expiresAt",
+          "createdAt",
+          "lastUsedAt"
+        ]
+      },
+      "TokenCreated": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "description": "Full token value. Store securely — it cannot be retrieved again."
+          },
+          "tokenPrefix": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "token",
+          "tokenPrefix",
+          "scopes",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "CreateTokenRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Human-readable name for the token"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "OAuth scopes to grant to this token"
+          },
+          "expiresInDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Token expiry in days (1-365, default: no expiry)"
+          }
+        },
+        "required": [
+          "name",
+          "scopes"
+        ]
+      },
+      "EventListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true
+          },
+          "eventUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "eventType": {
+            "type": "string",
+            "nullable": true
+          },
+          "rsvpCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "maxAttendees": {
+            "type": "number",
+            "nullable": true
+          },
+          "group": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "urlname": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "urlname"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "startTime",
+          "endTime",
+          "timezone",
+          "eventUrl",
+          "photoUrl",
+          "eventType",
+          "rsvpCount",
+          "maxAttendees",
+          "group"
+        ]
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "Total number of items (may be absent if count is expensive)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum items per page"
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of items skipped"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether more items exist beyond this page"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "hasMore"
+        ]
+      },
+      "Rsvp": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "waitlisted",
+              "cancelled"
+            ]
+          },
+          "rsvpAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "waitlistPosition": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "eventId",
+          "status",
+          "rsvpAt",
+          "waitlistPosition"
+        ]
+      },
+      "RsvpStatusResponse": {
+        "type": "object",
+        "properties": {
+          "rsvp": {
+            "$ref": "#/components/schemas/Rsvp"
+          }
+        },
+        "required": [
+          "rsvp"
+        ]
+      },
+      "RsvpSummary": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "waitlisted": {
+            "type": "number"
+          },
+          "cancelled": {
+            "type": "number"
+          },
+          "capacity": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "total",
+          "confirmed",
+          "waitlisted",
+          "cancelled",
+          "capacity"
+        ]
+      },
+      "CheckinResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "checkedInAt": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "eventId",
+          "checkedInAt",
+          "method"
+        ]
+      },
+      "GroupListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "urlname": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "link": {
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "memberCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "nullable": true
+          },
+          "socialLinks": {
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "urlname",
+          "name",
+          "description",
+          "link",
+          "website",
+          "memberCount",
+          "photoUrl"
+        ]
+      },
+      "GroupDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GroupListItem"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "upcomingEvents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "startTime": {
+                      "type": "string"
+                    },
+                    "eventUrl": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "startTime",
+                    "eventUrl"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "upcomingEvents"
+            ]
+          }
+        ]
+      },
+      "FollowEntry": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "followedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "username",
+          "name",
+          "avatarUrl",
+          "followedAt"
+        ]
+      },
+      "ClaimInfo": {
+        "type": "object",
+        "properties": {
+          "badge": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string",
+                "nullable": true
+              },
+              "icon": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string",
+                "nullable": true
+              },
+              "points": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "slug",
+              "description",
+              "icon",
+              "color",
+              "points"
+            ]
+          },
+          "group": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "urlname": {
+                "type": "string",
+                "nullable": true
+              },
+              "photoUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "name",
+              "urlname",
+              "photoUrl"
+            ]
+          },
+          "claimable": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "badge",
+          "group",
+          "claimable"
+        ]
+      },
+      "ClaimBadgeResponse": {
+        "type": "object",
+        "properties": {
+          "badge": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "slug"
+            ]
+          }
+        },
+        "required": [
+          "badge"
+        ]
+      },
+      "Scope": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "implies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "implies"
+        ]
+      }
+    },
     "parameters": {}
   },
   "paths": {
@@ -473,6 +1462,9 @@
                             "type": "string"
                           }
                         }
+                      },
+                      "favoritesCount": {
+                        "type": "number"
                       }
                     },
                     "required": [
@@ -599,6 +1591,9 @@
                           "type": "string"
                         }
                       }
+                    },
+                    "favoritesCount": {
+                      "type": "number"
                     }
                   },
                   "required": [
@@ -1325,6 +2320,2344 @@
               "text/html": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "summary": "MCP JSON-RPC endpoint",
+        "description": "Model Context Protocol (MCP) endpoint using Streamable HTTP transport (spec version `2025-03-26`). Accepts JSON-RPC 2.0 requests for MCP protocol methods. Supports batch requests (up to 10). Notifications (requests without `id`) return 204 No Content.\n\n**Supported methods:**\n- `initialize` — Capability negotiation and protocol version exchange\n- `tools/list` — List available tools (filtered by token scopes)\n- `tools/call` — Execute a tool with validated arguments\n- `resources/list` — List available resources\n- `resources/read` — Read a resource by URI\n- `resources/templates/list` — List URI templates for parameterized resources\n- `prompts/list` — List available prompt templates\n- `prompts/get` — Get a prompt template with arguments\n- `ping` — Health check\n\n**Headers:** Include `Mcp-Session-Id` to maintain session context (echoed back in response).",
+        "tags": [
+          "MCP"
+        ],
+        "security": [
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON-RPC 2.0 response (single `JsonRpcResponse` object or batch array). Per JSON-RPC 2.0, errors also return 200 with an `error` field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "nullable": true,
+                  "description": "JSON-RPC 2.0 response — see JsonRpcResponse schema"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content — notification processed (no response body)"
+          },
+          "400": {
+            "description": "Bad Request — invalid Content-Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "MCP SSE endpoint (not supported)",
+        "description": "Server-Sent Events endpoint for server-initiated messages. Not implemented — use `POST /mcp` for all MCP communication.",
+        "tags": [
+          "MCP"
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request — SSE not supported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "MCP session termination",
+        "description": "Terminates an MCP session. Sessions are stateless on the server side, so this is a no-op that always returns 204.",
+        "tags": [
+          "MCP"
+        ],
+        "security": [
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content — session terminated"
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "summary": "Get current user identity",
+        "description": "Returns basic identity information for the authenticated user. Email is included only if the `user:email` scope is granted.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user identity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserBasic"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile": {
+      "get": {
+        "summary": "Get current user profile",
+        "description": "Returns the full profile for the authenticated user including bio, social links, and settings.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full user profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfile"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update current user profile",
+        "description": "Updates the authenticated user's profile fields. Only provided fields are updated.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "user"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated user profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfile"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict — duplicate or state conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/linked-accounts": {
+      "get": {
+        "summary": "List linked OAuth accounts",
+        "description": "Returns the OAuth providers (GitHub, Discord, etc.) connected to the authenticated user's account.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Linked OAuth accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LinkedAccount"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile/portfolio": {
+      "get": {
+        "summary": "List portfolio items",
+        "description": "Returns all portfolio items for the authenticated user, ordered by sort order.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:portfolio"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Portfolio items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PortfolioItem"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create portfolio item",
+        "description": "Adds a new portfolio item to the authenticated user's profile.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:portfolio"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created portfolio item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PortfolioItem"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile/portfolio/{id}": {
+      "patch": {
+        "summary": "Update portfolio item",
+        "description": "Updates an existing portfolio item. Only provided fields are changed.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:portfolio"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Portfolio item ID"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioItemUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated portfolio item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PortfolioItem"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete portfolio item",
+        "description": "Permanently removes a portfolio item from the authenticated user's profile.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:portfolio"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Portfolio item ID"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Portfolio item deleted"
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile/achievements": {
+      "get": {
+        "summary": "Get achievement progress",
+        "description": "Returns all achievements with the authenticated user's progress toward each.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Achievement progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AchievementProgress"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile/tokens": {
+      "get": {
+        "summary": "List personal access tokens",
+        "description": "Returns all personal access tokens for the authenticated user. Token values are not included.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Personal access tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Token"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create personal access token",
+        "description": "Creates a new personal access token. The full token value is returned only once in the response -- store it securely.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "user"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created token with full value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TokenCreated"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile/tokens/{id}": {
+      "delete": {
+        "summary": "Revoke personal access token",
+        "description": "Permanently revokes a personal access token. The token can no longer be used for authentication.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "user"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Token ID"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Token revoked"
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "summary": "List upcoming events",
+        "description": "Returns a paginated list of upcoming events across all groups, ordered by start time.",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Maximum number of items to return (1-100)",
+              "example": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "minimum": 0,
+              "default": 0,
+              "description": "Number of items to skip",
+              "example": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Upcoming events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EventListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events/{eventId}/rsvp": {
+      "get": {
+        "summary": "Get RSVP status",
+        "description": "Returns the authenticated user's RSVP status for the specified event.",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Event ID"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RSVP status (null if not RSVPed)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RsvpStatusResponse"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "RSVP to event",
+        "description": "Creates an RSVP for the authenticated user. If the event is at capacity, the user is placed on the waitlist.",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Event ID"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "RSVP created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Rsvp"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict — duplicate or state conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel RSVP",
+        "description": "Cancels the authenticated user's RSVP. If a waitlisted user exists, they are automatically promoted.",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Event ID"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RSVP cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "success"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events/{eventId}/rsvp-summary": {
+      "get": {
+        "summary": "Get RSVP summary",
+        "description": "Returns aggregate RSVP counts (confirmed, waitlisted, cancelled) for the specified event.",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Event ID"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RSVP summary counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RsvpSummary"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/checkin/{code}": {
+      "post": {
+        "summary": "Check in to event",
+        "description": "Self check-in using a check-in code. Optionally specify the check-in method (link, qr, nfc).",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Check-in code"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Check-in recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CheckinResult"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict — duplicate or state conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone — resource expired or exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/groups": {
+      "get": {
+        "summary": "List groups",
+        "description": "Returns a paginated list of groups displayed on the site, ordered by member count.",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:groups"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Maximum number of items to return (1-100)",
+              "example": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "minimum": 0,
+              "default": 0,
+              "description": "Number of items to skip",
+              "example": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Groups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/GroupListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/groups/{slug}": {
+      "get": {
+        "summary": "Get group details",
+        "description": "Returns detailed information about a group including its upcoming events.",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:groups"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Group URL slug (urlname)"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Group details with upcoming events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/GroupDetail"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/favorites": {
+      "get": {
+        "summary": "List favorite groups",
+        "description": "Returns the groups the authenticated user has favorited.",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:favorites"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Favorite groups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "nullable": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/favorites/{groupSlug}": {
+      "post": {
+        "summary": "Add group to favorites",
+        "description": "Adds a group to the authenticated user's favorites. Returns 200 if already favorited.",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:favorites"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Group URL slug"
+            },
+            "required": true,
+            "name": "groupSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Already favorited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "alreadyFavorited": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "alreadyFavorited"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Group added to favorites",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "groupSlug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "groupSlug"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove group from favorites",
+        "description": "Removes a group from the authenticated user's favorites.",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "write:favorites"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Group URL slug"
+            },
+            "required": true,
+            "name": "groupSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Favorite removed"
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/{username}/follow": {
+      "post": {
+        "summary": "Follow user",
+        "description": "Follows the specified user. Returns 200 if already following.",
+        "tags": [
+          "Follows"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "user"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Target username"
+            },
+            "required": true,
+            "name": "username",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Already following",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "alreadyFollowing": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "alreadyFollowing"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Now following user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "following": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "following"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unfollow user",
+        "description": "Unfollows the specified user.",
+        "tags": [
+          "Follows"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "user"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Target username"
+            },
+            "required": true,
+            "name": "username",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unfollowed"
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/{username}/followers": {
+      "get": {
+        "summary": "List followers",
+        "description": "Returns a paginated list of users following the specified user.",
+        "tags": [
+          "Follows"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Target username"
+            },
+            "required": true,
+            "name": "username",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Maximum number of items to return (1-100)",
+              "example": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "minimum": 0,
+              "default": 0,
+              "description": "Number of items to skip",
+              "example": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Followers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FollowEntry"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/{username}/following": {
+      "get": {
+        "summary": "List following",
+        "description": "Returns a paginated list of users the specified user is following.",
+        "tags": [
+          "Follows"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Target username"
+            },
+            "required": true,
+            "name": "username",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Maximum number of items to return (1-100)",
+              "example": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "minimum": 0,
+              "default": 0,
+              "description": "Number of items to skip",
+              "example": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Following",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FollowEntry"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/claim/{code}": {
+      "get": {
+        "summary": "Get badge claim info",
+        "description": "Returns information about a badge claim link. No authentication required.",
+        "tags": [
+          "Claims"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Claim code"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim link information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ClaimInfo"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone — resource expired or exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Claim a badge",
+        "description": "Claims a badge using a claim link code. Requires authentication.",
+        "tags": [
+          "Claims"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Claim code"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Badge claimed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ClaimBadgeResponse"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict — duplicate or state conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone — resource expired or exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/scopes": {
+      "get": {
+        "summary": "List OAuth scopes",
+        "description": "Returns all available OAuth scopes with descriptions and hierarchy. No authentication required.",
+        "tags": [
+          "Scopes"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Available OAuth scopes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Scope"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
