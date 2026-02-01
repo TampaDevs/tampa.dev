@@ -2,6 +2,14 @@
 @import "@tampadevs/tailwind-preset/theme.css";
 @plugin "@tailwindcss/typography";
 
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 html,
 body {
   @apply bg-white dark:bg-gray-950;

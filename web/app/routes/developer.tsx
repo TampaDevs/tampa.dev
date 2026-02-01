@@ -105,6 +105,7 @@ export async function action({ request }: Route.ActionArgs) {
       .map((uri) => uri.trim())
       .filter(Boolean);
     const website = formData.get("website") as string;
+    const logoUri = formData.get("logoUri") as string | null;
 
     try {
       const response = await fetch(`${apiUrl}/developer/apps`, {
@@ -118,6 +119,7 @@ export async function action({ request }: Route.ActionArgs) {
           description: description || undefined,
           redirectUris,
           website: website || undefined,
+          logoUri: logoUri || undefined,
         }),
       });
 
@@ -449,6 +451,7 @@ function LogoUpload({
 function CreateAppForm({ onSuccess }: { onSuccess: (data: { clientId: string; clientSecret: string }) => void }) {
   const fetcher = useFetcher<{ success: boolean; created?: { clientId: string; clientSecret: string }; error?: string }>();
   const isSubmitting = fetcher.state !== "idle";
+  const [logoUri, setLogoUri] = useState<string | null>(null);
 
   // Handle successful creation
   if (fetcher.data?.success && fetcher.data.created) {
@@ -458,6 +461,18 @@ function CreateAppForm({ onSuccess }: { onSuccess: (data: { clientId: string; cl
   return (
     <fetcher.Form method="post" className="space-y-4">
       <input type="hidden" name="intent" value="create" />
+      {logoUri && <input type="hidden" name="logoUri" value={logoUri} />}
+
+      <div className="flex items-center gap-4">
+        <LogoUpload
+          appName="New App"
+          onUploadComplete={(url) => setLogoUri(url)}
+        />
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="font-medium text-gray-700 dark:text-gray-300">App Icon</p>
+          <p>JPEG, PNG, GIF, or WebP. Max 1MB.</p>
+        </div>
+      </div>
 
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

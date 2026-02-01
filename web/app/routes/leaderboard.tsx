@@ -456,23 +456,33 @@ export default function LeaderboardPage() {
                   <svg className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {total} members ranked
+                  <span className="sm:hidden">{total} ranked</span>
+                  <span className="hidden sm:inline">{total} members ranked</span>
                 </span>
                 <span className="text-gray-300 dark:text-gray-600">&#183;</span>
                 <span className="inline-flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  {totalXP.toLocaleString()} total XP earned
+                  <span className="sm:hidden">{totalXP.toLocaleString()} XP earned</span>
+                  <span className="hidden sm:inline">{totalXP.toLocaleString()} total XP earned</span>
                 </span>
                 {currentUserEntry && (
                   <>
                     <span className="text-gray-300 dark:text-gray-600">&#183;</span>
-                    <span className="inline-flex items-center gap-1.5 font-medium text-coral">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span
+                      className="inline-flex items-center gap-1.5 font-medium"
+                      style={
+                        currentUserEntry.rank <= 3
+                          ? { color: podiumConfigs[currentUserEntry.rank].accent }
+                          : undefined
+                      }
+                    >
+                      <svg className={`w-3.5 h-3.5${currentUserEntry.rank > 3 ? " text-gray-400 dark:text-gray-500" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                       </svg>
-                      Your rank: #{currentUserEntry.rank}
+                      <span className="sm:hidden">You're #{currentUserEntry.rank}</span>
+                      <span className="hidden sm:inline">Your rank: #{currentUserEntry.rank}</span>
                     </span>
                   </>
                 )}
@@ -482,12 +492,9 @@ export default function LeaderboardPage() {
             {currentUser && (
               <Link
                 to={`/p/${currentUser.username}`}
-                className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg text-sm font-medium text-coral hover:text-coral-light border border-coral/30 hover:border-coral/50 transition-colors"
+                className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-coral hover:text-coral-light transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-                My Achievements
+                My Achievements &rarr;
               </Link>
             )}
           </div>
