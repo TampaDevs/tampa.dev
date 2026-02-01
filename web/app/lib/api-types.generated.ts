@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY
  *
  * Generated from: http://localhost:8787/openapi.json
- * Generated at: 2026-02-01T20:57:54.332Z
+ * Generated at: 2026-02-01T22:36:49.636Z
  *
  * Regenerate with: npm run generate:types
  */
