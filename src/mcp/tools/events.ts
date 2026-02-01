@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import { eq, and, sql, gte, lte, asc } from 'drizzle-orm';
+import { eq, and, sql, gte, lte, asc, desc, like, count as drizzleCount } from 'drizzle-orm';
 import { defineTool } from '../registry.js';
 import { createDatabase } from '../../db/index.js';
 import {
@@ -29,21 +29,39 @@ import {
 
 defineTool({
   name: 'events_list',
-  description: 'List events with optional filters for group, date range, status, and pagination. Returns events ordered by start time ascending.',
+  description:
+    'Search and list events with keyword search (title/description), location, type, and date filters. ' +
+    'Supports sorting by start time, title, or RSVP count with flexible direction. ' +
+    'Returns paginated results with total count.',
   scope: 'read:events',
   inputSchema: z.object({
+    search: z.string().max(200).optional().describe('Keyword search on event title or description (substring match)'),
     group_slug: z.string().optional().describe('Filter by group URL slug (urlname)'),
+    city: z.string().max(100).optional().describe('Filter by venue city (substring match)'),
+    event_type: z.enum(['physical', 'online', 'hybrid']).optional().describe('Filter by event type'),
+    featured: z.boolean().optional().describe('Filter by featured status'),
     after: z.string().optional().describe('ISO 8601 datetime — only events starting at or after this time'),
     before: z.string().optional().describe('ISO 8601 datetime — only events starting at or before this time'),
     status: z.enum(['active', 'cancelled', 'draft']).optional().describe('Filter by event status'),
+    sort: z.enum(['start_time', 'title', 'rsvp_count']).optional().default('start_time').describe('Sort field'),
+    direction: z.enum(['asc', 'desc']).optional().describe('Sort direction (default: asc for start_time/title, desc for rsvp_count)'),
     limit: z.number().int().min(1).max(100).optional().default(25).describe('Max results to return (1-100, default 25)'),
     offset: z.number().int().min(0).optional().default(0).describe('Number of results to skip'),
   }),
   handler: async (args, ctx) => {
     const db = createDatabase(ctx.env.DB);
 
+    // Resolve sort direction default based on sort field
+    const sortField = args.sort ?? 'start_time';
+    const sortDir = args.direction ?? (sortField === 'rsvp_count' ? 'desc' : 'asc');
+
     // Build conditions
     const conditions: ReturnType<typeof eq>[] = [];
+
+    if (args.search && args.search.trim().length > 0) {
+      const searchTerm = `%${args.search.trim()}%`;
+      conditions.push(sql`(${events.title} LIKE ${searchTerm} OR ${events.description} LIKE ${searchTerm})` as any);
+    }
 
     if (args.group_slug) {
       const group = await db.query.groups.findFirst({
@@ -53,6 +71,18 @@ defineTool({
         return { content: [{ type: 'text', text: 'Error: Group not found' }], isError: true };
       }
       conditions.push(eq(events.groupId, group.id));
+    }
+
+    if (args.city && args.city.trim().length > 0) {
+      conditions.push(like(venues.city, `%${args.city.trim()}%`) as any);
+    }
+
+    if (args.event_type) {
+      conditions.push(eq(events.eventType, args.event_type));
+    }
+
+    if (args.featured !== undefined) {
+      conditions.push(eq(events.isFeatured, args.featured));
     }
 
     if (args.after) {
@@ -67,9 +97,16 @@ defineTool({
       conditions.push(eq(events.status, args.status));
     }
 
-    // Query events
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+    // Dynamic ORDER BY — safe because values come from validated enum
+    const orderByClause = sortField === 'title'
+      ? (sortDir === 'asc' ? [asc(events.title)] : [desc(events.title)])
+      : sortField === 'rsvp_count'
+        ? (sortDir === 'asc' ? [asc(events.rsvpCount)] : [desc(events.rsvpCount)])
+        : (sortDir === 'asc' ? [asc(events.startTime)] : [desc(events.startTime)]);
+
+    // Main data query
     const eventRows = await db
       .select({
         id: events.id,
@@ -84,6 +121,7 @@ defineTool({
         eventType: events.eventType,
         rsvpCount: events.rsvpCount,
         maxAttendees: events.maxAttendees,
+        isFeatured: events.isFeatured,
         groupId: events.groupId,
         groupName: groups.name,
         groupUrlname: groups.urlname,
@@ -99,11 +137,20 @@ defineTool({
       .leftJoin(groups, eq(events.groupId, groups.id))
       .leftJoin(venues, eq(events.venueId, venues.id))
       .where(whereClause)
-      .orderBy(asc(events.startTime))
+      .orderBy(...orderByClause)
       .limit(args.limit)
       .offset(args.offset);
 
-    const result = eventRows.map((row) => ({
+    // Count query (same filters, no pagination)
+    const [countRow] = await db
+      .select({ total: drizzleCount() })
+      .from(events)
+      .leftJoin(groups, eq(events.groupId, groups.id))
+      .leftJoin(venues, eq(events.venueId, venues.id))
+      .where(whereClause);
+    const total = countRow?.total ?? 0;
+
+    const entries = eventRows.map((row) => ({
       id: row.id,
       title: row.title,
       description: row.description,
@@ -116,6 +163,7 @@ defineTool({
       eventType: row.eventType,
       rsvpCount: row.rsvpCount,
       maxAttendees: row.maxAttendees,
+      isFeatured: row.isFeatured,
       group: {
         id: row.groupId,
         name: row.groupName,
@@ -134,7 +182,18 @@ defineTool({
         : null,
     }));
 
-    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          entries,
+          total,
+          limit: args.limit,
+          offset: args.offset,
+          hasMore: (args.offset + entries.length) < total,
+        }),
+      }],
+    };
   },
 });
 
