@@ -1709,6 +1709,7 @@ export function createAdminApiRoutes() {
     progressMode: z.enum(['counter', 'gauge']).optional().default('counter'),
     gaugeField: z.string().optional(),
     hidden: z.boolean().optional().default(false),
+    enabled: z.boolean().optional().default(true),
   });
 
   const updateAchievementSchema = z.object({
@@ -1727,6 +1728,7 @@ export function createAdminApiRoutes() {
     progressMode: z.enum(['counter', 'gauge']).optional().nullable(),
     gaugeField: z.string().optional().nullable(),
     hidden: z.boolean().optional(),
+    enabled: z.boolean().optional(),
   });
 
   /**
@@ -1787,6 +1789,7 @@ export function createAdminApiRoutes() {
       progressMode: data.progressMode || 'counter',
       gaugeField: data.gaugeField || null,
       hidden: data.hidden ? 1 : 0,
+      enabled: data.enabled !== false ? 1 : 0,
     });
 
     const createdAchievement = await db.query.achievements.findFirst({
@@ -1838,6 +1841,7 @@ export function createAdminApiRoutes() {
     if (data.progressMode !== undefined) updateData.progressMode = data.progressMode;
     if (data.gaugeField !== undefined) updateData.gaugeField = data.gaugeField;
     if (data.hidden !== undefined) updateData.hidden = data.hidden ? 1 : 0;
+    if (data.enabled !== undefined) updateData.enabled = data.enabled ? 1 : 0;
 
     await db.update(achievements).set(updateData).where(eq(achievements.id, id));
 

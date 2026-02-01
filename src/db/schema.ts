@@ -505,6 +505,7 @@ export const achievements = sqliteTable('achievements', {
   progressMode: text('progress_mode'), // 'counter' (default) | 'gauge'
   gaugeField: text('gauge_field'), // For gauge mode: payload field dot-path
   hidden: integer('hidden').notNull().default(0), // 1 = hidden achievement (Xbox/PSN style)
+  enabled: integer('enabled').notNull().default(1), // 1 = active, 0 = disabled (skipped by queue)
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
   updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),

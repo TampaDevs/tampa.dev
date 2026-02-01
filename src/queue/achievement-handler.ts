@@ -37,6 +37,7 @@ async function loadAchievements(env: Env): Promise<void> {
   cachedEventMap = new Map();
 
   for (const a of all) {
+    if (!a.enabled) continue; // Skip disabled achievements
     cachedAchievements.set(a.key, a);
     if (a.eventType) {
       const existing = cachedEventMap.get(a.eventType) || [];
