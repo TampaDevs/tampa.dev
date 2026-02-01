@@ -383,7 +383,7 @@ export function Header({ user }: HeaderProps) {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-hide">
             {/* Explore */}
             <div className="px-3 pt-1 pb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Explore</span>
@@ -415,6 +415,16 @@ export function Header({ user }: HeaderProps) {
               <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">For You</span>
             </div>
             <div className="flex flex-col gap-1">
+              <Link
+                to="/favorites"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-600 dark:text-gray-400"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                Favorites
+              </Link>
               <a
                 href="https://talent.tampa.dev"
                 target="_blank"
@@ -427,16 +437,6 @@ export function Header({ user }: HeaderProps) {
                 </svg>
                 Jobs
               </a>
-              <Link
-                to="/favorites"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-600 dark:text-gray-400"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                Favorites
-              </Link>
             </div>
 
             <div className="my-2 border-t border-gray-200 dark:border-gray-800" />
