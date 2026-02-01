@@ -912,6 +912,7 @@ defineTool({
     badgeSlug: z.string().optional().describe('Auto-award this badge on completion'),
     entitlement: z.string().optional().describe('Auto-grant this entitlement on completion'),
     hidden: z.boolean().optional().default(false),
+    enabled: z.boolean().optional().default(true).describe('Whether this achievement is actively evaluated. Disabled achievements won\'t accumulate progress.'),
   }),
   handler: async (args, ctx) => {
     if (!isPlatformAdmin(ctx.auth.user)) return adminError();
@@ -942,6 +943,7 @@ defineTool({
       badgeSlug: args.badgeSlug || null,
       entitlement: args.entitlement || null,
       hidden: args.hidden ? 1 : 0,
+      enabled: args.enabled !== false ? 1 : 0,
       createdAt: now,
       updatedAt: now,
     });
@@ -964,6 +966,7 @@ defineTool({
     xpReward: z.number().int().min(0).optional(),
     targetValue: z.number().int().min(1).optional(),
     hidden: z.boolean().optional(),
+    enabled: z.boolean().optional().describe('Whether this achievement is actively evaluated. Disabled achievements won\'t accumulate progress.'),
   }),
   handler: async (args, ctx) => {
     if (!isPlatformAdmin(ctx.auth.user)) return adminError();
@@ -980,6 +983,7 @@ defineTool({
     if (args.xpReward !== undefined) updateData.points = args.xpReward;
     if (args.targetValue !== undefined) updateData.targetValue = args.targetValue;
     if (args.hidden !== undefined) updateData.hidden = args.hidden ? 1 : 0;
+    if (args.enabled !== undefined) updateData.enabled = args.enabled ? 1 : 0;
 
     await db.update(achievements).set(updateData).where(eq(achievements.id, args.id));
     const updated = await db.query.achievements.findFirst({ where: eq(achievements.id, args.id) });
