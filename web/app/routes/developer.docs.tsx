@@ -10,11 +10,13 @@ import { data as routerData } from "react-router";
 import { DOCS, CATEGORIES } from "~/content/docs";
 import { fetchCurrentUser } from "~/lib/api.server";
 import type { Route } from "./+types/developer.docs";
+import { generateMetaTags } from "~/lib/seo";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "API Documentation | Tampa.dev Developer Portal" },
-  { name: "description", content: "API reference for the Tampa.dev platform. OAuth 2.1, scopes, webhooks, and Personal Access Tokens." },
-];
+export const meta: Route.MetaFunction = () => generateMetaTags({
+  title: "API Documentation",
+  description: "API reference for the Tampa.dev platform. OAuth 2.1, scopes, webhooks, and Personal Access Tokens.",
+  url: "/developer/docs",
+});
 
 export async function loader({ request }: Route.LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie") || undefined;

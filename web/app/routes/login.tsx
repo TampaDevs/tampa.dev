@@ -11,11 +11,13 @@
 import { Link, useSearchParams, redirect, useLoaderData } from "react-router";
 import type { Route } from "./+types/login";
 import { fetchCurrentUser, fetchAuthProviders } from "~/lib/admin-api.server";
+import { generateMetaTags } from "~/lib/seo";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Sign In | Tampa.dev" },
-  { name: "description", content: "Sign in to Tampa.dev" },
-];
+export const meta: Route.MetaFunction = () => generateMetaTags({
+  title: "Sign In",
+  description: "Sign in to Tampa.dev to access your favorites, RSVPs, and more.",
+  url: "/login",
+});
 
 export async function loader({ request }: Route.LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie") || undefined;

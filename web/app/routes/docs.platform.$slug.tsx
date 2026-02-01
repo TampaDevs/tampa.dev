@@ -6,6 +6,7 @@
 
 import { PLATFORM_DOCS_BY_SLUG } from "~/content/platform-docs";
 import type { Route } from "./+types/docs.platform.$slug";
+import { generateMetaTags } from "~/lib/seo";
 
 export function loader({ params }: Route.LoaderArgs) {
   const doc = PLATFORM_DOCS_BY_SLUG[params.slug];
@@ -17,10 +18,11 @@ export function loader({ params }: Route.LoaderArgs) {
 
 export const meta: Route.MetaFunction = ({ data }) => {
   if (!data) return [];
-  return [
-    { title: `${data.title} | Tampa.dev Platform Guide` },
-    { name: "description", content: data.description },
-  ];
+  return generateMetaTags({
+    title: `${data.title} | Platform Guide`,
+    description: data.description,
+    url: `/docs/platform/${data.slug}`,
+  });
 };
 
 export default function PlatformDocsPage({ loaderData }: Route.ComponentProps) {

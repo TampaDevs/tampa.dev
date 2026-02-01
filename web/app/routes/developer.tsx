@@ -8,6 +8,7 @@ import { redirect, useLoaderData, useFetcher, useRevalidator } from "react-route
 import { useState, useRef } from "react";
 import type { Route } from "./+types/developer";
 import { fetchCurrentUser } from "~/lib/admin-api.server";
+import { generateMetaTags } from "~/lib/seo";
 
 interface DeveloperApp {
   clientId: string;
@@ -38,10 +39,12 @@ interface WebhookDelivery {
   responseBody: string | null;
 }
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Developer Portal | Tampa.dev" },
-  { name: "description", content: "Register and manage your OAuth applications." },
-];
+export const meta: Route.MetaFunction = () => generateMetaTags({
+  title: "Developer Portal",
+  description: "Register and manage your OAuth applications for the Tampa.dev platform.",
+  url: "/developer",
+  noIndex: true,
+});
 
 export async function loader({ request }: Route.LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie") || undefined;

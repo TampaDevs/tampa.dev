@@ -17,6 +17,7 @@ import { getTrophyTier, TrophyIcon, type TrophyTier } from "~/lib/trophy-tiers";
 import { getRarityTier } from "~/lib/rarity";
 import { BadgeDetailModal } from "~/components/BadgeDetailModal";
 import { Emoji } from "~/components/Emoji";
+import { generateMetaTags } from "~/lib/seo";
 
 interface OAuthGrant {
   grantId: string;
@@ -106,9 +107,12 @@ interface ProfileData {
   favoriteGroups: FavoriteGroup[];
 }
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Profile | Tampa.dev" },
-];
+export const meta: Route.MetaFunction = () => generateMetaTags({
+  title: "Profile",
+  description: "Manage your Tampa.dev profile, connected accounts, and authorized apps.",
+  url: "/profile",
+  noIndex: true,
+});
 
 export async function loader({ request }: Route.LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie") || undefined;

@@ -6,11 +6,13 @@
 
 import { Link } from "react-router";
 import type { Route } from "./+types/docs._index";
+import { generateMetaTags } from "~/lib/seo";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Documentation | Tampa.dev" },
-  { name: "description", content: "Tampa.dev documentation hub. Developer API reference, platform guides, and more." },
-];
+export const meta: Route.MetaFunction = () => generateMetaTags({
+  title: "Documentation",
+  description: "Tampa.dev documentation hub. Developer API reference, platform guides, and more.",
+  url: "/docs",
+});
 
 const DOC_SITES = [
   {

@@ -8,11 +8,13 @@
 import { Link, Outlet, useNavigate, useParams } from "react-router";
 import { PLATFORM_DOCS, PLATFORM_CATEGORIES } from "~/content/platform-docs";
 import type { Route } from "./+types/docs.platform";
+import { generateMetaTags } from "~/lib/seo";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Platform Guide | Tampa.dev" },
-  { name: "description", content: "Learn how to use Tampa.dev — profiles, groups, events, badges, and community features." },
-];
+export const meta: Route.MetaFunction = () => generateMetaTags({
+  title: "Platform Guide",
+  description: "Learn how to use Tampa.dev — profiles, groups, events, badges, and community features.",
+  url: "/docs/platform",
+});
 
 export default function PlatformDocsLayout() {
   const params = useParams();
