@@ -28,7 +28,7 @@ import { ok, created, success, unauthorized, forbidden, notFound, conflict, gone
 // ============== Helper ==============
 
 function generateCheckinCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars (0/O, 1/I/L)
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // Exclude confusing chars (0/O, 1/I/L)
   let code = '';
   for (let i = 0; i < 8; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
