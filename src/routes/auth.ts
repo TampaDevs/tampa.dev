@@ -20,6 +20,7 @@ import { emitEvent } from '../lib/event-bus.js';
 import { encrypt } from '../lib/crypto.js';
 import { validateReturnTo, renderRedirectInterstitial } from '../lib/redirect-validation.js';
 import { rateLimit } from '../middleware/rate-limit.js';
+import { generateDefaultUsername } from '../lib/username.js';
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -336,10 +337,16 @@ export function createAuthRoutes() {
           const role = isOnAllowlist ? UserRole.ADMIN : UserRole.USER;
           const userId = crypto.randomUUID();
 
+          const username = await generateDefaultUsername(db, {
+            name: githubUser.name || githubUser.login,
+            providerUsername: githubUser.login,
+          });
+
           await db.insert(users).values({
             id: userId,
             email,
             name: githubUser.name || githubUser.login,
+            username,
             avatarUrl: githubUser.avatar_url,
             role,
             profileVisibility: 'public',
@@ -620,11 +627,17 @@ export function createAuthRoutes() {
 
     if (!user) {
       const userId = crypto.randomUUID();
+      const devName = `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+
+      const username = await generateDefaultUsername(db, {
+        name: devName,
+      });
 
       await db.insert(users).values({
         id: userId,
         email: devEmail,
-        name: `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+        name: devName,
+        username,
         avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${role}`,
         role: role as typeof UserRole.USER | typeof UserRole.ADMIN | typeof UserRole.SUPERADMIN,
         profileVisibility: 'public',
@@ -849,10 +862,17 @@ export function createAuthRoutes() {
 
         if (!user) {
           const userId = crypto.randomUUID();
+          const displayName = appleName || email;
+
+          const username = await generateDefaultUsername(db, {
+            name: appleName || null,
+          });
+
           await db.insert(users).values({
             id: userId,
             email,
-            name: appleName || email,
+            name: displayName,
+            username,
             role: UserRole.USER,
             profileVisibility: 'public',
             createdAt: now,
@@ -1126,10 +1146,16 @@ export function createAuthRoutes() {
           const isOnAllowlist = providerUser.username ? allowlist.includes(providerUser.username.toLowerCase()) : false;
           const role = isOnAllowlist ? UserRole.ADMIN : UserRole.USER;
 
+          const username = await generateDefaultUsername(db, {
+            name: providerUser.name || null,
+            providerUsername: providerUser.username || null,
+          });
+
           await db.insert(users).values({
             id: userId,
             email: providerUser.email,
             name: providerUser.name || providerUser.email,
+            username,
             avatarUrl: providerUser.avatarUrl || null,
             role,
             profileVisibility: 'public',

@@ -16,6 +16,7 @@ import { deleteCookie } from 'hono/cookie';
 import { getCurrentUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { ok, created, success, unauthorized, forbidden, notFound, badRequest, conflict } from '../lib/responses.js';
+import { RESERVED_USERNAMES } from '../lib/username.js';
 
 // ============== Rarity Helper ==============
 
@@ -29,12 +30,7 @@ function getRarityTierName(percentage: number): string {
 
 // ============== Validation Schemas ==============
 
-const RESERVED_USERNAMES = [
-  'admin', 'api', 'auth', 'login', 'logout', 'profile', 'settings',
-  'help', 'support', 'about', 'tampa', 'tampadevs', 'developer',
-  'oauth', 'groups', 'events', 'calendar', 'map', 'favorites',
-  'p', 'u', 'user', 'users', 'new', 'edit', 'delete', 'search',
-];
+// RESERVED_USERNAMES imported from '../lib/username.js' (single source of truth)
 
 const usernameSchema = z.string()
   .min(3, 'Username must be at least 3 characters')
