@@ -7,11 +7,11 @@ category: MCP
 
 # MCP Examples
 
-This page provides end-to-end examples for integrating with the Tampa Devs MCP server. Each example shows the complete JSON-RPC request and response flow.
+This page provides end-to-end examples for integrating with the Tampa.dev MCP server. Each example shows the complete JSON-RPC request and response flow.
 
 ## Claude Desktop Configuration
 
-To connect Claude Desktop to the Tampa Devs MCP server, add the following to your Claude Desktop configuration file (`claude_desktop_config.json`):
+To connect Claude Desktop to the Tampa.dev MCP server, add the following to your Claude Desktop configuration file (`claude_desktop_config.json`):
 
 ```json
 {
@@ -47,7 +47,7 @@ For OAuth-based authentication (recommended for interactive use):
 }
 ```
 
-After adding this configuration and restarting Claude Desktop, the Tampa Devs tools will appear in the tools menu automatically.
+After adding this configuration and restarting Claude Desktop, the Tampa.dev tools will appear in the tools menu automatically.
 
 ---
 
@@ -620,7 +620,7 @@ The agent should inform the user that the current token does not have permission
 
 - **Start with `tools/list`** to discover what your token can do. Do not hard-code tool names -- they may change or be unavailable based on scopes.
 - **Use resources for context** before making decisions. Reading `tampadev://profile` and `tampadev://events` gives you a solid foundation.
-- **Use prompts for complex workflows.** The built-in prompts encode Tampa Devs best practices and save you from writing multi-step logic.
+- **Use prompts for complex workflows.** The built-in prompts encode Tampa.dev best practices and save you from writing multi-step logic.
 - **Handle errors gracefully.** Check for `isError` in tool responses and provide helpful messages to the user.
 - **Respect rate limits.** If you receive a `rate_limited` error, back off and retry after the indicated period.
 - **Request minimal scopes.** Only request the scopes your agent actually needs. This follows the principle of least privilege and builds user trust.

@@ -125,7 +125,7 @@ export function renderRedirectInterstitial(targetUrl: string): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Leaving Tampa Devs</title>
+  <title>Leaving Tampa.dev</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -203,7 +203,7 @@ export function renderRedirectInterstitial(targetUrl: string): string {
 <body>
   <div class="card">
     <div class="icon" aria-hidden="true">&#x1F6AA;</div>
-    <h1>You are leaving Tampa Devs</h1>
+    <h1>You are leaving Tampa.dev</h1>
     <p class="description">
       You are about to be redirected to an external website. Please verify
       the URL below before continuing.
@@ -211,7 +211,7 @@ export function renderRedirectInterstitial(targetUrl: string): string {
     <div class="url-display">${safeUrl}</div>
     <div class="actions">
       <a class="btn-continue" href="${safeUrl}" rel="noopener noreferrer">Continue to ${displayDomain}</a>
-      <a class="btn-back" href="https://events.tampa.dev">Go to Tampa Devs</a>
+      <a class="btn-back" href="https://events.tampa.dev">Go to Tampa.dev</a>
     </div>
   </div>
 </body>

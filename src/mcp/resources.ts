@@ -1,7 +1,7 @@
 /**
  * MCP Resources
  *
- * Static resources and resource templates for the Tampa Devs Events API.
+ * Static resources and resource templates for the Tampa.dev Events API.
  * Uses the `tampadev://` URI scheme. Each resource handler queries the
  * database and returns JSON-formatted content.
  */
@@ -160,7 +160,7 @@ defineResource({
 defineResource({
   uri: 'tampadev://badges',
   name: 'Available Badges',
-  description: 'All available badges in the Tampa Devs platform',
+  description: 'All available badges in the Tampa.dev platform',
   scope: null,
   handler: async (uri: string, ctx: ToolContext): Promise<ResourceContent> => {
     const db = createDatabase(ctx.env.DB);
@@ -246,7 +246,7 @@ defineResource({
 defineResource({
   uri: 'tampadev://scopes',
   name: 'OAuth Scopes',
-  description: 'Available OAuth scopes and their descriptions for the Tampa Devs API',
+  description: 'Available OAuth scopes and their descriptions for the Tampa.dev API',
   scope: null,
   handler: async (uri: string, _ctx: ToolContext): Promise<ResourceContent> => {
     const scopeList = Object.entries(SCOPES).map(([key, description]) => ({

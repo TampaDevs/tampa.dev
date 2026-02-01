@@ -1,7 +1,7 @@
 /**
- * Tampa Devs Events API
+ * Tampa.dev Events API
  *
- * This worker is wrapped by OAuthProvider to enable "Sign in with Tampa Devs"
+ * This worker is wrapped by OAuthProvider to enable "Sign in with Tampa.dev"
  * for third-party applications in the Tampa Bay tech community.
  */
 
@@ -152,8 +152,8 @@ app.get('/', (c) => c.redirect('/docs'));
 
 // Machine-readable API discovery for LLMs and AI agents
 app.get('/llms.txt', (c) => {
-  const text = `# Tampa Devs Platform API
-> The Tampa Devs Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more.
+  const text = `# Tampa.dev Platform API
+> The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more.
 
 ## Base URL
 https://api.tampa.dev
@@ -265,7 +265,7 @@ const defaultHandler = {
   },
 };
 
-// Tampa Devs OAuth scopes (includes both new and legacy scopes for backwards compat)
+// Tampa.dev OAuth scopes (includes both new and legacy scopes for backwards compat)
 const SCOPES_SUPPORTED = [
   // New GitHub-style scopes
   'user',

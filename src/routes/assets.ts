@@ -28,7 +28,7 @@ function createAssetsRoutes() {
     const coral = '#e85a4f';
     const font = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
-    // Tampa Devs logo colors (from brand_assets/tampa-devs.svg), adapted per theme
+    // Tampa.dev logo colors (from brand_assets/tampa-devs.svg), adapted per theme
     const lBlk = theme === 'light' ? '#000' : '#fff';
     const lWht = theme === 'light' ? '#fff' : bg;
     const lRed = '#d70100';

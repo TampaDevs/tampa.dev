@@ -83,11 +83,11 @@ export function AddToCalendar({
 
   const calendarName = groupUrlname
     ? `${groupName || groupUrlname} Events`
-    : "Tampa Devs Community Calendar";
+    : "Tampa.dev Community Calendar";
 
   const calendarDescription = groupUrlname
     ? `Upcoming events from ${groupName || groupUrlname} in Tampa Bay`
-    : "All tech meetups, developer events, and community gatherings in the Tampa Bay area - curated by Tampa Devs";
+    : "All tech meetups, developer events, and community gatherings in the Tampa Bay area - curated by Tampa.dev";
 
   return (
     <AddToCalendarButton

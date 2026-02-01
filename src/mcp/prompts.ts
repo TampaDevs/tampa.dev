@@ -1,7 +1,7 @@
 /**
  * MCP Prompts
  *
- * Prompt templates for AI-assisted tasks in the Tampa Devs Events API.
+ * Prompt templates for AI-assisted tasks in the Tampa.dev Events API.
  * Each prompt fetches relevant data from the database and returns
  * structured messages with context for the AI to act on.
  */
@@ -544,7 +544,7 @@ definePrompt({
         role: 'user',
         content: {
           type: 'text',
-          text: `Create a personalized onboarding guide for a new Tampa Devs platform user.\n\nUser Profile Status:\n- Name: ${user?.name || 'Not set'}\n- Username: ${hasUsername ? user?.username : 'Not set'}\n- Profile completeness: ${JSON.stringify(profileCompleteness)}\n- Badges earned: ${badgeCountResult[0]?.count ?? 0}\n- Groups favorited: ${favCount[0]?.count ?? 0}\n- Events RSVPed: ${rsvpCount[0]?.count ?? 0}\n\nFeatured Groups to Explore:\n${JSON.stringify(featuredGroups, null, 2)}\n\nUpcoming Events:\n${JSON.stringify(soonEvents, null, 2)}\n\nPlease create a friendly, step-by-step onboarding guide that:\n1. Welcomes the user to Tampa Devs\n2. Identifies which profile setup steps they still need to complete\n3. Recommends featured groups to follow based on their interests\n4. Suggests upcoming events to attend\n5. Explains how badges and XP work\n6. Encourages community participation`,
+          text: `Create a personalized onboarding guide for a new Tampa.dev platform user.\n\nUser Profile Status:\n- Name: ${user?.name || 'Not set'}\n- Username: ${hasUsername ? user?.username : 'Not set'}\n- Profile completeness: ${JSON.stringify(profileCompleteness)}\n- Badges earned: ${badgeCountResult[0]?.count ?? 0}\n- Groups favorited: ${favCount[0]?.count ?? 0}\n- Events RSVPed: ${rsvpCount[0]?.count ?? 0}\n\nFeatured Groups to Explore:\n${JSON.stringify(featuredGroups, null, 2)}\n\nUpcoming Events:\n${JSON.stringify(soonEvents, null, 2)}\n\nPlease create a friendly, step-by-step onboarding guide that:\n1. Welcomes the user to Tampa.dev\n2. Identifies which profile setup steps they still need to complete\n3. Recommends featured groups to follow based on their interests\n4. Suggests upcoming events to attend\n5. Explains how badges and XP work\n6. Encourages community participation`,
         },
       },
     ];
@@ -617,7 +617,7 @@ definePrompt({
         role: 'user',
         content: {
           type: 'text',
-          text: `Create a group setup guide for the "${group.name}" group on the Tampa Devs platform.\n\nCurrent Group Status:\n- Name: ${group.name}\n- URL slug: ${group.urlname}\n- Platform: ${group.platform}\n- Setup completion: ${JSON.stringify(setupStatus, null, 2)}\n\nPlease provide a comprehensive setup guide that:\n1. Identifies which setup steps are complete and which remain\n2. Guides through completing the group profile (description, photo, website, tags, social links)\n3. Explains how to create and manage events\n4. Describes the badge system and how to create group-specific badges (limit: ${group.maxBadges} badges, max ${group.maxBadgePoints} points each)\n5. Explains member roles (owner, manager, volunteer, member) and when to use each\n6. Recommends best practices for growing the group on the platform\n7. Explains how to get the group featured on the site`,
+          text: `Create a group setup guide for the "${group.name}" group on the Tampa.dev platform.\n\nCurrent Group Status:\n- Name: ${group.name}\n- URL slug: ${group.urlname}\n- Platform: ${group.platform}\n- Setup completion: ${JSON.stringify(setupStatus, null, 2)}\n\nPlease provide a comprehensive setup guide that:\n1. Identifies which setup steps are complete and which remain\n2. Guides through completing the group profile (description, photo, website, tags, social links)\n3. Explains how to create and manage events\n4. Describes the badge system and how to create group-specific badges (limit: ${group.maxBadges} badges, max ${group.maxBadgePoints} points each)\n5. Explains member roles (owner, manager, volunteer, member) and when to use each\n6. Recommends best practices for growing the group on the platform\n7. Explains how to get the group featured on the site`,
         },
       },
     ];

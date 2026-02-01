@@ -144,7 +144,7 @@ function buildTestPayloadData(eventType: string): Record<string, unknown> {
       };
     default:
       return {
-        message: 'This is a test webhook delivery from Tampa Devs.',
+        message: 'This is a test webhook delivery from Tampa.dev.',
       };
   }
 }

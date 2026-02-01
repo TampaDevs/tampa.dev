@@ -23,7 +23,7 @@ Integration test runs can cause Miniflare to die when all tests are run in a sin
 - **KV:** Cloudflare KV for rate limiting and OAuth state
 - **Queues:** Cloudflare Queues for domain event bus (achievements, webhooks, notifications)
 - **Durable Objects:** `UserNotificationDO` and `BroadcastDO` for real-time WebSocket notifications
-- **OAuth:** `@cloudflare/workers-oauth-provider` wrapping the Hono app to provide "Sign in with Tampa Devs"
+- **OAuth:** `@cloudflare/workers-oauth-provider` wrapping the Hono app to provide "Sign in with Tampa.dev"
 - **Validation:** Zod for all input schemas
 - **Testing:** Vitest (integration) + Mocha (unit), Miniflare for local D1/KV/R2 bindings
 
@@ -589,7 +589,7 @@ Queue handlers in `src/queue/` process these events for achievements, webhook de
 
 ## 10. Community Trust
 
-This platform serves real members of the Tampa Devs community. Every decision should be made with that responsibility in mind.
+This platform serves real members of the Tampa.dev community. Every decision should be made with that responsibility in mind.
 
 - **Security is non-negotiable.** Never cut corners on authentication, authorization, or data protection.
 - **Default to returning less data.** If you are unsure whether a field should be public, make it private. It is easy to expose more data later; it is impossible to unexpose leaked data.
@@ -700,7 +700,7 @@ Every authenticated `/v1/` endpoint must appear in the OpenAPI spec at `/openapi
 
 ### Overview
 
-The platform exposes a first-party [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `POST /mcp`. This allows AI agents, personal assistants, and automation tools to interact with the Tampa Devs platform via a standardized JSON-RPC 2.0 interface.
+The platform exposes a first-party [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `POST /mcp`. This allows AI agents, personal assistants, and automation tools to interact with the Tampa.dev platform via a standardized JSON-RPC 2.0 interface.
 
 The MCP implementation is custom (not using `@modelcontextprotocol/sdk`) to avoid Node.js dependencies incompatible with Cloudflare Workers. It supports **Streamable HTTP** transport (MCP spec version `2025-03-26`).
 

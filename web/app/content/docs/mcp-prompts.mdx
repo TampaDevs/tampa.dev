@@ -7,7 +7,7 @@ category: MCP
 
 # MCP Prompts
 
-The Tampa Devs MCP server includes reusable prompt templates that help AI agents interact with the platform effectively. Prompts provide structured conversation starters for common workflows such as generating community reports, suggesting events, and guiding users through onboarding.
+The Tampa.dev MCP server includes reusable prompt templates that help AI agents interact with the platform effectively. Prompts provide structured conversation starters for common workflows such as generating community reports, suggesting events, and guiding users through onboarding.
 
 Prompts are not executable actions -- they return pre-built message templates that an AI agent can use to structure its interaction with the user and the platform's tools and resources.
 
@@ -60,7 +60,7 @@ Use `prompts/list` to discover available prompts:
       },
       {
         "name": "onboarding_guide",
-        "description": "Guide a new user through Tampa Devs platform features including profile setup, joining groups, RSVPing to events, and earning badges."
+        "description": "Guide a new user through Tampa.dev platform features including profile setup, joining groups, RSVPing to events, and earning badges."
       },
       {
         "name": "group_setup_guide",
@@ -202,7 +202,7 @@ Returns a prompt template for guiding new users through their first interactions
         "role": "user",
         "content": {
           "type": "text",
-          "text": "Help me get started with Tampa Devs. Walk me through the platform step by step:\n\n1. Check my profile with profile_get and suggest any missing information I should add.\n2. Check my onboarding status with onboarding_status to see what steps remain.\n3. List available groups with groups_list and recommend a few to join based on common interests.\n4. Show upcoming events with events_list and suggest one to RSVP to.\n5. Explain how badges and XP work, and how I can start earning them.\n\nKeep the tone friendly and helpful. After each step, ask if I would like to take that action."
+          "text": "Help me get started with Tampa.dev. Walk me through the platform step by step:\n\n1. Check my profile with profile_get and suggest any missing information I should add.\n2. Check my onboarding status with onboarding_status to see what steps remain.\n3. List available groups with groups_list and recommend a few to join based on common interests.\n4. Show upcoming events with events_list and suggest one to RSVP to.\n5. Explain how badges and XP work, and how I can start earning them.\n\nKeep the tone friendly and helpful. After each step, ask if I would like to take that action."
         }
       }
     ]
@@ -243,7 +243,7 @@ Returns a prompt template for group organizers who are configuring their group f
         "role": "user",
         "content": {
           "type": "text",
-          "text": "Help me set up my group 'grp_react' on Tampa Devs. Walk me through the configuration:\n\n1. Get current group details with manage_get_group to see what is already configured.\n2. Review the group description and suggest improvements if needed.\n3. Check if any badges exist with manage_list_badges and suggest creating starter badges.\n4. List current members with manage_list_members to understand the team.\n5. Suggest creating a first event with manage_create_event.\n\nFor each step, explain best practices and offer to make changes if I approve."
+          "text": "Help me set up my group 'grp_react' on Tampa.dev. Walk me through the configuration:\n\n1. Get current group details with manage_get_group to see what is already configured.\n2. Review the group description and suggest improvements if needed.\n3. Check if any badges exist with manage_list_badges and suggest creating starter badges.\n4. List current members with manage_list_members to understand the team.\n5. Suggest creating a first event with manage_create_event.\n\nFor each step, explain best practices and offer to make changes if I approve."
         }
       }
     ]
@@ -298,7 +298,7 @@ Prompts serve as structured blueprints for multi-step agent workflows. Instead o
 
 1. **Reduced trial and error** -- the prompt tells the agent exactly which tools to invoke and what data to gather.
 2. **Consistent output** -- prompts define the expected output structure (sections, recommendations, comparisons), leading to reliable results.
-3. **Domain knowledge** -- prompts embed Tampa Devs-specific best practices that a general-purpose AI agent would not know on its own.
+3. **Domain knowledge** -- prompts embed Tampa.dev-specific best practices that a general-purpose AI agent would not know on its own.
 4. **User guidance** -- prompts include instructions for the agent to ask for user confirmation before making changes, keeping the user in control.
 
 Agents can use prompts as-is or adapt them based on additional context from the conversation.

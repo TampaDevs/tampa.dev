@@ -90,14 +90,14 @@ export function addOpenAPIRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   app.doc('/openapi.json', {
     openapi: '3.1.0',
     info: {
-      title: 'Tampa Devs Platform API',
+      title: 'Tampa.dev Platform API',
       version: '2026-01-25',
       description:
-        'The Tampa Devs Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. ' +
+        'The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. ' +
         'Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. ' +
         'All authenticated endpoints are under `/v1/`.',
       contact: {
-        name: 'Tampa Devs',
+        name: 'Tampa.dev',
         url: 'https://tampa.dev',
       },
     },
@@ -126,6 +126,7 @@ export function addOpenAPIRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       { name: 'Admin', description: 'Platform administration (admin role required)' },
       { name: 'Management', description: 'Group management (group role required)' },
       { name: 'Public', description: 'Public endpoints (no authentication required)' },
+      { name: 'MCP', description: 'Model Context Protocol (JSON-RPC 2.0) endpoint for AI agents and automation tools' },
     ],
   });
 

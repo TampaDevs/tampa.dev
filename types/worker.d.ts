@@ -79,7 +79,7 @@ export interface Env {
   // Admin bootstrap
   ADMIN_ALLOWLIST?: string; // Comma-separated GitHub usernames
 
-  // Tampa Devs OAuth Provider config
+  // Tampa.dev OAuth Provider config
   OAUTH_AUTHORIZE_URL?: string; // e.g., https://tampa.dev/oauth/authorize
 
   // Environment identifier (e.g., "staging")
@@ -99,7 +99,7 @@ export interface Env {
 }
 
 /**
- * Tampa Devs OAuth scopes
+ * Tampa.dev OAuth scopes
  */
 export const TAMPA_DEVS_SCOPES = {
   PROFILE: 'profile',           // Read user profile (name, email, avatar)

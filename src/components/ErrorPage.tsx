@@ -19,7 +19,7 @@ export function ErrorPage({ errorStatus, errorMessage }: ErrorPageProps) {
       </h5>
 
       <p id="powered-by">
-        <a href="https://www.tampadevs.com/">Tampa Devs</a> Events API Widget - Powered by{' '}
+        <a href="https://www.tampadevs.com/">Tampa.dev</a> Events API Widget - Powered by{' '}
         <a href="https://github.com/TampaDevs/tampa.dev">Cloudflare</a>
       </p>
     </PageLayout>
