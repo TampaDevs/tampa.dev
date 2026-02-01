@@ -1,7 +1,7 @@
 =begin
-#Tampa Events API
+#Tampa.dev Platform API
 
-#Community events aggregation API for Tampa Bay tech meetups and events
+#The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 The version of the OpenAPI document: 2026-01-25
 
@@ -41,6 +41,8 @@ module TampaEventsAPI
 
     attr_accessor :social_links
 
+    attr_accessor :favorites_count
+
     class EnumAttributeValidator
       attr_reader :datatype
       attr_reader :allowable_values
@@ -78,7 +80,8 @@ module TampaEventsAPI
         :'is_featured' => :'isFeatured',
         :'display_on_site' => :'displayOnSite',
         :'tags' => :'tags',
-        :'social_links' => :'socialLinks'
+        :'social_links' => :'socialLinks',
+        :'favorites_count' => :'favoritesCount'
       }
     end
 
@@ -107,7 +110,8 @@ module TampaEventsAPI
         :'is_featured' => :'Boolean',
         :'display_on_site' => :'Boolean',
         :'tags' => :'Array<String>',
-        :'social_links' => :'V20260125GroupsGet200ResponseInnerSocialLinks'
+        :'social_links' => :'V20260125GroupsGet200ResponseInnerSocialLinks',
+        :'favorites_count' => :'Float'
       }
     end
 
@@ -211,6 +215,10 @@ module TampaEventsAPI
         self.social_links = attributes[:'social_links']
       else
         self.social_links = nil
+      end
+
+      if attributes.key?(:'favorites_count')
+        self.favorites_count = attributes[:'favorites_count']
       end
     end
 
@@ -443,7 +451,8 @@ module TampaEventsAPI
           is_featured == o.is_featured &&
           display_on_site == o.display_on_site &&
           tags == o.tags &&
-          social_links == o.social_links
+          social_links == o.social_links &&
+          favorites_count == o.favorites_count
     end
 
     # @see the `==` method
@@ -455,7 +464,7 @@ module TampaEventsAPI
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, urlname, name, description, link, website, platform, member_count, photo_url, is_featured, display_on_site, tags, social_links].hash
+      [id, urlname, name, description, link, website, platform, member_count, photo_url, is_featured, display_on_site, tags, social_links, favorites_count].hash
     end
 
     # Builds the object from hash

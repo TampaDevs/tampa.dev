@@ -1,7 +1,7 @@
 /*
-Tampa Events API
+Tampa.dev Platform API
 
-Community events aggregation API for Tampa Bay tech meetups and events
+The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 API version: 2026-01-25
 */
@@ -34,6 +34,7 @@ type V20260125GroupsGet200ResponseInner struct {
 	DisplayOnSite bool `json:"displayOnSite"`
 	Tags []string `json:"tags"`
 	SocialLinks VV20260125GroupsGet200ResponseInnerSocialLinks `json:"socialLinks"`
+	FavoritesCount *float32 `json:"favoritesCount,omitempty"`
 }
 
 type _V20260125GroupsGet200ResponseInner V20260125GroupsGet200ResponseInner
@@ -380,6 +381,38 @@ func (o *V20260125GroupsGet200ResponseInner) SetSocialLinks(v VV20260125GroupsGe
 	o.SocialLinks = v
 }
 
+// GetFavoritesCount returns the FavoritesCount field value if set, zero value otherwise.
+func (o *V20260125GroupsGet200ResponseInner) GetFavoritesCount() float32 {
+	if o == nil || IsNil(o.FavoritesCount) {
+		var ret float32
+		return ret
+	}
+	return *o.FavoritesCount
+}
+
+// GetFavoritesCountOk returns a tuple with the FavoritesCount field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *V20260125GroupsGet200ResponseInner) GetFavoritesCountOk() (*float32, bool) {
+	if o == nil || IsNil(o.FavoritesCount) {
+		return nil, false
+	}
+	return o.FavoritesCount, true
+}
+
+// HasFavoritesCount returns a boolean if a field has been set.
+func (o *V20260125GroupsGet200ResponseInner) HasFavoritesCount() bool {
+	if o != nil && !IsNil(o.FavoritesCount) {
+		return true
+	}
+
+	return false
+}
+
+// SetFavoritesCount gets a reference to the given float32 and assigns it to the FavoritesCount field.
+func (o *V20260125GroupsGet200ResponseInner) SetFavoritesCount(v float32) {
+	o.FavoritesCount = &v
+}
+
 func (o V20260125GroupsGet200ResponseInner) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -403,6 +436,9 @@ func (o V20260125GroupsGet200ResponseInner) ToMap() (map[string]interface{}, err
 	toSerialize["displayOnSite"] = o.DisplayOnSite
 	toSerialize["tags"] = o.Tags
 	toSerialize["socialLinks"] = o.SocialLinks
+	if !IsNil(o.FavoritesCount) {
+		toSerialize["favoritesCount"] = o.FavoritesCount
+	}
 	return toSerialize, nil
 }
 

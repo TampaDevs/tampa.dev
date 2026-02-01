@@ -24,6 +24,11 @@ Alias for /rss - returns events as an RSS 2.0 feed
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::FeedsApi.new
 opts = {
@@ -77,7 +82,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -98,6 +103,11 @@ Alias for /ics - returns events as an iCalendar (.ics) feed
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::FeedsApi.new
 opts = {
@@ -151,7 +161,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -172,6 +182,11 @@ Returns events as an iCalendar (.ics) feed
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::FeedsApi.new
 opts = {
@@ -225,7 +240,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -246,6 +261,11 @@ Returns events as an RSS 2.0 feed
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::FeedsApi.new
 opts = {
@@ -299,7 +319,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -320,6 +340,11 @@ Returns events as an iCalendar feed (same as /ics, for webcal:// protocol)
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::FeedsApi.new
 opts = {
@@ -373,7 +398,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

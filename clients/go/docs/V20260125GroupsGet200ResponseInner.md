@@ -17,6 +17,7 @@ Name | Type | Description | Notes
 **DisplayOnSite** | **bool** |  | 
 **Tags** | **[]string** |  | 
 **SocialLinks** | [**VV20260125GroupsGet200ResponseInnerSocialLinks**](V20260125GroupsGet200ResponseInnerSocialLinks.md) |  | 
+**FavoritesCount** | Pointer to **float32** |  | [optional] 
 
 ## Methods
 
@@ -296,6 +297,31 @@ and a boolean to check if the value has been set.
 
 SetSocialLinks sets SocialLinks field to given value.
 
+
+### GetFavoritesCount
+
+`func (o *V20260125GroupsGet200ResponseInner) GetFavoritesCount() float32`
+
+GetFavoritesCount returns the FavoritesCount field if non-nil, zero value otherwise.
+
+### GetFavoritesCountOk
+
+`func (o *V20260125GroupsGet200ResponseInner) GetFavoritesCountOk() (*float32, bool)`
+
+GetFavoritesCountOk returns a tuple with the FavoritesCount field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetFavoritesCount
+
+`func (o *V20260125GroupsGet200ResponseInner) SetFavoritesCount(v float32)`
+
+SetFavoritesCount sets FavoritesCount field to given value.
+
+### HasFavoritesCount
+
+`func (o *V20260125GroupsGet200ResponseInner) HasFavoritesCount() bool`
+
+HasFavoritesCount returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -58,7 +58,7 @@ const { status, data } = await apiInstance._20260125feedGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -121,7 +121,7 @@ const { status, data } = await apiInstance._20260125icalGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -184,7 +184,7 @@ const { status, data } = await apiInstance._20260125icsGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -247,7 +247,7 @@ const { status, data } = await apiInstance._20260125rssGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -310,7 +310,7 @@ const { status, data } = await apiInstance._20260125webcalGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

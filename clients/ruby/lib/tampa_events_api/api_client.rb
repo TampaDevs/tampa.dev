@@ -1,7 +1,7 @@
 =begin
-#Tampa Events API
+#Tampa.dev Platform API
 
-#Community events aggregation API for Tampa Bay tech meetups and events
+#The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 The version of the OpenAPI document: 2026-01-25
 
@@ -100,6 +100,7 @@ module TampaEventsAPI
       form_params = opts[:form_params] || {}
       follow_location = opts[:follow_location] || true
 
+      update_params_for_auth! header_params, query_params, opts[:auth_names]
 
       # set ssl_verifyhosts option based on @config.verify_ssl_host (true/false)
       _verify_ssl_host = @config.verify_ssl_host ? 2 : 0

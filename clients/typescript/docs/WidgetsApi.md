@@ -43,7 +43,7 @@ const { status, data } = await apiInstance.widgetCarouselGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -94,7 +94,7 @@ const { status, data } = await apiInstance.widgetNextEventGet(
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

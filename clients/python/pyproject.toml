@@ -1,12 +1,12 @@
 [project]
 name = "tampa_events_api"
 version = "1.0.0"
-description = "Tampa Events API"
+description = "Tampa.dev Platform API"
 authors = [
-  {name = "Tampa Devs",email = "team@openapitools.org"},
+  {name = "Tampa.dev",email = "team@openapitools.org"},
 ]
 readme = "README.md"
-keywords = ["OpenAPI", "OpenAPI-Generator", "Tampa Events API"]
+keywords = ["OpenAPI", "OpenAPI-Generator", "Tampa.dev Platform API"]
 requires-python = ">=3.9"
 
 dependencies = [

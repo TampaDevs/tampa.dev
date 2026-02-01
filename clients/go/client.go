@@ -1,7 +1,7 @@
 /*
-Tampa Events API
+Tampa.dev Platform API
 
-Community events aggregation API for Tampa Bay tech meetups and events
+The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 API version: 2026-01-25
 */
@@ -41,7 +41,7 @@ var (
 	queryDescape    = strings.NewReplacer( "%5B", "[", "%5D", "]" )
 )
 
-// APIClient manages communication with the Tampa Events API API v2026-01-25
+// APIClient manages communication with the Tampa.dev Platform API API v2026-01-25
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
 	cfg    *Configuration
@@ -49,15 +49,25 @@ type APIClient struct {
 
 	// API Services
 
+	ClaimsAPI *ClaimsAPIService
+
 	EventsAPI *EventsAPIService
 
 	FeedsAPI *FeedsAPIService
 
+	FollowsAPI *FollowsAPIService
+
 	GroupsAPI *GroupsAPIService
+
+	MCPAPI *MCPAPIService
 
 	PagesAPI *PagesAPIService
 
 	SchemasAPI *SchemasAPIService
+
+	ScopesAPI *ScopesAPIService
+
+	UserAPI *UserAPIService
 
 	WidgetsAPI *WidgetsAPIService
 }
@@ -78,11 +88,16 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.common.client = c
 
 	// API Services
+	c.ClaimsAPI = (*ClaimsAPIService)(&c.common)
 	c.EventsAPI = (*EventsAPIService)(&c.common)
 	c.FeedsAPI = (*FeedsAPIService)(&c.common)
+	c.FollowsAPI = (*FollowsAPIService)(&c.common)
 	c.GroupsAPI = (*GroupsAPIService)(&c.common)
+	c.MCPAPI = (*MCPAPIService)(&c.common)
 	c.PagesAPI = (*PagesAPIService)(&c.common)
 	c.SchemasAPI = (*SchemasAPIService)(&c.common)
+	c.ScopesAPI = (*ScopesAPIService)(&c.common)
+	c.UserAPI = (*UserAPIService)(&c.common)
 	c.WidgetsAPI = (*WidgetsAPIService)(&c.common)
 
 	return c
@@ -432,6 +447,11 @@ func (c *APIClient) prepareRequest(
 		localVarRequest = localVarRequest.WithContext(ctx)
 
 		// Walk through any authentication.
+
+		// AccessToken Authentication
+		if auth, ok := ctx.Value(ContextAccessToken).(string); ok {
+			localVarRequest.Header.Add("Authorization", "Bearer "+auth)
+		}
 
 	}
 

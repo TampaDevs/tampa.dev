@@ -1,7 +1,7 @@
 =begin
-#Tampa Events API
+#Tampa.dev Platform API
 
-#Community events aggregation API for Tampa Bay tech meetups and events
+#The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 The version of the OpenAPI document: 2026-01-25
 

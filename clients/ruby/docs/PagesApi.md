@@ -21,6 +21,11 @@ Returns a formatted HTML page displaying upcoming events
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::PagesApi.new
 opts = {
@@ -74,7 +79,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 
@@ -95,6 +100,11 @@ Alias for /html - returns a formatted HTML page displaying upcoming events
 ```ruby
 require 'time'
 require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
 
 api_instance = TampaEventsAPI::PagesApi.new
 opts = {
@@ -148,7 +158,7 @@ end
 
 ### Authorization
 
-No authorization required
+[BearerToken](../README.md#BearerToken)
 
 ### HTTP request headers
 

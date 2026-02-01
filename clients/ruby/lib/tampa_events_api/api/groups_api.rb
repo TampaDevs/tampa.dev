@@ -1,7 +1,7 @@
 =begin
-#Tampa Events API
+#Tampa.dev Platform API
 
-#Community events aggregation API for Tampa Bay tech meetups and events
+#The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 The version of the OpenAPI document: 2026-01-25
 
@@ -63,7 +63,7 @@ module TampaEventsAPI
       return_type = opts[:debug_return_type] || 'Array<V20260125GroupsGet200ResponseInner>'
 
       # auth_names
-      auth_names = opts[:debug_auth_names] || []
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
 
       new_options = opts.merge(
         :operation => :"GroupsApi.call_20260125_groups_get",
@@ -126,7 +126,7 @@ module TampaEventsAPI
       return_type = opts[:debug_return_type] || 'V20260125GroupsGet200ResponseInner'
 
       # auth_names
-      auth_names = opts[:debug_auth_names] || []
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
 
       new_options = opts.merge(
         :operation => :"GroupsApi.call_20260125_groups_slug_get",
@@ -141,6 +141,327 @@ module TampaEventsAPI
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
         @api_client.config.logger.debug "API called: GroupsApi#call_20260125_groups_slug_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # List favorite groups
+    # Returns the groups the authenticated user has favorited.
+    # @param [Hash] opts the optional parameters
+    # @return [VV1FavoritesGet200Response]
+    def v1_favorites_get(opts = {})
+      data, _status_code, _headers = v1_favorites_get_with_http_info(opts)
+      data
+    end
+
+    # List favorite groups
+    # Returns the groups the authenticated user has favorited.
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1FavoritesGet200Response, Integer, Hash)>] VV1FavoritesGet200Response data, response status code and response headers
+    def v1_favorites_get_with_http_info(opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: GroupsApi.v1_favorites_get ...'
+      end
+      # resource path
+      local_var_path = '/v1/favorites'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1FavoritesGet200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"GroupsApi.v1_favorites_get",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: GroupsApi#v1_favorites_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Remove group from favorites
+    # Removes a group from the authenticated user's favorites.
+    # @param group_slug [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [nil]
+    def v1_favorites_group_slug_delete(group_slug, opts = {})
+      v1_favorites_group_slug_delete_with_http_info(group_slug, opts)
+      nil
+    end
+
+    # Remove group from favorites
+    # Removes a group from the authenticated user&#39;s favorites.
+    # @param group_slug [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(nil, Integer, Hash)>] nil, response status code and response headers
+    def v1_favorites_group_slug_delete_with_http_info(group_slug, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: GroupsApi.v1_favorites_group_slug_delete ...'
+      end
+      # verify the required parameter 'group_slug' is set
+      if @api_client.config.client_side_validation && group_slug.nil?
+        fail ArgumentError, "Missing the required parameter 'group_slug' when calling GroupsApi.v1_favorites_group_slug_delete"
+      end
+      # resource path
+      local_var_path = '/v1/favorites/{groupSlug}'.sub('{' + 'groupSlug' + '}', CGI.escape(group_slug.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type]
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"GroupsApi.v1_favorites_group_slug_delete",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: GroupsApi#v1_favorites_group_slug_delete\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Add group to favorites
+    # Adds a group to the authenticated user's favorites. Returns 200 if already favorited.
+    # @param group_slug [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [VV1FavoritesGroupSlugPost200Response]
+    def v1_favorites_group_slug_post(group_slug, opts = {})
+      data, _status_code, _headers = v1_favorites_group_slug_post_with_http_info(group_slug, opts)
+      data
+    end
+
+    # Add group to favorites
+    # Adds a group to the authenticated user&#39;s favorites. Returns 200 if already favorited.
+    # @param group_slug [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1FavoritesGroupSlugPost200Response, Integer, Hash)>] VV1FavoritesGroupSlugPost200Response data, response status code and response headers
+    def v1_favorites_group_slug_post_with_http_info(group_slug, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: GroupsApi.v1_favorites_group_slug_post ...'
+      end
+      # verify the required parameter 'group_slug' is set
+      if @api_client.config.client_side_validation && group_slug.nil?
+        fail ArgumentError, "Missing the required parameter 'group_slug' when calling GroupsApi.v1_favorites_group_slug_post"
+      end
+      # resource path
+      local_var_path = '/v1/favorites/{groupSlug}'.sub('{' + 'groupSlug' + '}', CGI.escape(group_slug.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1FavoritesGroupSlugPost200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"GroupsApi.v1_favorites_group_slug_post",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: GroupsApi#v1_favorites_group_slug_post\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # List groups
+    # Returns a paginated list of groups displayed on the site, ordered by member count.
+    # @param [Hash] opts the optional parameters
+    # @option opts [Float] :limit  (default to 20)
+    # @option opts [Float] :offset  (default to 0)
+    # @return [VV1GroupsGet200Response]
+    def v1_groups_get(opts = {})
+      data, _status_code, _headers = v1_groups_get_with_http_info(opts)
+      data
+    end
+
+    # List groups
+    # Returns a paginated list of groups displayed on the site, ordered by member count.
+    # @param [Hash] opts the optional parameters
+    # @option opts [Float] :limit  (default to 20)
+    # @option opts [Float] :offset  (default to 0)
+    # @return [Array<(VV1GroupsGet200Response, Integer, Hash)>] VV1GroupsGet200Response data, response status code and response headers
+    def v1_groups_get_with_http_info(opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: GroupsApi.v1_groups_get ...'
+      end
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 100
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling GroupsApi.v1_groups_get, must be smaller than or equal to 100.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling GroupsApi.v1_groups_get, must be greater than or equal to 1.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'offset'].nil? && opts[:'offset'] < 0
+        fail ArgumentError, 'invalid value for "opts[:"offset"]" when calling GroupsApi.v1_groups_get, must be greater than or equal to 0.'
+      end
+
+      # resource path
+      local_var_path = '/v1/groups'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
+      query_params[:'offset'] = opts[:'offset'] if !opts[:'offset'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1GroupsGet200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"GroupsApi.v1_groups_get",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: GroupsApi#v1_groups_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Get group details
+    # Returns detailed information about a group including its upcoming events.
+    # @param slug [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [VV1GroupsSlugGet200Response]
+    def v1_groups_slug_get(slug, opts = {})
+      data, _status_code, _headers = v1_groups_slug_get_with_http_info(slug, opts)
+      data
+    end
+
+    # Get group details
+    # Returns detailed information about a group including its upcoming events.
+    # @param slug [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1GroupsSlugGet200Response, Integer, Hash)>] VV1GroupsSlugGet200Response data, response status code and response headers
+    def v1_groups_slug_get_with_http_info(slug, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: GroupsApi.v1_groups_slug_get ...'
+      end
+      # verify the required parameter 'slug' is set
+      if @api_client.config.client_side_validation && slug.nil?
+        fail ArgumentError, "Missing the required parameter 'slug' when calling GroupsApi.v1_groups_slug_get"
+      end
+      # resource path
+      local_var_path = '/v1/groups/{slug}'.sub('{' + 'slug' + '}', CGI.escape(slug.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1GroupsSlugGet200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"GroupsApi.v1_groups_slug_get",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: GroupsApi#v1_groups_slug_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end

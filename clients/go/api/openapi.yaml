@@ -1,10 +1,13 @@
 openapi: 3.1.0
 info:
   contact:
-    name: Tampa Devs
+    name: Tampa.dev
     url: https://tampa.dev
-  description: Community events aggregation API for Tampa Bay tech meetups and events
-  title: Tampa Events API
+  description: "The Tampa.dev Platform API provides authenticated access to community\
+    \ data including user profiles, events, groups, badges, and more. Authenticate\
+    \ with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated\
+    \ endpoints are under `/v1/`."
+  title: Tampa.dev Platform API
   version: 2026-01-25
 servers:
 - description: Production
@@ -13,6 +16,30 @@ servers:
   url: https://events.api.tampa.dev
 - description: Development
   url: http://localhost:8787
+security:
+- BearerToken: []
+tags:
+- description: User identity and profile management
+  name: User
+- description: "Event discovery, RSVP, and check-in"
+  name: Events
+- description: Group discovery and favorites
+  name: Groups
+- description: User follow relationships
+  name: Follows
+- description: Badge claim links
+  name: Claims
+- description: OAuth scope discovery
+  name: Scopes
+- description: Platform administration (admin role required)
+  name: Admin
+- description: Group management (group role required)
+  name: Management
+- description: Public endpoints (no authentication required)
+  name: Public
+- description: Model Context Protocol (JSON-RPC 2.0) endpoint for AI agents and automation
+    tools
+  name: MCP
 paths:
   /2026-01-25/events:
     get:
@@ -724,9 +751,2073 @@ paths:
       summary: Upcoming events HTML page
       tags:
       - Pages
+  /mcp:
+    delete:
+      description: "Terminates an MCP session. Sessions are stateless on the server\
+        \ side, so this is a no-op that always returns 204."
+      responses:
+        "204":
+          description: No Content — session terminated
+      security:
+      - BearerToken: []
+      summary: MCP session termination
+      tags:
+      - MCP
+    get:
+      description: Server-Sent Events endpoint for server-initiated messages. Not
+        implemented — use `POST /mcp` for all MCP communication.
+      responses:
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpError"
+          description: Bad Request — SSE not supported
+      summary: MCP SSE endpoint (not supported)
+      tags:
+      - MCP
+    post:
+      description: |-
+        Model Context Protocol (MCP) endpoint using Streamable HTTP transport (spec version `2025-03-26`). Accepts JSON-RPC 2.0 requests for MCP protocol methods. Supports batch requests (up to 10). Notifications (requests without `id`) return 204 No Content.
+
+        **Supported methods:**
+        - `initialize` — Capability negotiation and protocol version exchange
+        - `tools/list` — List available tools (filtered by token scopes)
+        - `tools/call` — Execute a tool with validated arguments
+        - `resources/list` — List available resources
+        - `resources/read` — Read a resource by URI
+        - `resources/templates/list` — List URI templates for parameterized resources
+        - `prompts/list` — List available prompt templates
+        - `prompts/get` — Get a prompt template with arguments
+        - `ping` — Health check
+
+        **Headers:** Include `Mcp-Session-Id` to maintain session context (echoed back in response).
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: "JSON-RPC 2.0 response (single `JsonRpcResponse` object or\
+            \ batch array). Per JSON-RPC 2.0, errors also return 200 with an `error`\
+            \ field."
+        "204":
+          description: No Content — notification processed (no response body)
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpError"
+          description: Bad Request — invalid Content-Type
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpError"
+          description: Unauthorized — missing or invalid authentication
+      security:
+      - BearerToken: []
+      summary: MCP JSON-RPC endpoint
+      tags:
+      - MCP
+  /v1/me:
+    get:
+      description: Returns basic identity information for the authenticated user.
+        Email is included only if the `user:email` scope is granted.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_me_get_200_response"
+          description: Current user identity
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:user
+      summary: Get current user identity
+      tags:
+      - User
+  /v1/profile:
+    get:
+      description: "Returns the full profile for the authenticated user including\
+        \ bio, social links, and settings."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_get_200_response"
+          description: Full user profile
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:user
+      summary: Get current user profile
+      tags:
+      - User
+    patch:
+      description: Updates the authenticated user's profile fields. Only provided
+        fields are updated.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_get_200_response"
+          description: Updated user profile
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Conflict — duplicate or state conflict
+      security:
+      - BearerToken:
+        - user
+      summary: Update current user profile
+      tags:
+      - User
+  /v1/me/linked-accounts:
+    get:
+      description: "Returns the OAuth providers (GitHub, Discord, etc.) connected\
+        \ to the authenticated user's account."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_me_linked_accounts_get_200_response"
+          description: Linked OAuth accounts
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:user
+      summary: List linked OAuth accounts
+      tags:
+      - User
+  /v1/profile/portfolio:
+    get:
+      description: "Returns all portfolio items for the authenticated user, ordered\
+        \ by sort order."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_portfolio_get_200_response"
+          description: Portfolio items
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:portfolio
+      summary: List portfolio items
+      tags:
+      - User
+    post:
+      description: Adds a new portfolio item to the authenticated user's profile.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortfolioItemRequest"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_portfolio_post_201_response"
+          description: Created portfolio item
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - write:portfolio
+      summary: Create portfolio item
+      tags:
+      - User
+  /v1/profile/portfolio/{id}:
+    delete:
+      description: Permanently removes a portfolio item from the authenticated user's
+        profile.
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          description: Portfolio item ID
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Portfolio item deleted
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - write:portfolio
+      summary: Delete portfolio item
+      tags:
+      - User
+    patch:
+      description: Updates an existing portfolio item. Only provided fields are changed.
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          description: Portfolio item ID
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortfolioItemUpdateRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_portfolio_post_201_response"
+          description: Updated portfolio item
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - write:portfolio
+      summary: Update portfolio item
+      tags:
+      - User
+  /v1/profile/achievements:
+    get:
+      description: Returns all achievements with the authenticated user's progress
+        toward each.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_achievements_get_200_response"
+          description: Achievement progress
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:user
+      summary: Get achievement progress
+      tags:
+      - User
+  /v1/profile/tokens:
+    get:
+      description: Returns all personal access tokens for the authenticated user.
+        Token values are not included.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_tokens_get_200_response"
+          description: Personal access tokens
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - user
+      summary: List personal access tokens
+      tags:
+      - User
+    post:
+      description: Creates a new personal access token. The full token value is returned
+        only once in the response -- store it securely.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTokenRequest"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_tokens_post_201_response"
+          description: Created token with full value
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - user
+      summary: Create personal access token
+      tags:
+      - User
+  /v1/profile/tokens/{id}:
+    delete:
+      description: Permanently revokes a personal access token. The token can no longer
+        be used for authentication.
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          description: Token ID
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Token revoked
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - user
+      summary: Revoke personal access token
+      tags:
+      - User
+  /v1/events:
+    get:
+      description: "Returns a paginated list of upcoming events across all groups,\
+        \ ordered by start time."
+      parameters:
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          description: Maximum number of items to return (1-100)
+          example: 20
+          maximum: 100
+          minimum: 1
+          type: number
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          description: Number of items to skip
+          example: 0
+          minimum: 0
+          type: number
+          nullable: true
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_events_get_200_response"
+          description: Upcoming events
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:events
+      summary: List upcoming events
+      tags:
+      - Events
+  /v1/events/{eventId}/rsvp:
+    delete:
+      description: "Cancels the authenticated user's RSVP. If a waitlisted user exists,\
+        \ they are automatically promoted."
+      parameters:
+      - explode: false
+        in: path
+        name: eventId
+        required: true
+        schema:
+          description: Event ID
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_events__eventId__rsvp_delete_200_response"
+          description: RSVP cancelled
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - write:events
+      summary: Cancel RSVP
+      tags:
+      - Events
+    get:
+      description: Returns the authenticated user's RSVP status for the specified
+        event.
+      parameters:
+      - explode: false
+        in: path
+        name: eventId
+        required: true
+        schema:
+          description: Event ID
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_events__eventId__rsvp_get_200_response"
+          description: RSVP status (null if not RSVPed)
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - read:events
+      summary: Get RSVP status
+      tags:
+      - Events
+    post:
+      description: "Creates an RSVP for the authenticated user. If the event is at\
+        \ capacity, the user is placed on the waitlist."
+      parameters:
+      - explode: false
+        in: path
+        name: eventId
+        required: true
+        schema:
+          description: Event ID
+          type: string
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_events__eventId__rsvp_post_201_response"
+          description: RSVP created
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Conflict — duplicate or state conflict
+      security:
+      - BearerToken:
+        - write:events
+      summary: RSVP to event
+      tags:
+      - Events
+  /v1/events/{eventId}/rsvp-summary:
+    get:
+      description: "Returns aggregate RSVP counts (confirmed, waitlisted, cancelled)\
+        \ for the specified event."
+      parameters:
+      - explode: false
+        in: path
+        name: eventId
+        required: true
+        schema:
+          description: Event ID
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_events__eventId__rsvp_summary_get_200_response"
+          description: RSVP summary counts
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - read:events
+      summary: Get RSVP summary
+      tags:
+      - Events
+  /v1/checkin/{code}:
+    post:
+      description: "Self check-in using a check-in code. Optionally specify the check-in\
+        \ method (link, qr, nfc)."
+      parameters:
+      - explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          description: Check-in code
+          type: string
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_checkin__code__post_201_response"
+          description: Check-in recorded
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Conflict — duplicate or state conflict
+        "410":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Gone — resource expired or exhausted
+      security:
+      - BearerToken:
+        - write:events
+      summary: Check in to event
+      tags:
+      - Events
+  /v1/groups:
+    get:
+      description: "Returns a paginated list of groups displayed on the site, ordered\
+        \ by member count."
+      parameters:
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          description: Maximum number of items to return (1-100)
+          example: 20
+          maximum: 100
+          minimum: 1
+          type: number
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          description: Number of items to skip
+          example: 0
+          minimum: 0
+          type: number
+          nullable: true
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_groups_get_200_response"
+          description: Groups
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:groups
+      summary: List groups
+      tags:
+      - Groups
+  /v1/groups/{slug}:
+    get:
+      description: Returns detailed information about a group including its upcoming
+        events.
+      parameters:
+      - explode: false
+        in: path
+        name: slug
+        required: true
+        schema:
+          description: Group URL slug (urlname)
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_groups__slug__get_200_response"
+          description: Group details with upcoming events
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - read:groups
+      summary: Get group details
+      tags:
+      - Groups
+  /v1/favorites:
+    get:
+      description: Returns the groups the authenticated user has favorited.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_favorites_get_200_response"
+          description: Favorite groups
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:favorites
+      summary: List favorite groups
+      tags:
+      - Groups
+  /v1/favorites/{groupSlug}:
+    delete:
+      description: Removes a group from the authenticated user's favorites.
+      parameters:
+      - explode: false
+        in: path
+        name: groupSlug
+        required: true
+        schema:
+          description: Group URL slug
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Favorite removed
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - write:favorites
+      summary: Remove group from favorites
+      tags:
+      - Groups
+    post:
+      description: Adds a group to the authenticated user's favorites. Returns 200
+        if already favorited.
+      parameters:
+      - explode: false
+        in: path
+        name: groupSlug
+        required: true
+        schema:
+          description: Group URL slug
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_favorites__groupSlug__post_200_response"
+          description: Already favorited
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_favorites__groupSlug__post_201_response"
+          description: Group added to favorites
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - write:favorites
+      summary: Add group to favorites
+      tags:
+      - Groups
+  /v1/users/{username}/follow:
+    delete:
+      description: Unfollows the specified user.
+      parameters:
+      - explode: false
+        in: path
+        name: username
+        required: true
+        schema:
+          description: Target username
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Unfollowed
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - user
+      summary: Unfollow user
+      tags:
+      - Follows
+    post:
+      description: Follows the specified user. Returns 200 if already following.
+      parameters:
+      - explode: false
+        in: path
+        name: username
+        required: true
+        schema:
+          description: Target username
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_users__username__follow_post_200_response"
+          description: Already following
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_users__username__follow_post_201_response"
+          description: Now following user
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - user
+      summary: Follow user
+      tags:
+      - Follows
+  /v1/users/{username}/followers:
+    get:
+      description: Returns a paginated list of users following the specified user.
+      parameters:
+      - explode: false
+        in: path
+        name: username
+        required: true
+        schema:
+          description: Target username
+          type: string
+        style: simple
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          description: Maximum number of items to return (1-100)
+          example: 20
+          maximum: 100
+          minimum: 1
+          type: number
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          description: Number of items to skip
+          example: 0
+          minimum: 0
+          type: number
+          nullable: true
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_users__username__followers_get_200_response"
+          description: Followers
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - read:user
+      summary: List followers
+      tags:
+      - Follows
+  /v1/users/{username}/following:
+    get:
+      description: Returns a paginated list of users the specified user is following.
+      parameters:
+      - explode: false
+        in: path
+        name: username
+        required: true
+        schema:
+          description: Target username
+          type: string
+        style: simple
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          description: Maximum number of items to return (1-100)
+          example: 20
+          maximum: 100
+          minimum: 1
+          type: number
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          description: Number of items to skip
+          example: 0
+          minimum: 0
+          type: number
+          nullable: true
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_users__username__followers_get_200_response"
+          description: Following
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+      security:
+      - BearerToken:
+        - read:user
+      summary: List following
+      tags:
+      - Follows
+  /v1/claim/{code}:
+    get:
+      description: Returns information about a badge claim link. No authentication
+        required.
+      parameters:
+      - explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          description: Claim code
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_claim__code__get_200_response"
+          description: Claim link information
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+        "410":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Gone — resource expired or exhausted
+      security: []
+      summary: Get badge claim info
+      tags:
+      - Claims
+    post:
+      description: Claims a badge using a claim link code. Requires authentication.
+      parameters:
+      - explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          description: Claim code
+          type: string
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_claim__code__post_201_response"
+          description: Badge claimed
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Not Found — resource does not exist
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Conflict — duplicate or state conflict
+        "410":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Gone — resource expired or exhausted
+      security:
+      - BearerToken:
+        - read:user
+      summary: Claim a badge
+      tags:
+      - Claims
+  /v1/scopes:
+    get:
+      description: Returns all available OAuth scopes with descriptions and hierarchy.
+        No authentication required.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_scopes_get_200_response"
+          description: Available OAuth scopes
+      security: []
+      summary: List OAuth scopes
+      tags:
+      - Scopes
 components:
   parameters: {}
   schemas:
+    McpError:
+      example:
+        code: code
+        error: error
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - error
+    UserBasic:
+      example:
+        avatarUrl: avatarUrl
+        name: name
+        id: id
+        email: email
+        username: username
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+        email:
+          type: string
+      required:
+      - avatarUrl
+      - id
+      - name
+      - username
+    ErrorResponse:
+      example:
+        code: code
+        error: error
+      properties:
+        error:
+          description: Human-readable error message
+          type: string
+        code:
+          description: Machine-readable error code
+          type: string
+      required:
+      - code
+      - error
+    UserProfile:
+      example:
+        socialLinks:
+        - socialLinks
+        - socialLinks
+        profileVisibility: public
+        role: role
+        avatarUrl: avatarUrl
+        bio: bio
+        heroImageUrl: heroImageUrl
+        showAchievements: true
+        createdAt: createdAt
+        themeColor: themeColor
+        name: name
+        location: location
+        id: id
+        email: email
+        username: username
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        heroImageUrl:
+          type: string
+          nullable: true
+        themeColor:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        socialLinks:
+          items:
+            type: string
+          type: array
+          nullable: true
+        role:
+          type: string
+        profileVisibility:
+          enum:
+          - public
+          - private
+          type: string
+        showAchievements:
+          type: boolean
+          nullable: true
+        createdAt:
+          type: string
+        email:
+          type: string
+      required:
+      - avatarUrl
+      - bio
+      - createdAt
+      - heroImageUrl
+      - id
+      - location
+      - name
+      - profileVisibility
+      - role
+      - showAchievements
+      - socialLinks
+      - themeColor
+      - username
+    UpdateProfileRequest:
+      properties:
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+        avatarUrl:
+          format: uri
+          type: string
+          nullable: true
+        heroImageUrl:
+          format: uri
+          type: string
+          nullable: true
+        themeColor:
+          enum:
+          - coral
+          - ocean
+          - sunset
+          - forest
+          - violet
+          - rose
+          - slate
+          - sky
+          type: string
+          nullable: true
+        username:
+          maxLength: 30
+          minLength: 3
+          pattern: "^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$"
+          type: string
+        bio:
+          maxLength: 500
+          type: string
+          nullable: true
+        location:
+          maxLength: 100
+          type: string
+          nullable: true
+        socialLinks:
+          items:
+            format: uri
+            type: string
+          maxItems: 5
+          type: array
+          nullable: true
+        showAchievements:
+          type: boolean
+        profileVisibility:
+          enum:
+          - public
+          - private
+          type: string
+    LinkedAccount:
+      example:
+        createdAt: createdAt
+        provider: provider
+        providerUsername: providerUsername
+        providerEmail: providerEmail
+      properties:
+        provider:
+          type: string
+        providerUsername:
+          type: string
+          nullable: true
+        providerEmail:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          nullable: true
+      required:
+      - createdAt
+      - provider
+      - providerEmail
+      - providerUsername
+    PortfolioItem:
+      example:
+        createdAt: createdAt
+        imageUrl: imageUrl
+        sortOrder: 0.8008281904610115
+        description: description
+        id: id
+        title: title
+        userId: userId
+        url: url
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        url:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        sortOrder:
+          type: number
+        createdAt:
+          type: string
+          nullable: true
+      required:
+      - createdAt
+      - description
+      - id
+      - imageUrl
+      - sortOrder
+      - title
+      - url
+      - userId
+    PortfolioItemRequest:
+      properties:
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          maxLength: 500
+          type: string
+          nullable: true
+        url:
+          format: uri
+          type: string
+          nullable: true
+        imageUrl:
+          format: uri
+          type: string
+          nullable: true
+        sortOrder:
+          default: 0
+          minimum: 0
+          type: integer
+      required:
+      - title
+    PortfolioItemUpdateRequest:
+      properties:
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          maxLength: 500
+          type: string
+          nullable: true
+        url:
+          format: uri
+          type: string
+          nullable: true
+        imageUrl:
+          format: uri
+          type: string
+          nullable: true
+        sortOrder:
+          default: 0
+          minimum: 0
+          type: integer
+    AchievementProgress:
+      example:
+        completedAt: completedAt
+        badgeSlug: badgeSlug
+        color: color
+        hidden: true
+        name: name
+        icon: icon
+        targetValue: 0.8008281904610115
+        description: description
+        key: key
+        currentValue: 6.027456183070403
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        targetValue:
+          type: number
+        currentValue:
+          type: number
+        completedAt:
+          type: string
+          nullable: true
+        badgeSlug:
+          type: string
+          nullable: true
+        hidden:
+          type: boolean
+      required:
+      - badgeSlug
+      - color
+      - completedAt
+      - currentValue
+      - description
+      - hidden
+      - icon
+      - key
+      - name
+      - targetValue
+    Token:
+      example:
+        createdAt: createdAt
+        lastUsedAt: lastUsedAt
+        name: name
+        tokenPrefix: tokenPrefix
+        id: id
+        scopes: scopes
+        expiresAt: expiresAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        tokenPrefix:
+          type: string
+        scopes:
+          type: string
+        expiresAt:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          nullable: true
+        lastUsedAt:
+          type: string
+          nullable: true
+      required:
+      - createdAt
+      - expiresAt
+      - id
+      - lastUsedAt
+      - name
+      - scopes
+      - tokenPrefix
+    TokenCreated:
+      example:
+        createdAt: createdAt
+        name: name
+        tokenPrefix: tokenPrefix
+        id: id
+        scopes: scopes
+        expiresAt: expiresAt
+        token: token
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        token:
+          description: Full token value. Store securely — it cannot be retrieved again.
+          type: string
+        tokenPrefix:
+          type: string
+        scopes:
+          type: string
+        expiresAt:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          nullable: true
+      required:
+      - createdAt
+      - expiresAt
+      - id
+      - name
+      - scopes
+      - token
+      - tokenPrefix
+    CreateTokenRequest:
+      properties:
+        name:
+          description: Human-readable name for the token
+          maxLength: 100
+          minLength: 1
+          type: string
+        scopes:
+          description: OAuth scopes to grant to this token
+          items:
+            type: string
+          minItems: 1
+          type: array
+        expiresInDays:
+          description: "Token expiry in days (1-365, default: no expiry)"
+          maximum: 365
+          minimum: 1
+          type: integer
+      required:
+      - name
+      - scopes
+    EventListItem:
+      example:
+        photoUrl: photoUrl
+        timezone: timezone
+        eventUrl: eventUrl
+        rsvpCount: 0.8008281904610115
+        description: description
+        startTime: startTime
+        id: id
+        endTime: endTime
+        eventType: eventType
+        title: title
+        maxAttendees: 6.027456183070403
+        group:
+          name: name
+          id: id
+          urlname: urlname
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startTime:
+          type: string
+        endTime:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        eventUrl:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        eventType:
+          type: string
+          nullable: true
+        rsvpCount:
+          type: number
+          nullable: true
+        maxAttendees:
+          type: number
+          nullable: true
+        group:
+          $ref: "#/components/schemas/EventListItem_group"
+      required:
+      - description
+      - endTime
+      - eventType
+      - eventUrl
+      - group
+      - id
+      - maxAttendees
+      - photoUrl
+      - rsvpCount
+      - startTime
+      - timezone
+      - title
+    Pagination:
+      example:
+        total: 1.4658129805029452
+        offset: 5.637376656633329
+        limit: 5.962133916683182
+        hasMore: true
+      properties:
+        total:
+          description: Total number of items (may be absent if count is expensive)
+          type: number
+        limit:
+          description: Maximum items per page
+          type: number
+        offset:
+          description: Number of items skipped
+          type: number
+        hasMore:
+          description: Whether more items exist beyond this page
+          type: boolean
+      required:
+      - hasMore
+      - limit
+      - offset
+    Rsvp:
+      example:
+        eventId: eventId
+        waitlistPosition: 0.8008281904610115
+        rsvpAt: rsvpAt
+        id: id
+        status: confirmed
+      properties:
+        id:
+          type: string
+        eventId:
+          type: string
+        status:
+          enum:
+          - confirmed
+          - waitlisted
+          - cancelled
+          type: string
+        rsvpAt:
+          type: string
+          nullable: true
+        waitlistPosition:
+          type: number
+          nullable: true
+      required:
+      - eventId
+      - id
+      - rsvpAt
+      - status
+      - waitlistPosition
+      nullable: true
+    RsvpStatusResponse:
+      example:
+        rsvp:
+          eventId: eventId
+          waitlistPosition: 0.8008281904610115
+          rsvpAt: rsvpAt
+          id: id
+          status: confirmed
+      properties:
+        rsvp:
+          $ref: "#/components/schemas/Rsvp"
+      required:
+      - rsvp
+    RsvpSummary:
+      example:
+        total: 0.8008281904610115
+        cancelled: 5.962133916683182
+        waitlisted: 1.4658129805029452
+        confirmed: 6.027456183070403
+        capacity: 5.637376656633329
+      properties:
+        total:
+          type: number
+        confirmed:
+          type: number
+        waitlisted:
+          type: number
+        cancelled:
+          type: number
+        capacity:
+          type: number
+          nullable: true
+      required:
+      - cancelled
+      - capacity
+      - confirmed
+      - total
+      - waitlisted
+    CheckinResult:
+      example:
+        eventId: eventId
+        method: method
+        id: id
+        checkedInAt: checkedInAt
+      properties:
+        id:
+          type: string
+        eventId:
+          type: string
+        checkedInAt:
+          type: string
+        method:
+          type: string
+      required:
+      - checkedInAt
+      - eventId
+      - id
+      - method
+    GroupListItem:
+      example:
+        photoUrl: photoUrl
+        website: website
+        socialLinks: ""
+        memberCount: 0.8008281904610115
+        name: name
+        link: link
+        description: description
+        id: id
+        urlname: urlname
+        tags: ""
+      properties:
+        id:
+          type: string
+        urlname:
+          type: string
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        link:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        memberCount:
+          type: number
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        tags:
+          nullable: true
+        socialLinks:
+          nullable: true
+      required:
+      - description
+      - id
+      - link
+      - memberCount
+      - name
+      - photoUrl
+      - urlname
+      - website
+    GroupDetail:
+      allOf:
+      - $ref: "#/components/schemas/GroupListItem"
+      - properties:
+          upcomingEvents:
+            items:
+              $ref: "#/components/schemas/GroupDetail_allOf_upcomingEvents"
+            type: array
+        required:
+        - upcomingEvents
+      example:
+        photoUrl: photoUrl
+        website: website
+        socialLinks: ""
+        upcomingEvents:
+        - eventUrl: eventUrl
+          startTime: startTime
+          id: id
+          title: title
+        - eventUrl: eventUrl
+          startTime: startTime
+          id: id
+          title: title
+        memberCount: 0.8008281904610115
+        name: name
+        link: link
+        description: description
+        id: id
+        urlname: urlname
+        tags: ""
+    FollowEntry:
+      example:
+        avatarUrl: avatarUrl
+        followedAt: followedAt
+        name: name
+        username: username
+      properties:
+        username:
+          type: string
+          nullable: true
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        followedAt:
+          type: string
+          nullable: true
+      required:
+      - avatarUrl
+      - followedAt
+      - name
+      - username
+    ClaimInfo:
+      example:
+        badge:
+          color: color
+          name: name
+          icon: icon
+          description: description
+          slug: slug
+          points: 0.8008281904610115
+        reason: reason
+        claimable: true
+        group:
+          photoUrl: photoUrl
+          name: name
+          urlname: urlname
+      properties:
+        badge:
+          $ref: "#/components/schemas/ClaimInfo_badge"
+        group:
+          $ref: "#/components/schemas/ClaimInfo_group"
+        claimable:
+          type: boolean
+        reason:
+          type: string
+      required:
+      - badge
+      - claimable
+      - group
+    ClaimBadgeResponse:
+      example:
+        badge:
+          name: name
+          slug: slug
+      properties:
+        badge:
+          $ref: "#/components/schemas/ClaimBadgeResponse_badge"
+      required:
+      - badge
+    Scope:
+      example:
+        name: name
+        description: description
+        implies:
+        - implies
+        - implies
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        implies:
+          items:
+            type: string
+          type: array
+      required:
+      - description
+      - implies
+      - name
     _2026_01_25_events_get_200_response_inner:
       example:
         dateTime: dateTime
@@ -841,6 +2932,7 @@ components:
         memberCount: 0.8008281904610115
         link: link
         description: description
+        favoritesCount: 6.027456183070403
         platform: meetup
         tags:
         - tags
@@ -891,6 +2983,8 @@ components:
           nullable: true
         socialLinks:
           $ref: "#/components/schemas/_2026_01_25_groups_get_200_response_inner_socialLinks"
+        favoritesCount:
+          type: number
       required:
       - description
       - displayOnSite
@@ -971,3 +3065,622 @@ components:
       required:
       - available
       - error
+    _v1_me_get_200_response:
+      example:
+        data:
+          avatarUrl: avatarUrl
+          name: name
+          id: id
+          email: email
+          username: username
+      properties:
+        data:
+          $ref: "#/components/schemas/UserBasic"
+      required:
+      - data
+    _v1_profile_get_200_response:
+      example:
+        data:
+          socialLinks:
+          - socialLinks
+          - socialLinks
+          profileVisibility: public
+          role: role
+          avatarUrl: avatarUrl
+          bio: bio
+          heroImageUrl: heroImageUrl
+          showAchievements: true
+          createdAt: createdAt
+          themeColor: themeColor
+          name: name
+          location: location
+          id: id
+          email: email
+          username: username
+      properties:
+        data:
+          $ref: "#/components/schemas/UserProfile"
+      required:
+      - data
+    _v1_me_linked_accounts_get_200_response:
+      example:
+        data:
+        - createdAt: createdAt
+          provider: provider
+          providerUsername: providerUsername
+          providerEmail: providerEmail
+        - createdAt: createdAt
+          provider: provider
+          providerUsername: providerUsername
+          providerEmail: providerEmail
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/LinkedAccount"
+          type: array
+      required:
+      - data
+    _v1_profile_portfolio_get_200_response:
+      example:
+        data:
+        - createdAt: createdAt
+          imageUrl: imageUrl
+          sortOrder: 0.8008281904610115
+          description: description
+          id: id
+          title: title
+          userId: userId
+          url: url
+        - createdAt: createdAt
+          imageUrl: imageUrl
+          sortOrder: 0.8008281904610115
+          description: description
+          id: id
+          title: title
+          userId: userId
+          url: url
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/PortfolioItem"
+          type: array
+      required:
+      - data
+    _v1_profile_portfolio_post_201_response:
+      example:
+        data:
+          createdAt: createdAt
+          imageUrl: imageUrl
+          sortOrder: 0.8008281904610115
+          description: description
+          id: id
+          title: title
+          userId: userId
+          url: url
+      properties:
+        data:
+          $ref: "#/components/schemas/PortfolioItem"
+      required:
+      - data
+    _v1_profile_achievements_get_200_response:
+      example:
+        data:
+        - completedAt: completedAt
+          badgeSlug: badgeSlug
+          color: color
+          hidden: true
+          name: name
+          icon: icon
+          targetValue: 0.8008281904610115
+          description: description
+          key: key
+          currentValue: 6.027456183070403
+        - completedAt: completedAt
+          badgeSlug: badgeSlug
+          color: color
+          hidden: true
+          name: name
+          icon: icon
+          targetValue: 0.8008281904610115
+          description: description
+          key: key
+          currentValue: 6.027456183070403
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/AchievementProgress"
+          type: array
+      required:
+      - data
+    _v1_profile_tokens_get_200_response:
+      example:
+        data:
+        - createdAt: createdAt
+          lastUsedAt: lastUsedAt
+          name: name
+          tokenPrefix: tokenPrefix
+          id: id
+          scopes: scopes
+          expiresAt: expiresAt
+        - createdAt: createdAt
+          lastUsedAt: lastUsedAt
+          name: name
+          tokenPrefix: tokenPrefix
+          id: id
+          scopes: scopes
+          expiresAt: expiresAt
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/Token"
+          type: array
+      required:
+      - data
+    _v1_profile_tokens_post_201_response:
+      example:
+        data:
+          createdAt: createdAt
+          name: name
+          tokenPrefix: tokenPrefix
+          id: id
+          scopes: scopes
+          expiresAt: expiresAt
+          token: token
+      properties:
+        data:
+          $ref: "#/components/schemas/TokenCreated"
+      required:
+      - data
+    _v1_events_get_200_response:
+      example:
+        pagination:
+          total: 1.4658129805029452
+          offset: 5.637376656633329
+          limit: 5.962133916683182
+          hasMore: true
+        data:
+        - photoUrl: photoUrl
+          timezone: timezone
+          eventUrl: eventUrl
+          rsvpCount: 0.8008281904610115
+          description: description
+          startTime: startTime
+          id: id
+          endTime: endTime
+          eventType: eventType
+          title: title
+          maxAttendees: 6.027456183070403
+          group:
+            name: name
+            id: id
+            urlname: urlname
+        - photoUrl: photoUrl
+          timezone: timezone
+          eventUrl: eventUrl
+          rsvpCount: 0.8008281904610115
+          description: description
+          startTime: startTime
+          id: id
+          endTime: endTime
+          eventType: eventType
+          title: title
+          maxAttendees: 6.027456183070403
+          group:
+            name: name
+            id: id
+            urlname: urlname
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/EventListItem"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+    _v1_events__eventId__rsvp_get_200_response:
+      example:
+        data:
+          rsvp:
+            eventId: eventId
+            waitlistPosition: 0.8008281904610115
+            rsvpAt: rsvpAt
+            id: id
+            status: confirmed
+      properties:
+        data:
+          $ref: "#/components/schemas/RsvpStatusResponse"
+      required:
+      - data
+    _v1_events__eventId__rsvp_post_201_response:
+      example:
+        data:
+          eventId: eventId
+          waitlistPosition: 0.8008281904610115
+          rsvpAt: rsvpAt
+          id: id
+          status: confirmed
+      properties:
+        data:
+          $ref: "#/components/schemas/Rsvp"
+      required:
+      - data
+    _v1_events__eventId__rsvp_delete_200_response_data:
+      example:
+        success: true
+      properties:
+        success:
+          enum:
+          - true
+          type: boolean
+      required:
+      - success
+    _v1_events__eventId__rsvp_delete_200_response:
+      example:
+        data:
+          success: true
+      properties:
+        data:
+          $ref: "#/components/schemas/_v1_events__eventId__rsvp_delete_200_response_data"
+      required:
+      - data
+    _v1_events__eventId__rsvp_summary_get_200_response:
+      example:
+        data:
+          total: 0.8008281904610115
+          cancelled: 5.962133916683182
+          waitlisted: 1.4658129805029452
+          confirmed: 6.027456183070403
+          capacity: 5.637376656633329
+      properties:
+        data:
+          $ref: "#/components/schemas/RsvpSummary"
+      required:
+      - data
+    _v1_checkin__code__post_201_response:
+      example:
+        data:
+          eventId: eventId
+          method: method
+          id: id
+          checkedInAt: checkedInAt
+      properties:
+        data:
+          $ref: "#/components/schemas/CheckinResult"
+      required:
+      - data
+    _v1_groups_get_200_response:
+      example:
+        pagination:
+          total: 1.4658129805029452
+          offset: 5.637376656633329
+          limit: 5.962133916683182
+          hasMore: true
+        data:
+        - photoUrl: photoUrl
+          website: website
+          socialLinks: ""
+          memberCount: 0.8008281904610115
+          name: name
+          link: link
+          description: description
+          id: id
+          urlname: urlname
+          tags: ""
+        - photoUrl: photoUrl
+          website: website
+          socialLinks: ""
+          memberCount: 0.8008281904610115
+          name: name
+          link: link
+          description: description
+          id: id
+          urlname: urlname
+          tags: ""
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/GroupListItem"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+    _v1_groups__slug__get_200_response:
+      example:
+        data:
+          photoUrl: photoUrl
+          website: website
+          socialLinks: ""
+          upcomingEvents:
+          - eventUrl: eventUrl
+            startTime: startTime
+            id: id
+            title: title
+          - eventUrl: eventUrl
+            startTime: startTime
+            id: id
+            title: title
+          memberCount: 0.8008281904610115
+          name: name
+          link: link
+          description: description
+          id: id
+          urlname: urlname
+          tags: ""
+      properties:
+        data:
+          $ref: "#/components/schemas/GroupDetail"
+      required:
+      - data
+    _v1_favorites_get_200_response:
+      example:
+        data:
+        - ""
+        - ""
+      properties:
+        data:
+          items:
+            nullable: true
+          type: array
+      required:
+      - data
+    _v1_favorites__groupSlug__post_200_response_data:
+      example:
+        alreadyFavorited: true
+      properties:
+        alreadyFavorited:
+          type: boolean
+      required:
+      - alreadyFavorited
+    _v1_favorites__groupSlug__post_200_response:
+      example:
+        data:
+          alreadyFavorited: true
+      properties:
+        data:
+          $ref: "#/components/schemas/_v1_favorites__groupSlug__post_200_response_data"
+      required:
+      - data
+    _v1_favorites__groupSlug__post_201_response_data:
+      example:
+        groupSlug: groupSlug
+      properties:
+        groupSlug:
+          type: string
+      required:
+      - groupSlug
+    _v1_favorites__groupSlug__post_201_response:
+      example:
+        data:
+          groupSlug: groupSlug
+      properties:
+        data:
+          $ref: "#/components/schemas/_v1_favorites__groupSlug__post_201_response_data"
+      required:
+      - data
+    _v1_users__username__follow_post_200_response_data:
+      example:
+        alreadyFollowing: true
+      properties:
+        alreadyFollowing:
+          enum:
+          - true
+          type: boolean
+      required:
+      - alreadyFollowing
+    _v1_users__username__follow_post_200_response:
+      example:
+        data:
+          alreadyFollowing: true
+      properties:
+        data:
+          $ref: "#/components/schemas/_v1_users__username__follow_post_200_response_data"
+      required:
+      - data
+    _v1_users__username__follow_post_201_response_data:
+      example:
+        following: true
+      properties:
+        following:
+          enum:
+          - true
+          type: boolean
+      required:
+      - following
+    _v1_users__username__follow_post_201_response:
+      example:
+        data:
+          following: true
+      properties:
+        data:
+          $ref: "#/components/schemas/_v1_users__username__follow_post_201_response_data"
+      required:
+      - data
+    _v1_users__username__followers_get_200_response:
+      example:
+        pagination:
+          total: 1.4658129805029452
+          offset: 5.637376656633329
+          limit: 5.962133916683182
+          hasMore: true
+        data:
+        - avatarUrl: avatarUrl
+          followedAt: followedAt
+          name: name
+          username: username
+        - avatarUrl: avatarUrl
+          followedAt: followedAt
+          name: name
+          username: username
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/FollowEntry"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+    _v1_claim__code__get_200_response:
+      example:
+        data:
+          badge:
+            color: color
+            name: name
+            icon: icon
+            description: description
+            slug: slug
+            points: 0.8008281904610115
+          reason: reason
+          claimable: true
+          group:
+            photoUrl: photoUrl
+            name: name
+            urlname: urlname
+      properties:
+        data:
+          $ref: "#/components/schemas/ClaimInfo"
+      required:
+      - data
+    _v1_claim__code__post_201_response:
+      example:
+        data:
+          badge:
+            name: name
+            slug: slug
+      properties:
+        data:
+          $ref: "#/components/schemas/ClaimBadgeResponse"
+      required:
+      - data
+    _v1_scopes_get_200_response:
+      example:
+        data:
+        - name: name
+          description: description
+          implies:
+          - implies
+          - implies
+        - name: name
+          description: description
+          implies:
+          - implies
+          - implies
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/Scope"
+          type: array
+      required:
+      - data
+    EventListItem_group:
+      example:
+        name: name
+        id: id
+        urlname: urlname
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        urlname:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - urlname
+      nullable: true
+    GroupDetail_allOf_upcomingEvents:
+      example:
+        eventUrl: eventUrl
+        startTime: startTime
+        id: id
+        title: title
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        startTime:
+          type: string
+        eventUrl:
+          type: string
+          nullable: true
+      required:
+      - eventUrl
+      - id
+      - startTime
+      - title
+    ClaimInfo_badge:
+      example:
+        color: color
+        name: name
+        icon: icon
+        description: description
+        slug: slug
+        points: 0.8008281904610115
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+        color:
+          type: string
+          nullable: true
+        points:
+          type: number
+      required:
+      - color
+      - description
+      - icon
+      - name
+      - points
+      - slug
+    ClaimInfo_group:
+      example:
+        photoUrl: photoUrl
+        name: name
+        urlname: urlname
+      properties:
+        name:
+          type: string
+        urlname:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+      required:
+      - name
+      - photoUrl
+      - urlname
+      nullable: true
+    ClaimBadgeResponse_badge:
+      example:
+        name: name
+        slug: slug
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+      required:
+      - name
+      - slug
+  securitySchemes:
+    BearerToken:
+      description: Personal Access Token (td_pat_...) or OAuth 2.0 access token. Create
+        PATs at https://tampa.dev/developer. OAuth tokens are obtained via the /oauth/authorize
+        flow.
+      scheme: bearer
+      type: http

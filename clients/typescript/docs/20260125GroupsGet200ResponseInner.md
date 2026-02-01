@@ -18,6 +18,7 @@ Name | Type | Description | Notes
 **displayOnSite** | **boolean** |  | [default to undefined]
 **tags** | **Array&lt;string&gt;** |  | [default to undefined]
 **socialLinks** | [**V20260125GroupsGet200ResponseInnerSocialLinks**](V20260125GroupsGet200ResponseInnerSocialLinks.md) |  | [default to undefined]
+**favoritesCount** | **number** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -38,6 +39,7 @@ const instance: V20260125GroupsGet200ResponseInner = {
     displayOnSite,
     tags,
     socialLinks,
+    favoritesCount,
 };
 ```
 

@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 
 =begin
-#Tampa Events API
+#Tampa.dev Platform API
 
-#Community events aggregation API for Tampa Bay tech meetups and events
+#The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 The version of the OpenAPI document: 2026-01-25
 
@@ -22,8 +22,8 @@ Gem::Specification.new do |s|
   s.authors     = ["OpenAPI-Generator"]
   s.email       = [""]
   s.homepage    = "https://openapi-generator.tech"
-  s.summary     = "Tampa Events API Ruby Gem"
-  s.description = "Community events aggregation API for Tampa Bay tech meetups and events"
+  s.summary     = "Tampa.dev Platform API Ruby Gem"
+  s.description = "The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`."
   s.license     = "Unlicense"
   s.required_ruby_version = ">= 2.7"
   s.metadata    = {}

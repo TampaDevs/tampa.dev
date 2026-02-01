@@ -1,7 +1,7 @@
 =begin
-#Tampa Events API
+#Tampa.dev Platform API
 
-#Community events aggregation API for Tampa Bay tech meetups and events
+#The Tampa.dev Platform API provides authenticated access to community data including user profiles, events, groups, badges, and more. Authenticate with Personal Access Tokens (PATs) or OAuth 2.0 bearer tokens. All authenticated endpoints are under `/v1/`.
 
 The version of the OpenAPI document: 2026-01-25
 
@@ -72,7 +72,7 @@ module TampaEventsAPI
       return_type = opts[:debug_return_type] || 'Array<V20260125EventsGet200ResponseInner>'
 
       # auth_names
-      auth_names = opts[:debug_auth_names] || []
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
 
       new_options = opts.merge(
         :operation => :"EventsApi.call_20260125_events_get",
@@ -144,7 +144,7 @@ module TampaEventsAPI
       return_type = opts[:debug_return_type] || 'Array<V20260125EventsGet200ResponseInner>'
 
       # auth_names
-      auth_names = opts[:debug_auth_names] || []
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
 
       new_options = opts.merge(
         :operation => :"EventsApi.call_20260125_events_next_get",
@@ -159,6 +159,396 @@ module TampaEventsAPI
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
         @api_client.config.logger.debug "API called: EventsApi#call_20260125_events_next_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Check in to event
+    # Self check-in using a check-in code. Optionally specify the check-in method (link, qr, nfc).
+    # @param code [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [VV1CheckinCodePost201Response]
+    def v1_checkin_code_post(code, opts = {})
+      data, _status_code, _headers = v1_checkin_code_post_with_http_info(code, opts)
+      data
+    end
+
+    # Check in to event
+    # Self check-in using a check-in code. Optionally specify the check-in method (link, qr, nfc).
+    # @param code [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1CheckinCodePost201Response, Integer, Hash)>] VV1CheckinCodePost201Response data, response status code and response headers
+    def v1_checkin_code_post_with_http_info(code, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: EventsApi.v1_checkin_code_post ...'
+      end
+      # verify the required parameter 'code' is set
+      if @api_client.config.client_side_validation && code.nil?
+        fail ArgumentError, "Missing the required parameter 'code' when calling EventsApi.v1_checkin_code_post"
+      end
+      # resource path
+      local_var_path = '/v1/checkin/{code}'.sub('{' + 'code' + '}', CGI.escape(code.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1CheckinCodePost201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"EventsApi.v1_checkin_code_post",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: EventsApi#v1_checkin_code_post\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Cancel RSVP
+    # Cancels the authenticated user's RSVP. If a waitlisted user exists, they are automatically promoted.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [VV1EventsEventIdRsvpDelete200Response]
+    def v1_events_event_id_rsvp_delete(event_id, opts = {})
+      data, _status_code, _headers = v1_events_event_id_rsvp_delete_with_http_info(event_id, opts)
+      data
+    end
+
+    # Cancel RSVP
+    # Cancels the authenticated user&#39;s RSVP. If a waitlisted user exists, they are automatically promoted.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1EventsEventIdRsvpDelete200Response, Integer, Hash)>] VV1EventsEventIdRsvpDelete200Response data, response status code and response headers
+    def v1_events_event_id_rsvp_delete_with_http_info(event_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: EventsApi.v1_events_event_id_rsvp_delete ...'
+      end
+      # verify the required parameter 'event_id' is set
+      if @api_client.config.client_side_validation && event_id.nil?
+        fail ArgumentError, "Missing the required parameter 'event_id' when calling EventsApi.v1_events_event_id_rsvp_delete"
+      end
+      # resource path
+      local_var_path = '/v1/events/{eventId}/rsvp'.sub('{' + 'eventId' + '}', CGI.escape(event_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1EventsEventIdRsvpDelete200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"EventsApi.v1_events_event_id_rsvp_delete",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: EventsApi#v1_events_event_id_rsvp_delete\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Get RSVP status
+    # Returns the authenticated user's RSVP status for the specified event.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [VV1EventsEventIdRsvpGet200Response]
+    def v1_events_event_id_rsvp_get(event_id, opts = {})
+      data, _status_code, _headers = v1_events_event_id_rsvp_get_with_http_info(event_id, opts)
+      data
+    end
+
+    # Get RSVP status
+    # Returns the authenticated user&#39;s RSVP status for the specified event.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1EventsEventIdRsvpGet200Response, Integer, Hash)>] VV1EventsEventIdRsvpGet200Response data, response status code and response headers
+    def v1_events_event_id_rsvp_get_with_http_info(event_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: EventsApi.v1_events_event_id_rsvp_get ...'
+      end
+      # verify the required parameter 'event_id' is set
+      if @api_client.config.client_side_validation && event_id.nil?
+        fail ArgumentError, "Missing the required parameter 'event_id' when calling EventsApi.v1_events_event_id_rsvp_get"
+      end
+      # resource path
+      local_var_path = '/v1/events/{eventId}/rsvp'.sub('{' + 'eventId' + '}', CGI.escape(event_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1EventsEventIdRsvpGet200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"EventsApi.v1_events_event_id_rsvp_get",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: EventsApi#v1_events_event_id_rsvp_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # RSVP to event
+    # Creates an RSVP for the authenticated user. If the event is at capacity, the user is placed on the waitlist.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [VV1EventsEventIdRsvpPost201Response]
+    def v1_events_event_id_rsvp_post(event_id, opts = {})
+      data, _status_code, _headers = v1_events_event_id_rsvp_post_with_http_info(event_id, opts)
+      data
+    end
+
+    # RSVP to event
+    # Creates an RSVP for the authenticated user. If the event is at capacity, the user is placed on the waitlist.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1EventsEventIdRsvpPost201Response, Integer, Hash)>] VV1EventsEventIdRsvpPost201Response data, response status code and response headers
+    def v1_events_event_id_rsvp_post_with_http_info(event_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: EventsApi.v1_events_event_id_rsvp_post ...'
+      end
+      # verify the required parameter 'event_id' is set
+      if @api_client.config.client_side_validation && event_id.nil?
+        fail ArgumentError, "Missing the required parameter 'event_id' when calling EventsApi.v1_events_event_id_rsvp_post"
+      end
+      # resource path
+      local_var_path = '/v1/events/{eventId}/rsvp'.sub('{' + 'eventId' + '}', CGI.escape(event_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1EventsEventIdRsvpPost201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"EventsApi.v1_events_event_id_rsvp_post",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: EventsApi#v1_events_event_id_rsvp_post\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Get RSVP summary
+    # Returns aggregate RSVP counts (confirmed, waitlisted, cancelled) for the specified event.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [VV1EventsEventIdRsvpSummaryGet200Response]
+    def v1_events_event_id_rsvp_summary_get(event_id, opts = {})
+      data, _status_code, _headers = v1_events_event_id_rsvp_summary_get_with_http_info(event_id, opts)
+      data
+    end
+
+    # Get RSVP summary
+    # Returns aggregate RSVP counts (confirmed, waitlisted, cancelled) for the specified event.
+    # @param event_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VV1EventsEventIdRsvpSummaryGet200Response, Integer, Hash)>] VV1EventsEventIdRsvpSummaryGet200Response data, response status code and response headers
+    def v1_events_event_id_rsvp_summary_get_with_http_info(event_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: EventsApi.v1_events_event_id_rsvp_summary_get ...'
+      end
+      # verify the required parameter 'event_id' is set
+      if @api_client.config.client_side_validation && event_id.nil?
+        fail ArgumentError, "Missing the required parameter 'event_id' when calling EventsApi.v1_events_event_id_rsvp_summary_get"
+      end
+      # resource path
+      local_var_path = '/v1/events/{eventId}/rsvp-summary'.sub('{' + 'eventId' + '}', CGI.escape(event_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1EventsEventIdRsvpSummaryGet200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"EventsApi.v1_events_event_id_rsvp_summary_get",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: EventsApi#v1_events_event_id_rsvp_summary_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # List upcoming events
+    # Returns a paginated list of upcoming events across all groups, ordered by start time.
+    # @param [Hash] opts the optional parameters
+    # @option opts [Float] :limit  (default to 20)
+    # @option opts [Float] :offset  (default to 0)
+    # @return [VV1EventsGet200Response]
+    def v1_events_get(opts = {})
+      data, _status_code, _headers = v1_events_get_with_http_info(opts)
+      data
+    end
+
+    # List upcoming events
+    # Returns a paginated list of upcoming events across all groups, ordered by start time.
+    # @param [Hash] opts the optional parameters
+    # @option opts [Float] :limit  (default to 20)
+    # @option opts [Float] :offset  (default to 0)
+    # @return [Array<(VV1EventsGet200Response, Integer, Hash)>] VV1EventsGet200Response data, response status code and response headers
+    def v1_events_get_with_http_info(opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: EventsApi.v1_events_get ...'
+      end
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 100
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling EventsApi.v1_events_get, must be smaller than or equal to 100.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling EventsApi.v1_events_get, must be greater than or equal to 1.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'offset'].nil? && opts[:'offset'] < 0
+        fail ArgumentError, 'invalid value for "opts[:"offset"]" when calling EventsApi.v1_events_get, must be greater than or equal to 0.'
+      end
+
+      # resource path
+      local_var_path = '/v1/events'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
+      query_params[:'offset'] = opts[:'offset'] if !opts[:'offset'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VV1EventsGet200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['BearerToken']
+
+      new_options = opts.merge(
+        :operation => :"EventsApi.v1_events_get",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: EventsApi#v1_events_get\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
