@@ -283,6 +283,8 @@ const SCOPES_SUPPORTED = [
   'manage:checkins',
   'manage:badges',
   'admin',
+  // Standard OAuth scope for refresh token issuance (required by clients like ChatGPT)
+  'offline_access',
   // Legacy scopes (kept for backwards compatibility with existing OAuth tokens)
   'profile',
   'events:read',

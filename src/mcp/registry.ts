@@ -253,7 +253,13 @@ export function getPrompt(name: string): RegisteredPrompt | undefined {
  * Convert a Zod schema to JSON Schema for MCP tool input definitions.
  */
 function convertZodToJsonSchema(schema: ZodType): ToolDefinition['inputSchema'] {
-  const jsonSchema = zodToJsonSchema(schema, { target: 'openApi3' });
+  // Use jsonSchema7 target (not openApi3) because MCP clients expect JSON Schema
+  // Draft 7+ where exclusiveMinimum/exclusiveMaximum are numbers, not booleans.
+  // openApi3 target produces boolean exclusiveMinimum (Draft 4 style) which causes
+  // validation failures in clients like ChatGPT.
+  // Cast to `any` to prevent TS from recursing through Zod's deep generics
+  // when resolving zodToJsonSchema's overloaded signatures.
+  const jsonSchema = zodToJsonSchema(schema as any, { target: 'jsonSchema7' });
   // Ensure it's an object type with the right shape
   if (typeof jsonSchema === 'object' && 'type' in jsonSchema && jsonSchema.type === 'object') {
     return {

@@ -26,6 +26,7 @@ import '../mcp/tools/manage-events.js';
 import '../mcp/tools/manage-checkins.js';
 import '../mcp/tools/manage-badges.js';
 import '../mcp/tools/admin.js';
+import '../mcp/tools/users.js';
 import '../mcp/resources.js';
 import '../mcp/prompts.js';
 
