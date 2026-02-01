@@ -276,6 +276,15 @@ Use the official "Sign in with Tampa.dev" button for a consistent, recognizable 
 
 The easiest approach -- link directly to the hosted button image:
 
+<div style={{ display: 'flex', gap: '16px', alignItems: 'center', margin: '24px 0', flexWrap: 'wrap' }}>
+  <div style={{ padding: '16px 24px', borderRadius: '8px', background: '#f8f9fa' }}>
+    <img src="https://api.tampa.dev/assets/signin-button.svg" alt="Sign in with Tampa.dev" height="40" />
+  </div>
+  <div style={{ padding: '16px 24px', borderRadius: '8px', background: '#1a1a1a' }}>
+    <img src="https://api.tampa.dev/assets/signin-button.svg?theme=dark" alt="Sign in with Tampa.dev (dark)" height="40" />
+  </div>
+</div>
+
 ```html
 <!-- Light theme (default) -->
 <a href="https://tampa.dev/oauth/authorize?...">

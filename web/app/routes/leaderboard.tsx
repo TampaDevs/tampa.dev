@@ -98,37 +98,37 @@ interface PodiumConfig {
 
 const podiumConfigs: Record<number, PodiumConfig> = {
   1: {
-    maxWidth: "max-w-2xl",
+    maxWidth: "max-w-[21rem] sm:max-w-2xl",
     avatarSize: "xl",
     nameClass: "text-xl sm:text-2xl",
     accent: "#D4A015",
     accentOverlay: "18",
-    rankPanelPx: "px-7 sm:px-9 py-5 sm:py-6",
-    rankTextSize: "text-4xl sm:text-5xl",
-    xpTextSize: "text-base sm:text-lg",
-    contentPadding: "p-5 sm:p-6",
+    rankPanelPx: "px-5 sm:px-9 py-4 sm:py-6",
+    rankTextSize: "text-3xl sm:text-5xl",
+    xpTextSize: "text-sm sm:text-lg",
+    contentPadding: "p-3.5 sm:p-6",
   },
   2: {
-    maxWidth: "max-w-xl",
+    maxWidth: "max-w-[21rem] sm:max-w-xl",
     avatarSize: "lg",
     nameClass: "text-lg sm:text-xl",
     accent: "#94A3B8",
     accentOverlay: "14",
-    rankPanelPx: "px-6 sm:px-7 py-4 sm:py-5",
-    rankTextSize: "text-3xl sm:text-4xl",
-    xpTextSize: "text-sm sm:text-base",
-    contentPadding: "p-4 sm:p-5",
+    rankPanelPx: "px-5 sm:px-7 py-3.5 sm:py-5",
+    rankTextSize: "text-2xl sm:text-4xl",
+    xpTextSize: "text-xs sm:text-base",
+    contentPadding: "p-3 sm:p-5",
   },
   3: {
-    maxWidth: "max-w-lg",
+    maxWidth: "max-w-[21rem] sm:max-w-lg",
     avatarSize: "md",
     nameClass: "text-base sm:text-lg",
     accent: "#CD7F32",
     accentOverlay: "10",
-    rankPanelPx: "px-5 sm:px-6 py-3.5 sm:py-4",
-    rankTextSize: "text-2xl sm:text-3xl",
+    rankPanelPx: "px-5 sm:px-6 py-3 sm:py-4",
+    rankTextSize: "text-xl sm:text-3xl",
     xpTextSize: "text-xs sm:text-sm",
-    contentPadding: "p-3.5 sm:p-4",
+    contentPadding: "p-3 sm:p-4",
   },
 };
 
@@ -540,6 +540,7 @@ export default function LeaderboardPage() {
                 return (
                   <div
                     key={entry.username}
+                    className="w-full"
                     style={podiumEntranceStyles[entry.rank]}
                   >
                     <div style={podiumFloatStyles[entry.rank]}>

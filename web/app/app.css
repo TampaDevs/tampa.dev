@@ -81,3 +81,21 @@ body {
   0% { opacity: 0; transform: translateY(20px) scale(0.97); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ─── Leaderboard: Reduced motion on mobile ─── */
+@media (max-width: 639px) {
+  @keyframes podium-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1.5px); }
+  }
+
+  @keyframes lb-particle-drift {
+    0%, 100% { transform: translateY(0) translateX(0); opacity: var(--lb-p-opacity); }
+    50% { transform: translateY(-3px) translateX(1.5px); opacity: var(--lb-p-opacity); }
+  }
+
+  @keyframes lb-trophy-shimmer {
+    0%, 100% { opacity: 0.85; filter: none; }
+    50% { opacity: 1; filter: none; }
+  }
+}

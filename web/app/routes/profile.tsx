@@ -1349,23 +1349,23 @@ function ConnectedAccounts({
             key={identity.provider}
             className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                   <ProviderIcon provider={identity.provider} />
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 dark:text-white truncate">
                     {PROVIDER_NAMES[identity.provider] || identity.provider}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                     {identity.username
                       ? `@${identity.username}`
                       : identity.email || "Connected"}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="px-2.5 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
                   Connected
                 </span>
@@ -1416,12 +1416,12 @@ function ConnectedAccounts({
                 {emailIdentities.map((identity) => {
                   const isCurrent = identity.email === currentEmail;
                   return (
-                    <div key={identity.provider} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <div key={identity.provider} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
                           {identity.email}
                         </span>
-                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
                           ({PROVIDER_NAMES[identity.provider] || identity.provider})
                         </span>
                         {isCurrent && (
@@ -1457,16 +1457,16 @@ function ConnectedAccounts({
             key={provider.provider}
             className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-dashed p-4"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center opacity-50">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center opacity-50 flex-shrink-0">
                   <ProviderIcon provider={provider.provider} />
                 </div>
-                <div>
-                  <p className="font-medium text-gray-500 dark:text-gray-400">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-500 dark:text-gray-400 truncate">
                     {provider.name}
                   </p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                  <p className="text-sm text-gray-400 dark:text-gray-500 truncate">
                     Not connected
                   </p>
                 </div>
