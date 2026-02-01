@@ -176,6 +176,13 @@
       "when": 1769654800000,
       "tag": "0024_add_missing_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1769978000000,
+      "tag": "0025_add_achievement_enabled",
+      "breakpoints": true
     }
   ]
 }

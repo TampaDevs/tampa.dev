@@ -27,6 +27,7 @@ interface Achievement {
   progressMode: string | null;
   gaugeField: string | null;
   hidden: number;
+  enabled: number;
   createdAt: string;
   userCount?: number;
   completedCount?: number;
@@ -123,6 +124,7 @@ export async function action({ request }: Route.ActionArgs) {
     const progressMode = formData.get("progressMode") as string;
     const gaugeField = formData.get("gaugeField") as string;
     const hiddenVal = formData.get("hidden") === "1";
+    const enabledVal = formData.get("enabled") !== "0";
 
     try {
       const response = await fetch(`${API_HOST}/admin/achievements`, {
@@ -148,6 +150,7 @@ export async function action({ request }: Route.ActionArgs) {
           progressMode: progressMode || undefined,
           gaugeField: gaugeField || undefined,
           hidden: hiddenVal,
+          enabled: enabledVal,
         }),
       });
 
@@ -179,6 +182,7 @@ export async function action({ request }: Route.ActionArgs) {
     const progressMode = formData.get("progressMode") as string;
     const gaugeField = formData.get("gaugeField") as string;
     const hiddenVal = formData.get("hidden") === "1";
+    const enabledVal = formData.get("enabled") !== "0";
 
     try {
       const response = await fetch(
@@ -206,6 +210,7 @@ export async function action({ request }: Route.ActionArgs) {
             progressMode: progressMode || undefined,
             gaugeField: gaugeField || undefined,
             hidden: hiddenVal,
+            enabled: enabledVal,
           }),
         }
       );
@@ -267,6 +272,7 @@ function AchievementForm({
   const [progressMode, setProgressMode] = useState(achievement?.progressMode || "counter");
   const [gaugeField, setGaugeField] = useState(achievement?.gaugeField || "");
   const [hidden, setHidden] = useState(achievement?.hidden ? true : false);
+  const [enabled, setEnabled] = useState(achievement ? !!achievement.enabled : true);
 
   // Parse conditions from JSON string
   const initialConditions: Condition[] = (() => {
@@ -534,6 +540,34 @@ function AchievementForm({
           />
         </div>
 
+        {/* Enabled toggle */}
+        <div className="flex items-center gap-3">
+          <input type="hidden" name="enabled" value={enabled ? "1" : "0"} />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={() => setEnabled(!enabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              enabled ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                enabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Enabled
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Disabled achievements won&apos;t be evaluated or award progress
+            </p>
+          </div>
+        </div>
+
         {/* Hidden Achievement toggle */}
         <div className="flex items-center gap-3">
           <input type="hidden" name="hidden" value={hidden ? "1" : "0"} />
@@ -696,7 +730,7 @@ function AchievementCard({ achievement, onEdit }: { achievement: Achievement; on
   const isDeleting = fetcher.state !== "idle";
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4${!achievement.enabled ? " opacity-60" : ""}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
@@ -756,6 +790,14 @@ function AchievementCard({ achievement, onEdit }: { achievement: Achievement; on
         {achievement.entitlement && (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
             Entitlement: {achievement.entitlement}
+          </span>
+        )}
+        {!achievement.enabled && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            Disabled
           </span>
         )}
         {!!achievement.hidden && (
