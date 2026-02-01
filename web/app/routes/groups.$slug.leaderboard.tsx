@@ -400,7 +400,7 @@ export default function GroupLeaderboardPage({
             {/* Trophy icon */}
             <div className="inline-flex items-center justify-center mb-4">
               <span
-                style={{ animation: "lb-trophy-shimmer 3s ease-in-out infinite", color: "#D4A015" }}
+                style={{ animation: "lb-trophy-shimmer 6s ease-in-out infinite", color: "#D4A015" }}
               >
                 <Emoji emoji="🏆" size={48} />
               </span>

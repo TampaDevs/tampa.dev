@@ -64,10 +64,15 @@ body {
   100% { transform: translateY(0) translateX(0); opacity: var(--lb-p-opacity); }
 }
 
-/* ─── Leaderboard: Trophy shimmer ─── */
+/* ─── Leaderboard: Trophy glow (flame-like) ─── */
 @keyframes lb-trophy-shimmer {
-  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 3px currentColor); }
-  50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
+  0%   { filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor); }
+  15%  { filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 20px currentColor); }
+  30%  { filter: drop-shadow(0 0 7px currentColor) drop-shadow(0 0 14px currentColor); }
+  50%  { filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 24px currentColor); }
+  65%  { filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor); }
+  80%  { filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 18px currentColor); }
+  100% { filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor); }
 }
 
 /* ─── Leaderboard: Header text fade-in slide ─── */
@@ -95,7 +100,7 @@ body {
   }
 
   @keyframes lb-trophy-shimmer {
-    0%, 100% { opacity: 0.85; filter: none; }
-    50% { opacity: 1; filter: none; }
+    0%, 100% { filter: drop-shadow(0 0 4px currentColor); transform: none; }
+    50% { filter: drop-shadow(0 0 8px currentColor); transform: none; }
   }
 }
