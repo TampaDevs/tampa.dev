@@ -58,6 +58,19 @@ export default defineConfig({
     tailwindcss(),
     reactRouter(),
     tsconfigPaths(),
+    // Workaround for cloudflare/workers-sdk#8909 — the Cloudflare Vite plugin
+    // registers a hot channel that asserts a WebSocket exists, but during
+    // production SSR builds no WebSocket is created, causing the build to crash.
+    // Removing the dev config from the SSR environment during builds prevents
+    // the hot channel from being instantiated.
+    {
+      name: "cloudflare-vite-plugin-ws-fix",
+      configEnvironment(name, config) {
+        if (name === "ssr" && config.dev && !process.argv.includes("dev")) {
+          delete config.dev;
+        }
+      },
+    },
   ],
   build: {
     minify: noMinify ? false : "esbuild",
