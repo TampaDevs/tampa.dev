@@ -316,11 +316,12 @@ export async function fetchCurrentUser(
   cookieHeader?: string | null
 ): Promise<CurrentUser | null> {
   if (!cookieHeader) return null;
-  const response = await fetch(`${API_HOST}/me`, {
+  const response = await fetch(`${API_HOST}/auth/me`, {
     headers: { Accept: "application/json", Cookie: cookieHeader },
   });
   if (!response.ok) return null;
-  return (await response.json()) as CurrentUser;
+  const data = (await response.json()) as { user: CurrentUser | null };
+  return data.user;
 }
 
 // ============== User Group Badges API ==============
