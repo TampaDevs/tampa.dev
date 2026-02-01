@@ -74,6 +74,19 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  const VISIBLE_TAG_COUNT = 8;
+  const visibleTags = useMemo(() => {
+    if (showAllTags) return tags;
+    const top = tags.slice(0, VISIBLE_TAG_COUNT);
+    // Always include the active tag so the user can see their selection
+    if (activeTag && !top.includes(activeTag)) {
+      top.push(activeTag);
+    }
+    return top;
+  }, [tags, showAllTags, activeTag]);
+  const hasHiddenTags = tags.length > VISIBLE_TAG_COUNT;
 
   const filteredGroups = allGroups.filter((g) => {
     if (activeTag && !g.tags.includes(activeTag)) return false;
@@ -128,7 +141,7 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
         </div>
 
         {/* Tags Filter */}
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap gap-2 items-center">
           <button
             type="button"
             onClick={() => setSearchParams(new URLSearchParams())}
@@ -140,7 +153,7 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
           >
             All
           </button>
-          {tags.map((tag) => (
+          {visibleTags.map((tag) => (
             <button
               key={tag}
               type="button"
@@ -158,6 +171,15 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
               {tag}
             </button>
           ))}
+          {hasHiddenTags && (
+            <button
+              type="button"
+              onClick={() => setShowAllTags(!showAllTags)}
+              className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            >
+              {showAllTags ? "Show less" : `Show all (${tags.length})`}
+            </button>
+          )}
         </div>
 
         {/* Search Bar */}
