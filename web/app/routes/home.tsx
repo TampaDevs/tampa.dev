@@ -11,6 +11,7 @@ import {
   type FAQItem,
 } from "~/lib/structured-data";
 import { AddToCalendar, EventCard, EventCarousel, GroupCard, NewsletterSignup, StructuredData } from "~/components";
+import { Emoji } from "~/components/Emoji";
 import { OnboardingChecklist, type OnboardingStep } from "~/components/OnboardingChecklist";
 import { useWS } from "~/hooks/WebSocketProvider";
 import { getFavorites } from "~/lib/favorites";
@@ -163,7 +164,7 @@ function PersonalizedDashboard({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Welcome back, {userName} 👋
+              Welcome back, {userName} <Emoji emoji="👋" size={32} />
             </h1>
             <p className="mt-1 text-gray-600 dark:text-gray-400">
               {totalGroups}+ groups and {totalEvents}+ upcoming events in Tampa Bay

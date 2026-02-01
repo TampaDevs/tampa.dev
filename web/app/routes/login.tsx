@@ -12,6 +12,7 @@ import { Link, useSearchParams, redirect, useLoaderData } from "react-router";
 import type { Route } from "./+types/login";
 import { fetchCurrentUser, fetchAuthProviders } from "~/lib/admin-api.server";
 import { generateMetaTags } from "~/lib/seo";
+import { Emoji } from "~/components/Emoji";
 
 export const meta: Route.MetaFunction = () => generateMetaTags({
   title: "Sign In",
@@ -154,7 +155,7 @@ export default function Login() {
         {/* Login card */}
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
           <h1 className="text-2xl font-bold text-white text-center mb-2">
-            Welcome Back 👋
+            Welcome Back <Emoji emoji="👋" size={28} />
           </h1>
           <p className="text-white/60 text-center mb-8">
             Sign in to access your favorites, RSVPs, and more
