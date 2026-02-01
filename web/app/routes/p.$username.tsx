@@ -176,10 +176,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   let isFollowing = false;
 
   if (followersRes?.ok) {
-    followersData = ((await followersRes.json()) as { data: FollowersResponse }).data;
+    const body = (await followersRes.json()) as { data: FollowerEntry[]; pagination: { total: number } };
+    followersData = { followers: body.data, total: body.pagination.total };
   }
   if (followingRes?.ok) {
-    followingData = ((await followingRes.json()) as { data: FollowingResponse }).data;
+    const body = (await followingRes.json()) as { data: FollowerEntry[]; pagination: { total: number } };
+    followingData = { following: body.data, total: body.pagination.total };
   }
   if (followStatusRes?.ok) {
     const statusData = ((await followStatusRes.json()) as { data: { following: boolean } }).data;
@@ -544,7 +546,7 @@ export default function PublicProfilePage({
         {/* Floating Profile Card */}
         <div className="-mt-28 sm:-mt-32 relative z-10">
           <div
-            className="glass-card rounded-2xl p-6 sm:p-8 border border-gray-200/60 dark:border-gray-700/60 shadow-lg bg-white/[0.94] dark:bg-gray-900/[0.90] backdrop-blur-xl relative overflow-hidden"
+            className="glass-card rounded-2xl p-6 sm:p-8 border border-gray-200/60 dark:border-gray-700/60 shadow-lg bg-white/[0.96] dark:bg-gray-900/[0.90] backdrop-blur-xl relative overflow-hidden"
           >
             {/* Subtle accent tint */}
             <div
@@ -579,8 +581,8 @@ export default function PublicProfilePage({
                     onClick={handleFollowToggle}
                     disabled={followLoading}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${following
-                        ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800"
-                        : "text-white"
+                      ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800"
+                      : "text-white"
                       }`}
                     style={!following ? { backgroundColor: accent } : undefined}
                   >
