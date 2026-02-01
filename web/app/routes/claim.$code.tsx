@@ -52,7 +52,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw data(null, { status: 404 });
   }
 
-  const claimInfo = (await claimResponse.json()) as ClaimInfo;
+  const claimInfo = ((await claimResponse.json()) as { data: ClaimInfo }).data;
 
   // Check if user is logged in (uses /auth/me endpoint)
   const user = await fetchCurrentUser(cookieHeader);
