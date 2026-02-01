@@ -11,29 +11,116 @@ import { Button, Avatar } from "@tampadevs/react";
 import type { Route } from "./+types/oauth.authorize";
 import { fetchCurrentUser, type AuthUser } from "~/lib/admin-api.server";
 
-// Scope descriptions for the UI
-const SCOPE_INFO: Record<string, { label: string; description: string; icon: string }> = {
-  profile: {
-    label: "Your Profile",
-    description: "Read your name, email, and avatar",
-    icon: "user",
-  },
-  "events:read": {
-    label: "Events",
-    description: "View upcoming events and calendar",
-    icon: "calendar",
-  },
-  "groups:read": {
-    label: "Groups",
-    description: "View tech groups and communities",
-    icon: "users",
-  },
-  "rsvp:write": {
-    label: "RSVPs",
-    description: "RSVP to events on your behalf",
-    icon: "check",
-  },
+// Group scopes into categories for a cleaner consent screen.
+// Maps each scope (including legacy aliases) to a display group.
+const SCOPE_TO_GROUP: Record<string, string> = {
+  user: "profile", "read:user": "profile", "user:email": "profile", profile: "profile",
+  "read:events": "events", "write:events": "events",
+  "events:read": "events", "rsvp:read": "events", "rsvp:write": "events",
+  "read:groups": "groups", "groups:read": "groups",
+  "read:favorites": "favorites", "write:favorites": "favorites",
+  "favorites:read": "favorites", "favorites:write": "favorites",
+  "read:portfolio": "portfolio", "write:portfolio": "portfolio",
+  "manage:groups": "management", "manage:events": "management",
+  "manage:checkins": "management", "manage:badges": "management",
+  admin: "admin",
+  offline_access: "offline",
 };
+
+const GROUP_DISPLAY_ORDER = [
+  "profile", "events", "groups", "favorites", "portfolio", "management", "admin", "offline",
+];
+
+interface GroupDisplay {
+  key: string;
+  label: string;
+  icon: string;
+  description: string;
+  order: number;
+}
+
+function getGroupDisplay(
+  groupKey: string,
+  scopes: Set<string>,
+): { label: string; icon: string; description: string } | null {
+  switch (groupKey) {
+    case "profile": {
+      const hasFullUser = scopes.has("user") || scopes.has("profile");
+      const hasEmail = scopes.has("user:email");
+      const hasReadUser = scopes.has("read:user");
+      if (hasFullUser)
+        return { label: "Your Profile", icon: "user", description: "Read and update your profile, email, and avatar" };
+      if (hasReadUser && hasEmail)
+        return { label: "Your Profile", icon: "user", description: "View your profile information and email address" };
+      if (hasReadUser)
+        return { label: "Your Profile", icon: "user", description: "View your public profile information" };
+      if (hasEmail)
+        return { label: "Email Address", icon: "email", description: "View your email address" };
+      return { label: "Your Profile", icon: "user", description: "View your profile information" };
+    }
+    case "events": {
+      const hasWrite = scopes.has("write:events") || scopes.has("rsvp:write");
+      if (hasWrite)
+        return { label: "Events", icon: "calendar", description: "View events and RSVP or check in on your behalf" };
+      return { label: "Events", icon: "calendar", description: "View upcoming events and event details" };
+    }
+    case "groups":
+      return { label: "Groups", icon: "users", description: "View tech groups and community details" };
+    case "favorites": {
+      const hasWrite = scopes.has("write:favorites") || scopes.has("favorites:write");
+      if (hasWrite)
+        return { label: "Favorites", icon: "heart", description: "View and manage your favorite groups" };
+      return { label: "Favorites", icon: "heart", description: "See which groups you've favorited" };
+    }
+    case "portfolio": {
+      const hasWrite = scopes.has("write:portfolio");
+      if (hasWrite)
+        return { label: "Portfolio", icon: "briefcase", description: "View and manage your portfolio items and projects" };
+      return { label: "Portfolio", icon: "briefcase", description: "View your portfolio items and projects" };
+    }
+    case "management": {
+      const capabilities: string[] = [];
+      if (scopes.has("manage:groups")) capabilities.push("groups");
+      if (scopes.has("manage:events")) capabilities.push("events");
+      if (scopes.has("manage:checkins")) capabilities.push("check-ins");
+      if (scopes.has("manage:badges")) capabilities.push("badges");
+      const capStr = capabilities.length > 1
+        ? capabilities.slice(0, -1).join(", ") + ", and " + capabilities[capabilities.length - 1]
+        : capabilities[0] || "resources";
+      return { label: "Group Management", icon: "settings", description: `Create and manage ${capStr} in groups you own or co-manage` };
+    }
+    case "admin":
+      return { label: "Administration", icon: "shield", description: "Full administrative access to the Tampa.dev platform" };
+    case "offline":
+      return { label: "Background Access", icon: "refresh", description: "Stay signed in and access your data in the background" };
+    default:
+      return null;
+  }
+}
+
+function groupRequestedScopes(scopes: string[]): GroupDisplay[] {
+  const grouped = new Map<string, Set<string>>();
+
+  for (const scope of scopes) {
+    const groupKey = SCOPE_TO_GROUP[scope];
+    if (!groupKey) continue;
+    if (!grouped.has(groupKey)) grouped.set(groupKey, new Set());
+    grouped.get(groupKey)!.add(scope);
+  }
+
+  const result: GroupDisplay[] = [];
+
+  for (const [groupKey, scopeSet] of grouped) {
+    const order = GROUP_DISPLAY_ORDER.indexOf(groupKey);
+    const display = getGroupDisplay(groupKey, scopeSet);
+    if (display) {
+      result.push({ ...display, key: groupKey, order: order >= 0 ? order : 99 });
+    }
+  }
+
+  result.sort((a, b) => a.order - b.order);
+  return result;
+}
 
 interface OAuthRequest {
   responseType: string;
@@ -116,12 +203,21 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       };
     }
 
+    // Filter out scopes the user isn't eligible to grant.
+    // The backend enforces this too — this is purely for UX so users
+    // don't see permissions they cannot actually grant.
+    const rawScopes = scope?.split(" ") || ["profile"];
+    const isAdmin = user.role === "admin" || user.role === "superadmin";
+    const requestedScopes = isAdmin
+      ? rawScopes
+      : rawScopes.filter((s) => s !== "admin");
+
     return {
       error: null,
       user,
       oauthRequest: parseData.oauthRequest,
       client: parseData.client,
-      requestedScopes: scope?.split(" ") || ["profile"],
+      requestedScopes,
     };
   } catch (error) {
     console.error("Failed to parse OAuth request:", error);
@@ -201,11 +297,16 @@ export async function action({ request }: Route.ActionArgs) {
   return { error: "Invalid action" };
 }
 
-function ScopeIcon({ scope }: { scope: string }) {
+function PermissionIcon({ icon }: { icon: string }) {
   const icons: Record<string, ReactNode> = {
     user: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    ),
+    email: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
     ),
     calendar: (
@@ -218,15 +319,35 @@ function ScopeIcon({ scope }: { scope: string }) {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
-    check: (
+    heart: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
+    ),
+    briefcase: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m10 0H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2z" />
+      </svg>
+    ),
+    settings: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    shield: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    ),
+    refresh: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
       </svg>
     ),
   };
 
-  const info = SCOPE_INFO[scope];
-  return icons[info?.icon || "user"] || icons.user;
+  return icons[icon] || icons.user;
 }
 
 export default function OAuthAuthorizePage() {
@@ -320,11 +441,11 @@ export default function OAuthAuthorizePage() {
     <div className="min-h-screen bg-gradient-to-b from-navy to-navy-dark flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white">
+        <div className="text-center mb-10 mt-4">
+          <h1 className="text-3xl font-bold text-white">
             Tampa<span className="text-coral">.dev</span>
           </h1>
-          <p className="text-white/60 text-sm mt-1">Sign in with Tampa.dev</p>
+          <p className="text-white/60 text-base mt-2">Sign in with Tampa.dev</p>
         </div>
 
         {/* Consent Card */}
@@ -391,24 +512,21 @@ export default function OAuthAuthorizePage() {
               This app would like to:
             </p>
             <ul className="space-y-3">
-              {scopes.map((scope) => {
-                const info = SCOPE_INFO[scope] || { label: scope, description: "Access this permission" };
-                return (
-                  <li key={scope} className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-coral/10 text-coral flex items-center justify-center">
-                      <ScopeIcon scope={scope} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {info.label}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {info.description}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
+              {groupRequestedScopes(scopes).map((group) => (
+                <li key={group.key} className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-coral/10 text-coral flex items-center justify-center">
+                    <PermissionIcon icon={group.icon} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {group.label}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {group.description}
+                    </p>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -464,7 +582,10 @@ export default function OAuthAuthorizePage() {
 
         {/* Footer */}
         <p className="text-center text-white/40 text-xs mt-6">
-          You can revoke access at any time from your account settings
+          You can revoke access at any time from your{" "}
+          <a href="/profile?tab=accounts" className="text-white/60 hover:text-white underline">
+            account settings
+          </a>
         </p>
       </div>
     </div>
