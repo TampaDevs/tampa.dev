@@ -3,7 +3,8 @@
  *
  * Verifies that role-based scope filtering correctly strips
  * scopes users aren't eligible to grant during the OAuth
- * authorization flow.
+ * authorization flow, and that session validation prevents
+ * unauthenticated or cross-user access.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -11,6 +12,7 @@ import {
   createTestEnv,
   createUser,
   createAdminUser,
+  createSession,
   appRequest,
 } from '../helpers';
 import type { Env } from '../../../types/worker';
@@ -53,14 +55,55 @@ function createEnvWithOAuthCapture() {
 }
 
 describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
-  describe('non-admin user', () => {
-    it('strips admin scope from approvedScopes', async () => {
-      const { env, getCapturedScope } = createEnvWithOAuthCapture();
+  describe('session validation (defense-in-depth)', () => {
+    it('returns 401 without a session cookie', async () => {
+      const { env } = createEnvWithOAuthCapture();
       const user = await createUser();
 
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        body: {
+          oauthRequest: makeOAuthRequest(),
+          userId: user.id,
+          approvedScopes: ['user'],
+        },
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 when session user does not match userId in body', async () => {
+      const { env } = createEnvWithOAuthCapture();
+      const caller = await createUser();
+      const target = await createUser();
+      const { cookieHeader } = await createSession(caller.id);
+
+      const res = await appRequest('/oauth/internal/complete', {
+        env,
+        method: 'POST',
+        headers: { Cookie: cookieHeader },
+        body: {
+          oauthRequest: makeOAuthRequest(),
+          userId: target.id,
+          approvedScopes: ['user'],
+        },
+      });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('non-admin user', () => {
+    it('strips admin scope from approvedScopes', async () => {
+      const { env, getCapturedScope } = createEnvWithOAuthCapture();
+      const user = await createUser();
+      const { cookieHeader } = await createSession(user.id);
+
+      const res = await appRequest('/oauth/internal/complete', {
+        env,
+        method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: user.id,
@@ -82,6 +125,7 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
     it('preserves all non-admin scopes', async () => {
       const { env, getCapturedScope } = createEnvWithOAuthCapture();
       const user = await createUser();
+      const { cookieHeader } = await createSession(user.id);
 
       const allNonAdmin = [
         'user', 'read:user', 'user:email',
@@ -94,6 +138,7 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: user.id,
@@ -113,12 +158,14 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
     it('preserves manage:* scopes for non-admin users', async () => {
       const { env, getCapturedScope } = createEnvWithOAuthCapture();
       const user = await createUser();
+      const { cookieHeader } = await createSession(user.id);
 
       const manageScopes = ['manage:groups', 'manage:events', 'manage:checkins', 'manage:badges'];
 
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: user.id,
@@ -137,10 +184,12 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
     it('filters admin from props.scopes as well', async () => {
       const { env, getCapturedProps } = createEnvWithOAuthCapture();
       const user = await createUser();
+      const { cookieHeader } = await createSession(user.id);
 
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: user.id,
@@ -162,10 +211,12 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
     it('preserves admin scope for admin users', async () => {
       const { env, getCapturedScope } = createEnvWithOAuthCapture();
       const admin = await createAdminUser();
+      const { cookieHeader } = await createSession(admin.id);
 
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: admin.id,
@@ -184,10 +235,12 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
     it('preserves admin scope for superadmin users', async () => {
       const { env, getCapturedScope } = createEnvWithOAuthCapture();
       const superadmin = await createUser({ role: 'superadmin' });
+      const { cookieHeader } = await createSession(superadmin.id);
 
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: superadmin.id,
@@ -207,10 +260,12 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
     it('handles empty scopes array', async () => {
       const { env, getCapturedScope } = createEnvWithOAuthCapture();
       const user = await createUser();
+      const { cookieHeader } = await createSession(user.id);
 
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: user.id,
@@ -225,10 +280,12 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
     it('results in empty scopes when non-admin approves only admin', async () => {
       const { env, getCapturedScope } = createEnvWithOAuthCapture();
       const user = await createUser();
+      const { cookieHeader } = await createSession(user.id);
 
       const res = await appRequest('/oauth/internal/complete', {
         env,
         method: 'POST',
+        headers: { Cookie: cookieHeader },
         body: {
           oauthRequest: makeOAuthRequest(),
           userId: user.id,
@@ -240,7 +297,7 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
       expect(getCapturedScope()).toEqual([]);
     });
 
-    it('returns 404 for non-existent user', async () => {
+    it('returns 401 for non-existent user (no valid session)', async () => {
       const { env } = createEnvWithOAuthCapture();
 
       const res = await appRequest('/oauth/internal/complete', {
@@ -253,7 +310,8 @@ describe('OAuth Scope Filtering - /oauth/internal/complete', () => {
         },
       });
 
-      expect(res.status).toBe(404);
+      // No session cookie → 401 before we even reach the user lookup
+      expect(res.status).toBe(401);
     });
   });
 });

@@ -204,8 +204,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }
 
     // Filter out scopes the user isn't eligible to grant.
-    // The backend enforces this too — this is purely for UX so users
-    // don't see permissions they cannot actually grant.
+    // The backend enforces this too (filterScopesForUser in src/lib/scopes.ts) —
+    // this is purely for UX so users don't see permissions they cannot grant.
+    //
+    // SYNC NOTE: This must stay in sync with ADMIN_ONLY_SCOPES in
+    // src/lib/scopes.ts. We inline it because the web app can't import
+    // from src/. If new role-gated scopes are added there, update here too.
     const rawScopes = scope?.split(" ") || ["profile"];
     const isAdmin = user.role === "admin" || user.role === "superadmin";
     const requestedScopes = isAdmin

@@ -89,6 +89,10 @@ export function hasAnyScope(granted: string[], required: Scope[]): boolean {
  *   level via requireGroupRole(), and at OAuth time we don't know which group
  *   the user will interact with.
  * - All other scopes are available to any authenticated user.
+ *
+ * SYNC NOTE: The OAuth consent screen in web/app/routes/oauth.authorize.tsx
+ * has an inline copy of this filter (it can't import from src/). If you add
+ * scopes to ADMIN_ONLY_SCOPES below, update the frontend filter to match.
  */
 export function filterScopesForUser(
   scopes: string[],
