@@ -50,7 +50,7 @@ describe("fetchEventRsvpSummary", () => {
   };
 
   it("calls the correct URL with the event ID", async () => {
-    mockFetch.mockResolvedValue(jsonResponse(mockSummary));
+    mockFetch.mockResolvedValue(jsonResponse({ data: mockSummary }));
 
     const result = await fetchEventRsvpSummary("evt-123");
 
@@ -100,7 +100,7 @@ describe("fetchCheckinInfo", () => {
   };
 
   it("calls the correct URL with the code", async () => {
-    mockFetch.mockResolvedValue(jsonResponse(mockCheckin));
+    mockFetch.mockResolvedValue(jsonResponse({ data: mockCheckin }));
 
     const result = await fetchCheckinInfo("abc-def-123");
 
@@ -156,7 +156,7 @@ describe("fetchGroupLeaderboard", () => {
   };
 
   it("calls the correct URL with slug and default limit", async () => {
-    mockFetch.mockResolvedValue(jsonResponse(mockLeaderboard));
+    mockFetch.mockResolvedValue(jsonResponse({ data: mockLeaderboard }));
 
     const result = await fetchGroupLeaderboard("tampadevs");
 
@@ -169,7 +169,7 @@ describe("fetchGroupLeaderboard", () => {
   });
 
   it("uses the provided limit", async () => {
-    mockFetch.mockResolvedValue(jsonResponse(mockLeaderboard));
+    mockFetch.mockResolvedValue(jsonResponse({ data: mockLeaderboard }));
 
     await fetchGroupLeaderboard("tampadevs", 10);
 
