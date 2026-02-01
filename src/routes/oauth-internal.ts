@@ -13,6 +13,7 @@ import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
 import { users, userIdentities, sessions } from '../db/schema.js';
 import { filterScopesForUser } from '../lib/scopes.js';
+import { getAuthUser } from '../middleware/auth.js';
 import type { Env } from '../../types/worker.js';
 
 // Schema for completing authorization
@@ -80,6 +81,19 @@ export function createOAuthInternalRoutes() {
    */
   app.post('/complete', zValidator('json', completeAuthSchema), async (c) => {
     const { oauthRequest, userId, approvedScopes } = c.req.valid('json');
+
+    // Defense-in-depth: validate the caller's session matches the userId
+    // in the request body. These routes are meant to be internal-only (called
+    // by the web app via service binding), but if they're ever exposed
+    // externally, this prevents unauthenticated callers and stops users
+    // from completing OAuth flows on behalf of other users.
+    const sessionUser = await getAuthUser(c);
+    if (!sessionUser) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    if (sessionUser.id !== userId) {
+      return c.json({ success: false, error: 'Forbidden' }, 403);
+    }
 
     const db = createDatabase(c.env.DB);
 
@@ -173,6 +187,14 @@ export function createOAuthInternalRoutes() {
   app.get('/grants/:userId', async (c) => {
     const userId = c.req.param('userId');
 
+    const sessionUser = await getAuthUser(c);
+    if (!sessionUser) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    if (sessionUser.id !== userId) {
+      return c.json({ success: false, error: 'Forbidden' }, 403);
+    }
+
     try {
       const grants = await c.env.OAUTH_PROVIDER.listUserGrants(userId);
 
@@ -214,6 +236,14 @@ export function createOAuthInternalRoutes() {
   app.delete('/grants/:userId/:grantId', async (c) => {
     const userId = c.req.param('userId');
     const grantId = c.req.param('grantId');
+
+    const sessionUser = await getAuthUser(c);
+    if (!sessionUser) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    if (sessionUser.id !== userId) {
+      return c.json({ success: false, error: 'Forbidden' }, 403);
+    }
 
     try {
       await c.env.OAUTH_PROVIDER.revokeGrant(grantId, userId);
