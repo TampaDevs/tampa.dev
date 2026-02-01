@@ -13,6 +13,7 @@ import { registerSchemaRoutes } from '../../../src/routes/schemas';
 import { registerFeedRoutes } from '../../../src/routes/feeds';
 import { adminApiRoutes } from '../../../src/routes/admin-api';
 import { authRoutes } from '../../../src/routes/auth';
+import { oauthInternalRoutes } from '../../../src/routes/oauth-internal';
 import { favoritesRoutes } from '../../../src/routes/favorites';
 import { developerRoutes } from '../../../src/routes/developer';
 import { uploadRoutes } from '../../../src/routes/uploads';
@@ -66,6 +67,7 @@ export function buildApp() {
 
   // Mount instance-style routes (same as src/index.ts)
   app.route('/auth', authRoutes);
+  app.route('/oauth/internal', oauthInternalRoutes);
   app.route('/admin', adminApiRoutes);
   app.route('/favorites', favoritesRoutes);
   app.route('/developer', developerRoutes);

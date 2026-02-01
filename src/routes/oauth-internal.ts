@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
 import { users, userIdentities, sessions } from '../db/schema.js';
+import { filterScopesForUser } from '../lib/scopes.js';
 import type { Env } from '../../types/worker.js';
 
 // Schema for completing authorization
@@ -100,6 +101,11 @@ export function createOAuthInternalRoutes() {
     });
 
     try {
+      // Filter scopes: strip role-gated scopes the user isn't eligible for.
+      // This is the security boundary — non-admin users cannot mint tokens
+      // with the 'admin' scope, even if the client requested it.
+      const filteredScopes = filterScopesForUser(approvedScopes, user);
+
       // Complete the authorization via OAuthProvider
       const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
         request: oauthRequest,
@@ -109,7 +115,7 @@ export function createOAuthInternalRoutes() {
           name: user.name,
           approvedAt: new Date().toISOString(),
         },
-        scope: approvedScopes,
+        scope: filteredScopes,
         // Props passed to API handlers when this token is used
         props: {
           userId: user.id,
@@ -117,7 +123,7 @@ export function createOAuthInternalRoutes() {
           name: user.name,
           avatarUrl: user.avatarUrl,
           githubUsername: githubIdentity?.providerUsername,
-          scopes: approvedScopes,
+          scopes: filteredScopes,
         },
       });
 

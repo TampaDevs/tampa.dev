@@ -5,6 +5,8 @@
  * `read:user` and `user:email`.
  */
 
+import type { User } from '../db/schema.js';
+
 export const SCOPES = {
   // User scopes (GitHub-style hierarchy)
   'user': 'Read/write access to profile info (includes user:email and read:user)',
@@ -76,6 +78,26 @@ export function hasScope(granted: string[], required: Scope): boolean {
 /** Check if granted scopes include any of the required scopes */
 export function hasAnyScope(granted: string[], required: Scope[]): boolean {
   return required.some((s) => hasScope(granted, s));
+}
+
+/**
+ * Filter scopes to only those the user is eligible to grant based on their role.
+ *
+ * Currently, only the `admin` scope requires role-based filtering:
+ * - `admin` requires platform admin role ('admin' or 'superadmin')
+ * - `manage:*` scopes are NOT filtered here — they're enforced at the endpoint
+ *   level via requireGroupRole(), and at OAuth time we don't know which group
+ *   the user will interact with.
+ * - All other scopes are available to any authenticated user.
+ */
+export function filterScopesForUser(
+  scopes: string[],
+  user: Pick<User, 'role'>,
+): string[] {
+  const ADMIN_ONLY_SCOPES: ReadonlySet<string> = new Set(['admin']);
+  const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+  if (isAdmin) return scopes;
+  return scopes.filter((scope) => !ADMIN_ONLY_SCOPES.has(scope));
 }
 
 /** All scope keys as an array */

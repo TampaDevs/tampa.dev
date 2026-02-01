@@ -290,6 +290,11 @@ To add a new scope:
 2. If the new scope is implied by a parent scope, add the relationship to `SCOPE_HIERARCHY`.
 3. Add the scope string to the `SCOPES_SUPPORTED` array in `src/index.ts` (for the OAuth provider).
 4. Use `requireScope(auth, 'your:scope', c)` in the relevant route handlers.
+5. Update the OAuth consent screen in `web/app/routes/oauth.authorize.tsx`:
+   - Add the scope to `SCOPE_TO_GROUP` (map it to an existing group or create a new one).
+   - If creating a new group, add a case in `getGroupDisplay()` and add the group key to `GROUP_DISPLAY_ORDER`.
+   - If the scope changes the description for an existing group (e.g., adding write access), update the logic in the relevant `getGroupDisplay()` case.
+6. Update `SCOPE_LABELS` in `web/app/routes/profile.tsx` (used in the Authorized Apps list on the user's profile).
 
 ---
 
@@ -540,6 +545,8 @@ Domain features in this codebase are exposed through multiple layers. When addin
 | **MCP tools** | `src/mcp/tools/*.ts` | Tool input schemas, handler logic, user-facing filtering |
 | **`/v1/` API** | `src/routes/v1.ts`, `v1-admin.ts`, `v1-manage.ts` | Endpoint schemas, response shapes |
 | **OpenAPI spec** | `src/routes/v1-schemas.ts` | Request/response Zod schemas |
+| **OAuth consent screen** | `web/app/routes/oauth.authorize.tsx` | `SCOPE_TO_GROUP` mapping, `getGroupDisplay()` descriptions |
+| **Profile scope labels** | `web/app/routes/profile.tsx` | `SCOPE_LABELS` record for Authorized Apps display |
 | **Integration tests** | `test/integration/` | Coverage for each affected surface |
 
 **How to use this:** When planning a schema or feature change, enumerate which surfaces are affected before writing code. Include all surfaces in the task plan. A field added to the schema but missing from the MCP tools or `/v1/` API is an incomplete feature.
