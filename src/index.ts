@@ -128,6 +128,10 @@ app.route('/me/onboarding', onboardingRoutes);
 import { wsRoutes } from './routes/ws.js';
 app.route('/ws', wsRoutes);
 
+// Mount MCP server (Streamable HTTP, tri-auth: PAT, OAuth, session)
+import { mcpRoutes } from './routes/mcp.js';
+app.route('/mcp', mcpRoutes);
+
 // Mount /v1/ authenticated API (tri-auth: PAT, OAuth, session)
 import { v1Routes } from './routes/v1.js';
 app.route('/v1', v1Routes);

@@ -273,3 +273,46 @@ curl https://api.tampa.dev/v1/scopes
 ```
 
 This endpoint does not require authentication and returns all available OAuth scopes with descriptions and hierarchy information.
+
+---
+
+## MCP (AI Agent) Examples
+
+The same operations are available via the [MCP server](/developer/docs/mcp-overview) using JSON-RPC 2.0. Here is an example of listing events via MCP:
+
+### Initialize an MCP session
+
+```bash
+curl -X POST https://api.tampa.dev/mcp \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {},
+      "clientInfo": { "name": "my-agent", "version": "1.0" }
+    }
+  }'
+```
+
+### Call a tool
+
+```bash
+curl -X POST https://api.tampa.dev/mcp \
+  -H "Authorization: Bearer td_pat_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "events_list",
+      "arguments": { "limit": 5 }
+    }
+  }'
+```
+
+See [MCP Examples](/developer/docs/mcp-examples) for more detailed integration patterns including Claude Desktop configuration and multi-step workflows.

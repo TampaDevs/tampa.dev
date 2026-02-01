@@ -59,3 +59,16 @@ Or request the scope during OAuth authorization:
 ```
 https://tampa.dev/oauth/authorize?scope=manage:groups manage:events
 ```
+
+## Recommended Scopes for MCP
+
+When connecting an AI assistant via [MCP](/developer/docs/mcp-overview), the scopes you request determine which tools the agent can discover and use. Here are common configurations:
+
+| Use Case | Recommended Scopes |
+|----------|-------------------|
+| Read-only browsing | `read:events read:groups read:user` |
+| Personal assistant (full) | `user read:events write:events read:groups read:favorites write:favorites read:portfolio write:portfolio` |
+| Group management bot | `manage:groups manage:events manage:checkins manage:badges` |
+| Platform admin | `admin` |
+
+The MCP server's `tools/list` response is automatically filtered to only include tools your token's scopes allow. This means an agent can introspect its own capabilities by listing available tools.

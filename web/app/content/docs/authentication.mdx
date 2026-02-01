@@ -58,3 +58,12 @@ All API endpoints accept three authentication methods:
 | **Session Cookie** | `Cookie: session=...` | Tampa.dev web application |
 
 This includes management endpoints (group settings, event creation, badge management, etc.) which require the appropriate `manage:*` scope when using OAuth or PAT authentication. See [Scopes](/developer/docs/scopes) for details.
+
+## MCP (AI Agent) Authentication
+
+Tampa.dev also supports the [Model Context Protocol](/developer/docs/mcp-overview) (MCP), allowing AI assistants and automation tools to interact with the platform. MCP clients authenticate using the same methods above:
+
+- **OAuth 2.1**: MCP clients discover the server via `GET /.well-known/mcp-configuration`, register dynamically, and obtain tokens through the standard OAuth flow. This is MCP's preferred authentication method.
+- **Personal Access Tokens**: For simpler setups, configure your AI assistant with a PAT.
+
+MCP requests are sent as JSON-RPC 2.0 to `POST /mcp`. The server returns tool catalogs filtered by the token's scopes, so agents automatically understand what actions they can perform. See the [MCP Overview](/developer/docs/mcp-overview) for details.

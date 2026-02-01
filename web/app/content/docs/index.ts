@@ -27,6 +27,13 @@ import ApiGroups, { frontmatter as apiGroupsFm } from './api-groups.mdx';
 import ApiManagement, { frontmatter as apiMgmtFm } from './api-management.mdx';
 import ErrorCatalog, { frontmatter as errorCatalogFm } from './error-catalog.mdx';
 
+// MCP docs
+import McpOverview, { frontmatter as mcpOverviewFm } from './mcp-overview.mdx';
+import McpTools, { frontmatter as mcpToolsFm } from './mcp-tools.mdx';
+import McpResources, { frontmatter as mcpResourcesFm } from './mcp-resources.mdx';
+import McpPrompts, { frontmatter as mcpPromptsFm } from './mcp-prompts.mdx';
+import McpExamples, { frontmatter as mcpExamplesFm } from './mcp-examples.mdx';
+
 // Admin-gated docs
 import WebhooksAdmin, { frontmatter as whAdminFm } from './webhooks-admin.mdx';
 
@@ -44,6 +51,7 @@ export interface DocEntry {
 export const CATEGORIES = [
   'Getting Started',
   'API Reference',
+  'MCP',
   'Webhooks',
   'Resources',
 ] as const;
@@ -77,6 +85,12 @@ export const DOCS: DocEntry[] = [
   // Webhooks
   entry('webhooks', Webhooks, webhooksFm),
   entry('webhooks-admin', WebhooksAdmin, whAdminFm),
+  // MCP
+  entry('mcp-overview', McpOverview, mcpOverviewFm),
+  entry('mcp-tools', McpTools, mcpToolsFm),
+  entry('mcp-resources', McpResources, mcpResourcesFm),
+  entry('mcp-prompts', McpPrompts, mcpPromptsFm),
+  entry('mcp-examples', McpExamples, mcpExamplesFm),
   // Resources
   entry('examples', Examples, examplesFm),
 ].sort((a, b) => a.order - b.order);

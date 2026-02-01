@@ -2,6 +2,13 @@
 
 This document provides essential context and rules for AI assistants working on this codebase. Read it before making changes.
 
+Note to Agents: When working on tasks, attempt to parallelize work as much as possible. Design workstreams intentionally, with dependency ordering set up to establish clarity with precision, maximize throughput, and minimize contention. Working efficiently in this sense is what affords us the appropriate bandwidth to be thorough. Apply that thoroughness and focus to security, quality, reliability, and continued investments in achieving holistic excellence.
+
+
+When running TypeScript type checks, do not use npm tsc. Instead, do a dry run build/deployment with wrangler. If you try to use npm tsc, it will take a long time before dying due to a MAX_HEAP error.
+
+Integration test runs can cause Miniflare to die when all tests are run in a single process or with high parallelization. Test in smaller batches when you can, or target appropriately. Always make sure the full test suite has been invoked (all unit, integration, etc) before reporting success. Success requires the project to build successfully with a passing test suite.
+
 ---
 
 ## 1. Project Overview
@@ -39,6 +46,14 @@ src/
     index.ts            # createDatabase() helper
   routes/               # Route modules (one per domain area)
     v1.ts               # /v1/ authenticated API (third-party apps, PATs, OAuth)
+    mcp.ts              # /mcp endpoint (MCP Streamable HTTP transport)
+  mcp/                  # Model Context Protocol server
+    server.ts           # JSON-RPC 2.0 dispatch, capability negotiation
+    types.ts            # MCP protocol types (JSON-RPC, tools, resources, prompts)
+    registry.ts         # Tool/resource/prompt registry with scope filtering
+    resources.ts        # MCP resource definitions
+    prompts.ts          # MCP prompt templates
+    tools/              # Tool definitions (one file per domain)
   middleware/            # Hono middleware (auth, rate-limit)
   lib/                  # Shared utilities (auth, crypto, scopes, validation, responses)
   services/             # Business logic services (sync, RSVP, favorites, etc.)
@@ -678,3 +693,147 @@ Every authenticated `/v1/` endpoint must appear in the OpenAPI spec at `/openapi
 3. Include `security: [{ BearerToken: [...requiredScopes] }]`.
 4. Add descriptions and examples.
 5. Group routes with OpenAPI tags (User, Events, Groups, Management, etc.).
+
+---
+
+## 12. MCP Server
+
+### Overview
+
+The platform exposes a first-party [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `POST /mcp`. This allows AI agents, personal assistants, and automation tools to interact with the Tampa Devs platform via a standardized JSON-RPC 2.0 interface.
+
+The MCP implementation is custom (not using `@modelcontextprotocol/sdk`) to avoid Node.js dependencies incompatible with Cloudflare Workers. It supports **Streamable HTTP** transport (MCP spec version `2025-03-26`).
+
+### Architecture
+
+```
+POST /mcp
+  └── src/routes/mcp.ts (Hono route)
+        └── src/mcp/server.ts (JSON-RPC dispatch)
+              ├── initialize    → Capability negotiation
+              ├── tools/list    → Scope-filtered tool catalog
+              ├── tools/call    → Tool execution with Zod validation
+              ├── resources/*   → Resource listing and reading
+              ├── prompts/*     → Prompt template retrieval
+              └── ping          → Health check
+```
+
+**Key components:**
+
+| File | Purpose |
+|------|---------|
+| `src/mcp/types.ts` | Protocol types: JSON-RPC messages, tool/resource/prompt definitions, error codes |
+| `src/mcp/registry.ts` | Central registry for tools, resources, prompts. `defineTool()` / `defineResource()` / `definePrompt()` registration functions. Scope-filtered discovery via `getAvailableTools(auth)` |
+| `src/mcp/server.ts` | JSON-RPC 2.0 dispatcher. Handles batch requests (max 10), notifications, and all MCP protocol methods |
+| `src/routes/mcp.ts` | Hono route handler. Authenticates via `getCurrentUser()`, validates Content-Type, dispatches to server |
+| `src/mcp/tools/*.ts` | Tool definitions organized by domain (14 files) |
+| `src/mcp/resources.ts` | Resource definitions with `tampadev://` URI scheme |
+| `src/mcp/prompts.ts` | Prompt templates for common workflows |
+
+### Authentication
+
+MCP requests use the same tri-auth system as `/v1/`:
+
+- Bearer tokens (OAuth or PAT) in `Authorization` header
+- Session cookies for first-party web clients
+- Unauthenticated requests receive 401
+
+### Tool Definition Pattern
+
+Tools are registered at import time using `defineTool()` from `src/mcp/registry.ts`. Each tool has a Zod input schema that is auto-converted to JSON Schema for MCP clients:
+
+```typescript
+import { z } from 'zod';
+import { defineTool } from '../registry.js';
+
+defineTool({
+  name: 'events_list',
+  description: 'List upcoming events in the Tampa Bay tech community',
+  scope: 'read:events',
+  inputSchema: z.object({
+    group_slug: z.string().optional().describe('Filter by group slug'),
+    limit: z.number().int().min(1).max(100).default(20),
+    offset: z.number().int().min(0).default(0),
+  }),
+  handler: async (args, context) => {
+    // context.auth = AuthResult from getCurrentUser()
+    // context.env = Env bindings
+    // Call service layer directly -- no HTTP self-calls
+    const db = createDatabase(context.env.DB);
+    const events = await db.select().from(eventsTable)...;
+    return { content: [{ type: 'text', text: JSON.stringify(events) }] };
+  },
+});
+```
+
+**Rules for tool handlers:**
+- Call service-layer functions directly, not HTTP endpoints (avoid overhead, auth re-resolution, rate-limit self-hits)
+- Scope enforcement happens in `server.ts` before the handler runs -- tools don't need to check scopes
+- Group role checks (`requireGroupRole()`) must be done inside management tool handlers
+- Return `{ content: [{ type: 'text', text: '...' }] }` for success
+- Return `{ content: [{ type: 'text', text: '...' }], isError: true }` for domain errors
+
+### Scope-Filtered Discovery
+
+`tools/list` returns only tools the caller's token scopes allow. This enables agents to understand their capabilities:
+
+- `scope: null` (public tools) -- visible to all authenticated users
+- `scope: 'read:events'` -- visible only when token has `read:events` (or parent scope)
+- Session users (`auth.scopes === null`) see all tools
+
+### Adding New MCP Tools
+
+1. Create or edit the appropriate file in `src/mcp/tools/`.
+2. Use `defineTool()` with a Zod input schema and handler function.
+3. Follow the naming convention: `{domain}_{action}` in snake_case (e.g., `events_list`, `manage_create_event`).
+4. Set the `scope` field to the required scope (or `null` for public tools).
+5. Import the tool file in `src/routes/mcp.ts` (side-effect import for registration).
+6. Add integration tests in `test/integration/routes/mcp/`.
+7. Document the tool in `web/app/content/docs/mcp-tools.mdx`.
+
+### Adding New MCP Resources
+
+Use `defineResource()` or `defineResourceTemplate()` in `src/mcp/resources.ts`:
+
+```typescript
+defineResource({
+  uri: 'tampadev://scopes',
+  name: 'OAuth Scopes',
+  description: 'Available OAuth scopes and their descriptions',
+  mimeType: 'application/json',
+  scope: null, // public
+  handler: async (context) => {
+    return { contents: [{ uri: 'tampadev://scopes', text: JSON.stringify(SCOPES), mimeType: 'application/json' }] };
+  },
+});
+```
+
+### Adding New MCP Prompts
+
+Use `definePrompt()` in `src/mcp/prompts.ts`:
+
+```typescript
+definePrompt({
+  name: 'community_health_report',
+  description: 'Generate a community health report for a group',
+  arguments: [{ name: 'group_slug', description: 'Group slug', required: true }],
+  handler: async (args, context) => {
+    return {
+      messages: [{ role: 'user', content: { type: 'text', text: '...' } }],
+    };
+  },
+});
+```
+
+### MCP Test Helpers
+
+MCP-specific test helpers are in `test/integration/helpers/mcp.ts`:
+
+- `mcpRequest(method, params, options)` -- Send raw JSON-RPC to `/mcp`
+- `mcpInitialize(options)` -- Send initialize and parse result
+- `mcpToolCall(toolName, args, options)` -- Call a tool and parse result
+- `mcpListTools(options)` -- List available tools
+- `mcpListResources(options)` -- List available resources
+- `mcpReadResource(uri, options)` -- Read a resource
+
+Protocol integration tests are in `test/integration/routes/mcp/`.

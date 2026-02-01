@@ -154,3 +154,9 @@ WWW-Authenticate: Bearer error="insufficient_scope", scope="read:events"
 ## Rate Limiting
 
 Most endpoints are rate-limited. When the limit is exceeded, the response includes a `Retry-After` header with the number of seconds to wait. See [Rate Limits](/developer/docs/rate-limits) for details.
+
+## MCP Server
+
+In addition to the REST API, Tampa.dev exposes a [Model Context Protocol](/developer/docs/mcp-overview) (MCP) server at `POST /mcp`. MCP provides a standardized JSON-RPC 2.0 interface for AI agents, personal assistants, and automation tools to interact with the same platform capabilities available through the REST API.
+
+MCP clients use the same authentication (OAuth or PAT) and scope system. The server automatically filters available tools based on token scopes. See the [MCP documentation](/developer/docs/mcp-overview) for details.

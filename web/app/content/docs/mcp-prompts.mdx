@@ -1,0 +1,304 @@
+---
+title: MCP Prompts
+description: Reusable prompt templates for common workflows
+order: 43
+category: MCP
+---
+
+# MCP Prompts
+
+The Tampa Devs MCP server includes reusable prompt templates that help AI agents interact with the platform effectively. Prompts provide structured conversation starters for common workflows such as generating community reports, suggesting events, and guiding users through onboarding.
+
+Prompts are not executable actions -- they return pre-built message templates that an AI agent can use to structure its interaction with the user and the platform's tools and resources.
+
+## Available Prompts
+
+| Prompt | Arguments | Description |
+|--------|-----------|-------------|
+| `community_health_report` | `group_slug` (required) | Generate a community health report for a group |
+| `suggest_events` | None | Suggest events based on the user's interests and history |
+| `onboarding_guide` | None | Guide a new user through platform features and setup |
+| `group_setup_guide` | `group_id` (required) | Guide a group organizer through initial group configuration |
+| `badge_strategy` | `group_slug` (required) | Suggest badge and achievement strategies for a group |
+
+## Listing Prompts
+
+Use `prompts/list` to discover available prompts:
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "prompts/list"
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "prompts": [
+      {
+        "name": "community_health_report",
+        "description": "Generate a community health report for a group, including event attendance trends, member growth, badge activity, and engagement metrics.",
+        "arguments": [
+          {
+            "name": "group_slug",
+            "description": "The slug of the group to analyze",
+            "required": true
+          }
+        ]
+      },
+      {
+        "name": "suggest_events",
+        "description": "Suggest upcoming events based on the user's favorite groups, past RSVPs, and interests."
+      },
+      {
+        "name": "onboarding_guide",
+        "description": "Guide a new user through Tampa Devs platform features including profile setup, joining groups, RSVPing to events, and earning badges."
+      },
+      {
+        "name": "group_setup_guide",
+        "description": "Guide a group organizer through setting up their group, including description, badges, events, and member management.",
+        "arguments": [
+          {
+            "name": "group_id",
+            "description": "The ID of the group to set up",
+            "required": true
+          }
+        ]
+      },
+      {
+        "name": "badge_strategy",
+        "description": "Suggest a badge and achievement strategy for a group based on its size, event frequency, and member engagement.",
+        "arguments": [
+          {
+            "name": "group_slug",
+            "description": "The slug of the group to create a strategy for",
+            "required": true
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Getting a Prompt
+
+Use `prompts/get` to retrieve the full message template for a prompt. If the prompt requires arguments, include them in the request.
+
+### community_health_report
+
+Generates a structured prompt that instructs the AI agent to analyze a group's health metrics by reading event data, member counts, badge activity, and leaderboard standings.
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "prompts/get",
+  "params": {
+    "name": "community_health_report",
+    "arguments": {
+      "group_slug": "tampadevs"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "description": "Generate a community health report for tampadevs",
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "type": "text",
+          "text": "Generate a community health report for the group 'tampadevs'. Use the available tools to gather data:\n\n1. Get group details with groups_get to understand the community size and description.\n2. List recent events with events_list filtered to this group to analyze event frequency and attendance.\n3. Check the group leaderboard with leaderboard_group to see top contributors.\n4. List group badges with badges_list to review the badge program.\n\nSummarize findings in these sections:\n- Overview (group size, description, activity level)\n- Event Activity (frequency, recent events, attendance trends)\n- Member Engagement (leaderboard highlights, active contributors)\n- Badge Program (number of badges, claim activity)\n- Recommendations (actionable suggestions for improving community health)"
+        }
+      }
+    ]
+  }
+}
+```
+
+### suggest_events
+
+Returns a prompt template that guides the agent to analyze the user's profile, favorites, and past activity to recommend upcoming events.
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "prompts/get",
+  "params": {
+    "name": "suggest_events"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "description": "Suggest events based on user interests",
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "type": "text",
+          "text": "Suggest upcoming events I should attend. Use the available tools to gather context:\n\n1. Get my profile with profile_get to understand my interests.\n2. List my favorite groups with favorites_list to know which communities I follow.\n3. List upcoming events with events_list to see what is available.\n\nFor each suggested event, explain why it matches my interests and include the event title, date, group, and a brief description. Prioritize events from my favorite groups."
+        }
+      }
+    ]
+  }
+}
+```
+
+### onboarding_guide
+
+Returns a prompt template for guiding new users through their first interactions with the platform.
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "prompts/get",
+  "params": {
+    "name": "onboarding_guide"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "description": "Guide new users through platform features",
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "type": "text",
+          "text": "Help me get started with Tampa Devs. Walk me through the platform step by step:\n\n1. Check my profile with profile_get and suggest any missing information I should add.\n2. Check my onboarding status with onboarding_status to see what steps remain.\n3. List available groups with groups_list and recommend a few to join based on common interests.\n4. Show upcoming events with events_list and suggest one to RSVP to.\n5. Explain how badges and XP work, and how I can start earning them.\n\nKeep the tone friendly and helpful. After each step, ask if I would like to take that action."
+        }
+      }
+    ]
+  }
+}
+```
+
+### group_setup_guide
+
+Returns a prompt template for group organizers who are configuring their group for the first time.
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "prompts/get",
+  "params": {
+    "name": "group_setup_guide",
+    "arguments": {
+      "group_id": "grp_react"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": {
+    "description": "Guide group setup for grp_react",
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "type": "text",
+          "text": "Help me set up my group 'grp_react' on Tampa Devs. Walk me through the configuration:\n\n1. Get current group details with manage_get_group to see what is already configured.\n2. Review the group description and suggest improvements if needed.\n3. Check if any badges exist with manage_list_badges and suggest creating starter badges.\n4. List current members with manage_list_members to understand the team.\n5. Suggest creating a first event with manage_create_event.\n\nFor each step, explain best practices and offer to make changes if I approve."
+        }
+      }
+    ]
+  }
+}
+```
+
+### badge_strategy
+
+Returns a prompt template that guides the agent to analyze a group's current badge usage and suggest improvements.
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "method": "prompts/get",
+  "params": {
+    "name": "badge_strategy",
+    "arguments": {
+      "group_slug": "tampadevs"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": {
+    "description": "Suggest badge and achievement strategy for tampadevs",
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "type": "text",
+          "text": "Analyze the badge and achievement strategy for the group 'tampadevs' and suggest improvements:\n\n1. Get group details with groups_get to understand group size and activity.\n2. List existing badges with badges_list filtered to this group.\n3. Check the group leaderboard with leaderboard_group to see engagement levels.\n4. Review the user's achievements with profile_achievements for context on platform-wide achievements.\n\nProvide recommendations in these areas:\n- Badge coverage (are there badges for attendance, contributions, milestones?)\n- Engagement incentives (how badges can drive participation)\n- Claim link strategy (when to use claim links vs direct awards)\n- Suggested new badges with names, descriptions, and award criteria"
+        }
+      }
+    ]
+  }
+}
+```
+
+## How Prompts Help Agents
+
+Prompts serve as structured blueprints for multi-step agent workflows. Instead of an AI agent needing to figure out which tools to call and in what order, a prompt provides a clear plan:
+
+1. **Reduced trial and error** -- the prompt tells the agent exactly which tools to invoke and what data to gather.
+2. **Consistent output** -- prompts define the expected output structure (sections, recommendations, comparisons), leading to reliable results.
+3. **Domain knowledge** -- prompts embed Tampa Devs-specific best practices that a general-purpose AI agent would not know on its own.
+4. **User guidance** -- prompts include instructions for the agent to ask for user confirmation before making changes, keeping the user in control.
+
+Agents can use prompts as-is or adapt them based on additional context from the conversation.

@@ -1,0 +1,153 @@
+---
+title: AI Assistant Integration
+description: Connect AI assistants to manage your group via MCP
+order: 23
+category: For Group Managers
+---
+
+# AI Assistant Integration
+
+You can connect AI assistants -- like Claude, ChatGPT, and other tools that support the Model Context Protocol (MCP) -- to Tampa.dev so they can help you manage your group. Instead of navigating dashboards and filling out forms, you can tell your AI assistant what you need in plain language and it handles the rest.
+
+This guide explains what's possible, how to get set up, and what to expect.
+
+## What MCP Enables
+
+MCP (Model Context Protocol) is a standard that lets AI assistants interact with external services on your behalf. When connected to Tampa.dev, your AI assistant can:
+
+- Create and update events for your group
+- Generate check-in codes for event attendance
+- Create badges and award them to members
+- View your group's members, RSVPs, and attendance data
+- Check leaderboard standings and community activity
+
+Think of it as giving your AI assistant access to the same management tools you already use, so you can accomplish tasks through conversation instead of clicking through the dashboard.
+
+## Getting Connected
+
+There are two ways to connect an AI assistant to your Tampa.dev account.
+
+### Option 1: Personal Access Token (PAT)
+
+This is the simplest approach. You create a token on Tampa.dev and give it to your AI assistant.
+
+1. Go to your [Developer settings](/developer) on Tampa.dev.
+2. Create a new Personal Access Token. Give it a descriptive name like "Claude MCP" or "My AI Assistant."
+3. Select the scopes your assistant will need. For group management, you'll typically want:
+   - `manage:events` -- to create and update events
+   - `manage:badges` -- to create and award badges
+   - `manage:checkins` -- to generate check-in codes and view attendees
+   - `manage:groups` -- to update group settings and manage members
+   - `read:events` and `read:groups` -- to view event and group information
+4. Copy the token (it starts with `td_pat_`). You will only see the full token once, so save it somewhere secure.
+5. In your AI assistant's MCP configuration, add Tampa.dev as a server and paste your token as the authentication credential.
+
+For details on token management and scopes, see the [Personal Access Tokens](/developer/docs/personal-access-tokens) developer documentation.
+
+### Option 2: OAuth
+
+If your AI tool supports OAuth-based MCP connections, it can handle authentication automatically. When you add Tampa.dev as an MCP server, the tool will walk you through signing in with your Tampa.dev account and granting the necessary permissions. There's no token to copy or paste -- the tool manages the connection for you.
+
+Check your AI assistant's documentation to see if it supports OAuth for MCP connections.
+
+## What Your AI Assistant Can Do
+
+Once connected, you can ask your AI assistant to perform group management tasks through natural conversation. Here's what's available, organized by area.
+
+### Event Management
+
+| Action | What It Does |
+|--------|--------------|
+| **Create an event** | Set up a new event with a title, description, date, time, venue, and capacity |
+| **Update event details** | Change the title, description, time, venue, or capacity of an existing event |
+| **Cancel an event** | Mark an event as cancelled so attendees know it's no longer happening |
+| **Generate a check-in code** | Create a code that attendees use to check in at the event |
+| **View attendees** | See who has RSVP'd, who's on the waitlist, and who has checked in |
+
+### Badge Management
+
+| Action | What It Does |
+|--------|--------------|
+| **Create a badge** | Design a new badge with a name, description, icon, color, and point value |
+| **Award a badge** | Give a badge to a specific member of your group |
+| **Create a claim link** | Generate a shareable link that lets members claim a badge on their own |
+| **View badge holders** | See which members have earned a particular badge |
+
+### Member Management
+
+| Action | What It Does |
+|--------|--------------|
+| **View members** | See a list of your group's members and their roles |
+| **Update a member's role** | Promote or demote members (within your own role's permissions) |
+| **Add a member** | Invite a Tampa.dev user to your group |
+| **Remove a member** | Remove someone from the group |
+
+### Community Insights
+
+| Action | What It Does |
+|--------|--------------|
+| **View the group leaderboard** | See XP rankings for members of your group |
+| **Check event attendance** | View attendance numbers and check-in rates for past events |
+| **View RSVP counts** | See how many people have RSVP'd to upcoming events |
+| **Monitor group activity** | Get a summary of recent events, new members, and badge activity |
+
+## Safety and Permissions
+
+Your AI assistant operates under the same rules as your account. It cannot do anything you couldn't do yourself through the dashboard.
+
+### Your permissions still apply
+
+- **Group role requirements are enforced.** Most management operations require you to be a Manager or Owner of the group. If your account is a regular member, the assistant cannot perform management actions on your behalf.
+- **Scope limits are enforced.** If you created a PAT with only `read:events`, the assistant cannot create or modify events. It can only do what the token's scopes allow.
+- **Badge governance limits apply.** The same limits on maximum badges per group and maximum badge points apply whether you're using the dashboard or an AI assistant.
+
+### Logging and accountability
+
+All actions taken by your AI assistant are attributed to your account. There is no anonymous access. If the assistant creates an event or awards a badge, that action is recorded under your user account just as if you had done it through the web interface.
+
+### Token security
+
+- Keep your Personal Access Token private. Do not share it publicly or commit it to a code repository.
+- Use the minimum set of scopes your assistant needs. If it only manages events, don't grant badge management scopes.
+- Set an expiration date on your token. You can always create a new one.
+- If you suspect a token has been compromised, revoke it immediately from your [Developer settings](/developer).
+
+## Example Workflows
+
+Here are some practical examples of how you might use an AI assistant to manage your group.
+
+### Schedule a meetup
+
+You: "Create a meetup called 'January Lightning Talks' for next Thursday at 6:30 PM at the Tampa Bay Tech Hub. Set the capacity to 50 and describe it as an evening of short 5-minute presentations on any tech topic."
+
+The assistant uses the event creation endpoint to set up the event with all the details you provided.
+
+### Prepare for an event
+
+You: "Generate a check-in code for tonight's Lightning Talks event."
+
+The assistant creates a check-in code that you can display at the venue for attendees to scan or enter.
+
+### Recognize attendees
+
+You: "Award the 'Lightning Speaker' badge to everyone who checked in at the January Lightning Talks."
+
+The assistant looks up who checked in, then awards the badge to each attendee.
+
+### Check on an upcoming event
+
+You: "How many people have RSVP'd to next week's event?"
+
+The assistant retrieves the RSVP data and gives you a summary of confirmed attendees and waitlisted members.
+
+### Review group activity
+
+You: "Show me the leaderboard for our group."
+
+The assistant pulls up the group leaderboard so you can see which members have earned the most XP.
+
+## Getting Help
+
+- For technical details about the API, scopes, and token management, see the [Developer Documentation](/developer/docs).
+- For questions about group management features, see the [Managing Your Group](/docs/platform/group-management), [Managing Events](/docs/platform/event-management), and [Managing Badges](/docs/platform/badge-management) guides.
+- For general support, use the standard Tampa.dev community channels.

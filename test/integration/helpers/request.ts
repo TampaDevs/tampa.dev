@@ -29,6 +29,9 @@ import { groupClaimRoutes } from '../../../src/routes/group-claims';
 import { rsvpRoutes } from '../../../src/routes/rsvp';
 import { checkinPublicRoutes } from '../../../src/routes/checkin';
 import { v1Routes } from '../../../src/routes/v1';
+import { v1AdminRoutes } from '../../../src/routes/v1-admin';
+import { v1ManageRoutes } from '../../../src/routes/v1-manage';
+import { mcpRoutes } from '../../../src/routes/mcp';
 import type { Env } from '../../../types/worker';
 
 let _app: ReturnType<typeof createApp> | null = null;
@@ -77,8 +80,17 @@ export function buildApp() {
   app.route('/', followsRoutes);
   app.route('/me/onboarding', onboardingRoutes);
 
+  // Mount MCP server
+  app.route('/mcp', mcpRoutes);
+
   // Mount /v1/ authenticated API
   app.route('/v1', v1Routes);
+
+  // Mount /v1/admin/ platform admin API
+  app.route('/v1/admin', v1AdminRoutes);
+
+  // Mount /v1/manage/ group management API
+  app.route('/v1/manage', v1ManageRoutes);
 
   addOpenAPIRoutes(app);
   app.get('/', (c) => c.redirect('/docs'));

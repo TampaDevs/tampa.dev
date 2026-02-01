@@ -1,0 +1,289 @@
+---
+title: MCP Resources
+description: Read-only data resources for AI context
+order: 42
+category: MCP
+---
+
+# MCP Resources
+
+MCP resources provide read-only access to Tampa Devs platform data through a `tampadev://` URI scheme. Resources are designed for AI agents that need to load context about the platform -- events, groups, profiles, badges, and more -- without invoking tools.
+
+Resources complement tools: while tools perform actions and return results, resources provide structured data that agents can reference when reasoning about the platform.
+
+## URI Scheme
+
+All resources use the `tampadev://` URI scheme. Static resources have fixed URIs, while dynamic resources use templates with `{parameter}` placeholders.
+
+## Available Resources
+
+| URI Pattern | Description | Required Scope | MIME Type |
+|-------------|-------------|---------------|-----------|
+| `tampadev://events` | List of upcoming events | `read:events` | `application/json` |
+| `tampadev://events/{id}` | Details for a specific event | `read:events` | `application/json` |
+| `tampadev://groups` | List of all groups | `read:groups` | `application/json` |
+| `tampadev://groups/{slug}` | Details for a specific group | `read:groups` | `application/json` |
+| `tampadev://profile` | The authenticated user's profile | `read:user` | `application/json` |
+| `tampadev://badges` | List of all available badges | None (public) | `application/json` |
+| `tampadev://leaderboard` | Global XP leaderboard | None (public) | `application/json` |
+| `tampadev://leaderboard/{slug}` | Group-specific leaderboard | None (public) | `application/json` |
+| `tampadev://scopes` | Available OAuth scopes and descriptions | None (public) | `application/json` |
+
+## Resource Templates
+
+Some resources accept parameters in the URI. These are defined as resource templates in the MCP protocol. When listing resources, the server returns both static resources and templates:
+
+- **Static resources** have fixed URIs (e.g., `tampadev://events`, `tampadev://profile`).
+- **Resource templates** have parameters enclosed in braces (e.g., `tampadev://events/{id}`).
+
+To read a template resource, replace the parameter with the actual value (e.g., `tampadev://events/evt_abc123`).
+
+## Listing Resources
+
+Use `resources/list` to discover all available resources:
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/list"
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "resources": [
+      {
+        "uri": "tampadev://events",
+        "name": "Upcoming Events",
+        "description": "List of upcoming community events",
+        "mimeType": "application/json"
+      },
+      {
+        "uri": "tampadev://groups",
+        "name": "Groups",
+        "description": "List of community groups",
+        "mimeType": "application/json"
+      },
+      {
+        "uri": "tampadev://profile",
+        "name": "User Profile",
+        "description": "The authenticated user's profile",
+        "mimeType": "application/json"
+      },
+      {
+        "uri": "tampadev://badges",
+        "name": "Badges",
+        "description": "Available badges across all groups",
+        "mimeType": "application/json"
+      },
+      {
+        "uri": "tampadev://leaderboard",
+        "name": "Global Leaderboard",
+        "description": "Platform-wide XP leaderboard",
+        "mimeType": "application/json"
+      },
+      {
+        "uri": "tampadev://scopes",
+        "name": "OAuth Scopes",
+        "description": "Available OAuth scopes and their descriptions",
+        "mimeType": "application/json"
+      }
+    ],
+    "resourceTemplates": [
+      {
+        "uriTemplate": "tampadev://events/{id}",
+        "name": "Event Details",
+        "description": "Full details for a specific event",
+        "mimeType": "application/json"
+      },
+      {
+        "uriTemplate": "tampadev://groups/{slug}",
+        "name": "Group Details",
+        "description": "Full details for a specific group by slug",
+        "mimeType": "application/json"
+      },
+      {
+        "uriTemplate": "tampadev://leaderboard/{slug}",
+        "name": "Group Leaderboard",
+        "description": "XP leaderboard for a specific group",
+        "mimeType": "application/json"
+      }
+    ]
+  }
+}
+```
+
+## Reading a Static Resource
+
+Use `resources/read` with the resource URI to fetch its data:
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "resources/read",
+  "params": {
+    "uri": "tampadev://events"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "contents": [
+      {
+        "uri": "tampadev://events",
+        "mimeType": "application/json",
+        "text": "[{\"id\":\"evt_abc123\",\"title\":\"React Meetup\",\"startTime\":\"2026-02-15T18:00:00Z\",\"groupName\":\"Tampa React\",\"rsvpCount\":24},{\"id\":\"evt_def456\",\"title\":\"Rust Workshop\",\"startTime\":\"2026-02-20T14:00:00Z\",\"groupName\":\"Tampa Rust\",\"rsvpCount\":15}]"
+      }
+    ]
+  }
+}
+```
+
+## Reading a Template Resource
+
+Replace the template parameter with an actual value:
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "resources/read",
+  "params": {
+    "uri": "tampadev://groups/tampadevs"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "contents": [
+      {
+        "uri": "tampadev://groups/tampadevs",
+        "mimeType": "application/json",
+        "text": "{\"id\":\"grp_tampadevs\",\"name\":\"Tampa Devs\",\"slug\":\"tampadevs\",\"description\":\"Tampa Bay's developer community\",\"memberCount\":1200,\"eventCount\":45,\"featured\":true}"
+      }
+    ]
+  }
+}
+```
+
+## Reading the User Profile
+
+The `tampadev://profile` resource returns the authenticated user's profile. This requires the `read:user` scope:
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "resources/read",
+  "params": {
+    "uri": "tampadev://profile"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "contents": [
+      {
+        "uri": "tampadev://profile",
+        "mimeType": "application/json",
+        "text": "{\"id\":\"usr_abc123\",\"name\":\"Jane Developer\",\"username\":\"janedev\",\"bio\":\"Building cool stuff in Tampa\",\"location\":\"Tampa, FL\",\"xp\":450,\"level\":5,\"badgeCount\":8}"
+      }
+    ]
+  }
+}
+```
+
+## Reading OAuth Scopes
+
+The `tampadev://scopes` resource is publicly accessible and returns the full scope reference. This is useful for agents that need to understand the permission model:
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "resources/read",
+  "params": {
+    "uri": "tampadev://scopes"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": {
+    "contents": [
+      {
+        "uri": "tampadev://scopes",
+        "mimeType": "application/json",
+        "text": "{\"scopes\":[{\"key\":\"read:events\",\"description\":\"Read events and event details\"},{\"key\":\"read:groups\",\"description\":\"Read groups and group details\"},{\"key\":\"read:user\",\"description\":\"Read your public profile data\"},{\"key\":\"user\",\"description\":\"Read/write access to profile info\"}],\"hierarchy\":{\"user\":[\"read:user\",\"user:email\"]}}"
+      }
+    ]
+  }
+}
+```
+
+## Error Handling
+
+If a resource is not found or the caller lacks the required scope, the server returns a JSON-RPC error:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 99,
+  "error": {
+    "code": -32002,
+    "message": "Resource not found: tampadev://events/nonexistent"
+  }
+}
+```
+
+## Resources vs Tools
+
+Use resources when you need to **load context** for reasoning. Use tools when you need to **perform actions**.
+
+| Use Case | Approach |
+|----------|---------|
+| "What events are coming up?" | Read `tampadev://events` |
+| "Tell me about Tampa Devs" | Read `tampadev://groups/tampadevs` |
+| "RSVP me to the React meetup" | Call `events_rsvp` tool |
+| "What scopes should I request?" | Read `tampadev://scopes` |
+| "Show me the leaderboard for Tampa Rust" | Read `tampadev://leaderboard/tampa-rust` |

@@ -1,0 +1,194 @@
+---
+title: MCP Overview
+description: Model Context Protocol server for AI agent integration
+order: 40
+category: MCP
+---
+
+# MCP Overview
+
+The Tampa Devs Platform provides a **Model Context Protocol (MCP)** server, enabling AI assistants, personal automation tools, and agent frameworks to interact with the Tampa Devs community programmatically.
+
+## What is MCP?
+
+The [Model Context Protocol](https://modelcontextprotocol.io/) is an open standard for connecting AI assistants to external tools and data sources. It defines a JSON-RPC 2.0 interface that allows AI models to discover and invoke tools, read structured resources, and use prompt templates -- all through a single, well-defined protocol.
+
+MCP eliminates the need for AI agents to understand REST API conventions, pagination, or authentication flows in detail. Instead, agents discover available capabilities at runtime and invoke them through a uniform interface.
+
+## Why Tampa.dev supports MCP
+
+The Tampa Devs MCP server allows AI agents to:
+
+- **Browse events and groups** -- search upcoming events, view group details, check leaderboards
+- **Manage RSVPs and check-ins** -- RSVP to events, check in with codes, view attendee lists
+- **Interact with profiles** -- read and update profile information, view achievements and badges
+- **Manage favorites and follows** -- add/remove favorite groups, follow/unfollow users
+- **Administer groups** -- create events, manage members, award badges, generate check-in codes
+- **Run platform admin tasks** -- manage users, sync data, configure achievements (admin only)
+
+All of this is governed by the same [scope system](/developer/docs/scopes) and [authentication](/developer/docs/authentication) used by the REST API, so agents operate with the same permissions as the user who authorized them.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Server URL** | `https://api.tampa.dev/mcp` |
+| **Transport** | Streamable HTTP (`POST /mcp` with JSON-RPC 2.0) |
+| **Protocol version** | `2025-03-26` |
+| **Discovery** | `https://api.tampa.dev/.well-known/mcp-configuration` |
+
+## Quick Start
+
+### 1. Discover the server
+
+Fetch the well-known MCP configuration to confirm the server endpoint and capabilities:
+
+```bash
+curl https://api.tampa.dev/.well-known/mcp-configuration
+```
+
+```json
+{
+  "mcpServers": {
+    "tampa-devs": {
+      "url": "https://api.tampa.dev/mcp",
+      "transport": "streamable-http",
+      "authentication": {
+        "type": "oauth2",
+        "authorizationUrl": "https://tampa.dev/oauth/authorize",
+        "tokenUrl": "https://tampa.dev/oauth/token",
+        "scopes": ["read:events", "read:groups", "read:user"]
+      }
+    }
+  }
+}
+```
+
+### 2. Authenticate
+
+MCP uses the same authentication as the REST API:
+
+- **OAuth 2.1 with PKCE** -- the recommended flow for interactive AI clients. See [Authentication](/developer/docs/authentication).
+- **Personal Access Token** -- simpler option for scripts and local tools. See [Personal Access Tokens](/developer/docs/personal-access-tokens).
+
+Include the token in the `Authorization` header of every `POST /mcp` request:
+
+```
+Authorization: Bearer td_pat_abc123...
+```
+
+### 3. Initialize the session
+
+Send an `initialize` request to establish the MCP session:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "my-ai-agent",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+The server responds with its capabilities:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {
+      "tools": {},
+      "resources": {},
+      "prompts": {}
+    },
+    "serverInfo": {
+      "name": "tampa-devs-mcp",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+### 4. Discover tools
+
+List the tools available to your token's scopes:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list"
+}
+```
+
+The response includes only the tools your token's scopes allow. See [Scope-filtered discovery](#scope-filtered-discovery) below.
+
+### 5. Call a tool
+
+Invoke a tool by name with the required arguments:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "events_list",
+    "arguments": {
+      "status": "upcoming",
+      "limit": 5
+    }
+  }
+}
+```
+
+## Capabilities
+
+The Tampa Devs MCP server exposes three capability types:
+
+| Capability | Description | Documentation |
+|------------|-------------|---------------|
+| **Tools** | Executable actions (read data, create resources, manage settings) | [MCP Tools](/developer/docs/mcp-tools) |
+| **Resources** | Read-only data accessible via `tampadev://` URIs | [MCP Resources](/developer/docs/mcp-resources) |
+| **Prompts** | Reusable prompt templates for common workflows | [MCP Prompts](/developer/docs/mcp-prompts) |
+
+## Scope-Filtered Discovery
+
+When an AI agent calls `tools/list`, the MCP server inspects the caller's token scopes and returns only the tools the caller is authorized to use. This means:
+
+- A token with `read:events` will see event browsing tools but not event management tools.
+- A token with `manage:groups` and `manage:events` will additionally see group and event management tools.
+- A token with `admin` will see the full platform administration tool set.
+- Session-authenticated users (first-party web UI) see all tools, since session auth bypasses scope restrictions.
+
+This design prevents AI agents from attempting operations they cannot perform, reducing unnecessary error handling and improving agent reliability.
+
+## Authentication and Scopes
+
+MCP uses the same scope system as the REST API. Request only the scopes your agent needs:
+
+| Agent Use Case | Recommended Scopes |
+|----------------|-------------------|
+| Event browser | `read:events`, `read:groups` |
+| Personal assistant | `read:events`, `read:user`, `read:favorites`, `write:favorites` |
+| RSVP manager | `read:events`, `write:events` |
+| Group organizer | `manage:groups`, `manage:events`, `manage:checkins`, `manage:badges` |
+| Full admin bot | `admin` |
+
+For the complete scope reference, see [Scopes](/developer/docs/scopes).
+
+## Next Steps
+
+- [MCP Tools](/developer/docs/mcp-tools) -- full tool reference organized by domain
+- [MCP Resources](/developer/docs/mcp-resources) -- read-only data resources for AI context
+- [MCP Prompts](/developer/docs/mcp-prompts) -- reusable prompt templates
+- [MCP Examples](/developer/docs/mcp-examples) -- end-to-end integration examples

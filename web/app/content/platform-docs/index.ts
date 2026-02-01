@@ -17,6 +17,7 @@ import GroupsGuide, { frontmatter as groupsFm } from './groups-guide.mdx';
 import GroupManagement, { frontmatter as groupMgmtFm } from './group-management.mdx';
 import EventManagement, { frontmatter as eventMgmtFm } from './event-management.mdx';
 import BadgeManagement, { frontmatter as badgeMgmtFm } from './badge-management.mdx';
+import McpGuide, { frontmatter as mcpFm } from './mcp-guide.mdx';
 import AdminGuide, { frontmatter as adminFm } from './admin-guide.mdx';
 
 export interface PlatformDocEntry {
@@ -58,6 +59,7 @@ export const PLATFORM_DOCS: PlatformDocEntry[] = [
   entry('group-management', GroupManagement, groupMgmtFm),
   entry('event-management', EventManagement, eventMgmtFm),
   entry('badge-management', BadgeManagement, badgeMgmtFm),
+  entry('mcp-guide', McpGuide, mcpFm),
   // For Platform Admins
   entry('admin-guide', AdminGuide, adminFm),
 ].sort((a, b) => a.order - b.order);

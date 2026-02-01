@@ -59,6 +59,26 @@ export function createApp() {
   // Favicon handler
   app.get('/favicon.ico', (c) => c.text('', 404));
 
+  // MCP Server Discovery (RFC well-known endpoint)
+  app.get('/.well-known/mcp-configuration', (c) => {
+    return c.json({
+      mcp_version: '2025-03-26',
+      server_name: 'Tampa.dev',
+      server_description: 'Tampa Bay tech community platform - events, groups, badges, and more',
+      server_url: 'https://api.tampa.dev/mcp',
+      transport: 'streamable-http',
+      authentication: {
+        type: 'oauth2',
+        oauth_metadata_url: 'https://api.tampa.dev/.well-known/oauth-authorization-server',
+      },
+      capabilities: {
+        tools: true,
+        resources: true,
+        prompts: true,
+      },
+    }, 200, { 'Cache-Control': 'public, max-age=3600' });
+  });
+
   return app;
 }
 
