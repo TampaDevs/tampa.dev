@@ -1,6 +1,6 @@
 import type { Route } from "./+types/members";
 import { useLoaderData, Link, useSearchParams, Form } from "react-router";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Avatar } from "@tampadevs/react";
 import { generateMetaTags } from "~/lib/seo";
 import { Emoji } from "~/components/Emoji";
@@ -162,196 +162,87 @@ function serializeBadgeSlugs(slugs: string[]): string {
   return slugs.join(",");
 }
 
-function BadgeFilterDropdown({
+const VISIBLE_BADGE_COUNT = 6;
+
+function BadgeFilterPills({
   badges,
   activeSlugs,
   onToggle,
   onClear,
-  onRemove,
 }: {
   badges: AvailableBadge[];
   activeSlugs: string[];
   onToggle: (slug: string) => void;
   onClear: () => void;
-  onRemove: (slug: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [showAll, setShowAll] = useState(false);
 
-  const activeBadges = activeSlugs
-    .map((slug) => badges.find((b) => b.slug === slug))
-    .filter((b): b is AvailableBadge => !!b);
+  // Sort badges by popularity (most awarded first)
+  const sorted = useMemo(
+    () => [...badges].sort((a, b) => b.awardedCount - a.awardedCount || a.name.localeCompare(b.name)),
+    [badges]
+  );
 
-  const filtered = query
-    ? badges.filter((b) =>
-        b.name.toLowerCase().includes(query.toLowerCase())
-      )
-    : badges;
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+  const visibleBadges = useMemo(() => {
+    if (showAll) return sorted;
+    const top = sorted.slice(0, VISIBLE_BADGE_COUNT);
+    // Always include active badges so the user can see their selection
+    for (const slug of activeSlugs) {
+      if (!top.find((b) => b.slug === slug)) {
+        const badge = sorted.find((b) => b.slug === slug);
+        if (badge) top.push(badge);
       }
     }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
+    return top;
+  }, [sorted, showAll, activeSlugs]);
 
-  useEffect(() => {
-    if (open && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [open]);
-
-  const handleToggle = useCallback(
-    (slug: string) => {
-      onToggle(slug);
-    },
-    [onToggle]
-  );
+  const hasHidden = sorted.length > VISIBLE_BADGE_COUNT;
 
   return (
     <div className="flex flex-col items-center gap-3 mb-8">
-      {/* Active badge chips */}
-      {activeBadges.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Filtered by</span>
-          {activeBadges.map((b) => (
-            <span
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {visibleBadges.map((b) => {
+          const isActive = activeSlugs.includes(b.slug);
+          return (
+            <button
               key={b.slug}
-              className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-sm font-medium"
+              type="button"
+              onClick={() => onToggle(b.slug)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                isActive
+                  ? "ring-2 ring-offset-1 ring-offset-white dark:ring-offset-gray-950"
+                  : "hover:opacity-80"
+              }`}
               style={{
-                backgroundColor: `${b.color}20`,
+                backgroundColor: isActive ? `${b.color}30` : `${b.color}15`,
                 color: b.color,
+                ...(isActive ? { ringColor: b.color } as Record<string, string> : {}),
               }}
             >
-              <Emoji emoji={b.icon} size={14} />
+              <Emoji emoji={b.icon} size={16} />
               {b.name}
-              <button
-                type="button"
-                onClick={() => onRemove(b.slug)}
-                className="ml-1 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                aria-label={`Remove ${b.name} filter`}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </span>
-          ))}
-          {activeBadges.length > 1 && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors underline"
-            >
-              Clear all
             </button>
-          )}
-        </div>
-      )}
-
-      {/* Dropdown trigger */}
-      <div ref={containerRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
-          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          Filter by badge
-          {activeSlugs.length > 0 && (
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-coral/20 text-coral text-xs font-bold">
-              {activeSlugs.length}
-            </span>
-          )}
-          <svg className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {open && (
-          <div className="absolute z-20 top-full mt-2 left-1/2 -translate-x-1/2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
-            {/* Search input */}
-            <div className="p-2 border-b border-gray-100 dark:border-gray-700">
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search badges..."
-                className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              />
-            </div>
-
-            {/* Badge list */}
-            <div className="max-h-64 overflow-y-auto">
-              {filtered.length === 0 ? (
-                <p className="p-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                  No badges found
-                </p>
-              ) : (
-                filtered.map((b) => {
-                  const isActive = activeSlugs.includes(b.slug);
-                  return (
-                    <button
-                      key={b.slug}
-                      type="button"
-                      onClick={() => handleToggle(b.slug)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                        isActive
-                          ? "bg-gray-50 dark:bg-gray-700/50"
-                          : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                      }`}
-                    >
-                      {/* Checkbox indicator */}
-                      <span
-                        className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                          isActive
-                            ? "border-coral bg-coral"
-                            : "border-gray-300 dark:border-gray-600"
-                        }`}
-                      >
-                        {isActive && (
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </span>
-                      <span
-                        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: `${b.color}20` }}
-                      >
-                        <Emoji emoji={b.icon} size={20} />
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {b.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {b.awardedCount} member{b.awardedCount !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
+          );
+        })}
+        {hasHidden && (
+          <button
+            type="button"
+            onClick={() => setShowAll(!showAll)}
+            className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+          >
+            {showAll ? "Show less" : `Show all (${sorted.length})`}
+          </button>
         )}
       </div>
+      {activeSlugs.length > 0 && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors underline"
+        >
+          Clear filters
+        </button>
+      )}
     </div>
   );
 }
@@ -454,7 +345,7 @@ export default function MembersPage() {
                 type="text"
                 name="search"
                 defaultValue={search}
-                placeholder="Search members by name or username..."
+                placeholder="Search members..."
                 className="block w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-3 pl-11 pr-4 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-shadow"
               />
             </div>
@@ -463,7 +354,7 @@ export default function MembersPage() {
 
         {/* Badge Filter */}
         {availableBadges.length > 0 && (
-          <BadgeFilterDropdown
+          <BadgeFilterPills
             badges={availableBadges}
             activeSlugs={activeSlugs}
             onToggle={(slug) => {
@@ -471,9 +362,6 @@ export default function MembersPage() {
                 ? activeSlugs.filter((s) => s !== slug)
                 : [...activeSlugs, slug];
               updateBadgeParam(next);
-            }}
-            onRemove={(slug) => {
-              updateBadgeParam(activeSlugs.filter((s) => s !== slug));
             }}
             onClear={() => {
               updateBadgeParam([]);
