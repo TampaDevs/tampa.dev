@@ -383,7 +383,7 @@ export function Header({ user }: HeaderProps) {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-hide touch-pan-y overscroll-contain">
+          <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800 h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-hide touch-pan-y overscroll-contain">
             {/* Explore */}
             <div className="px-3 pt-1 pb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Explore</span>
