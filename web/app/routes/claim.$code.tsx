@@ -180,7 +180,7 @@ export default function ClaimBadgePage({
   );
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center px-4 py-16 relative overflow-hidden transition-colors duration-700 ${status === "success"
+    <div className={`min-h-screen flex flex-col items-center justify-start px-4 pt-16 pb-24 relative overflow-hidden transition-colors duration-700 ${status === "success"
       ? "bg-gray-900"
       : "bg-gray-950"
       }`}>
