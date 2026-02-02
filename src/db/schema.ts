@@ -487,6 +487,21 @@ export const achievementProgress = sqliteTable('achievement_progress', {
 export type AchievementProgress = typeof achievementProgress.$inferSelect;
 export type NewAchievementProgress = typeof achievementProgress.$inferInsert;
 
+// ============== ACHIEVEMENT PROGRESS ITEMS ==============
+
+export const achievementProgressItems = sqliteTable('achievement_progress_items', {
+  id: text('id').primaryKey(),
+  progressId: text('progress_id').notNull().references(() => achievementProgress.id, { onDelete: 'cascade' }),
+  fieldValue: text('field_value').notNull(),
+  recordedAt: text('recorded_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index('achievement_progress_items_progress_idx').on(table.progressId),
+  uniqueIndex('achievement_progress_items_unique_idx').on(table.progressId, table.fieldValue),
+]);
+
+export type AchievementProgressItem = typeof achievementProgressItems.$inferSelect;
+export type NewAchievementProgressItem = typeof achievementProgressItems.$inferInsert;
+
 // ============== ACHIEVEMENTS (definitions) ==============
 
 export const achievements = sqliteTable('achievements', {

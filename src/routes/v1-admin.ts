@@ -202,7 +202,7 @@ const createAchievementSchema = z.object({
   eventType: z.string().optional(),
   sortOrder: z.number().int().min(0).optional().default(0),
   conditions: z.string().optional(),
-  progressMode: z.enum(['counter', 'gauge']).optional().default('counter'),
+  progressMode: z.enum(['counter', 'gauge', 'distinct']).optional().default('counter'),
   gaugeField: z.string().optional(),
   hidden: z.boolean().optional().default(false),
 });
@@ -220,7 +220,7 @@ const updateAchievementSchema = z.object({
   eventType: z.string().optional().nullable(),
   sortOrder: z.number().int().min(0).optional(),
   conditions: z.string().optional().nullable(),
-  progressMode: z.enum(['counter', 'gauge']).optional().nullable(),
+  progressMode: z.enum(['counter', 'gauge', 'distinct']).optional().nullable(),
   gaugeField: z.string().optional().nullable(),
   hidden: z.boolean().optional(),
 });

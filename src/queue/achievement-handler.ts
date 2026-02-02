@@ -10,7 +10,7 @@
 
 import { registerHandler } from './handler.js';
 import { createDatabase } from '../db/index.js';
-import { achievements, achievementProgress, badges, userBadges, onboardingSteps, userOnboarding } from '../db/schema.js';
+import { achievements, achievementProgress, achievementProgressItems, badges, userBadges, onboardingSteps, userOnboarding } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { grantEntitlement } from '../lib/entitlements.js';
 import { NotificationService } from '../lib/event-bus.js';
@@ -66,6 +66,7 @@ async function processAchievement(
   if (!evaluateConditions(conditions, event.payload)) return;
 
   const isGauge = achievement.progressMode === 'gauge';
+  const isDistinct = achievement.progressMode === 'distinct';
   const db = createDatabase(env.DB);
 
   // Atomic upsert: INSERT ... ON CONFLICT DO NOTHING to avoid race conditions
@@ -74,7 +75,7 @@ async function processAchievement(
     const extracted = getNestedValue(event.payload, achievement.gaugeField);
     initialValue = typeof extracted === 'number' ? extracted : 0;
   } else {
-    initialValue = 0; // counter mode: start at 0, the UPDATE below will increment to 1
+    initialValue = 0; // counter and distinct modes: start at 0, the UPDATE below will increment to 1
   }
 
   const progressId = crypto.randomUUID();
@@ -94,8 +95,51 @@ async function processAchievement(
     // Unique constraint violation — row already exists, will update below
   }
 
-  // Atomic increment/set for existing rows that aren't completed
-  if (isGauge && achievement.gaugeField) {
+  // Get the progress record (either just created or already existing)
+  const progress = await db.query.achievementProgress.findFirst({
+    where: and(
+      eq(achievementProgress.userId, userId),
+      eq(achievementProgress.achievementKey, achievementKey),
+    ),
+  });
+
+  if (!progress || progress.completedAt) return;
+
+  // Update progress based on mode
+  if (isDistinct && achievement.gaugeField) {
+    // Distinct mode: track unique values
+    const extracted = getNestedValue(event.payload, achievement.gaugeField);
+    const fieldValue = extracted !== null && extracted !== undefined ? String(extracted) : '';
+
+    if (!fieldValue) return; // Skip if no value to track
+
+    // Try to insert the distinct value — silently fails if already exists
+    try {
+      await db.insert(achievementProgressItems).values({
+        id: crypto.randomUUID(),
+        progressId: progress.id,
+        fieldValue,
+        recordedAt: now,
+      });
+
+      // If insert succeeded, increment currentValue atomically
+      await db
+        .update(achievementProgress)
+        .set({
+          currentValue: sql`${achievementProgress.currentValue} + 1`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(achievementProgress.id, progress.id),
+            sql`${achievementProgress.completedAt} IS NULL`,
+          ),
+        );
+    } catch {
+      // Unique constraint violation — this value was already seen, do nothing
+    }
+  } else if (isGauge && achievement.gaugeField) {
+    // Gauge mode: set absolute value
     const extracted = getNestedValue(event.payload, achievement.gaugeField);
     const gaugeValue = typeof extracted === 'number' ? extracted : 0;
     await db
@@ -125,25 +169,25 @@ async function processAchievement(
       );
   }
 
-  // Read back the current state
-  const progress = await db.query.achievementProgress.findFirst({
+  // Read back the current state after update
+  const updatedProgress = await db.query.achievementProgress.findFirst({
     where: and(
       eq(achievementProgress.userId, userId),
       eq(achievementProgress.achievementKey, achievementKey),
     ),
   });
 
-  if (!progress || progress.completedAt) return;
+  if (!updatedProgress || updatedProgress.completedAt) return;
 
   // Check if achievement is now completed
-  if (progress.currentValue >= achievement.targetValue && !progress.completedAt) {
+  if (updatedProgress.currentValue >= achievement.targetValue && !updatedProgress.completedAt) {
     const now = new Date().toISOString();
 
     // Mark as completed
     await db
       .update(achievementProgress)
       .set({ completedAt: now, updatedAt: now })
-      .where(eq(achievementProgress.id, progress.id));
+      .where(eq(achievementProgress.id, updatedProgress.id));
 
     const notify = new NotificationService(env);
 

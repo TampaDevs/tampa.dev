@@ -400,6 +400,7 @@ export function createCheckinPublicRoutes() {
       type: 'dev.tampa.event.checkin',
       payload: {
         eventId: event.id,
+        groupId: event.groupId,
         userId: user.id,
         checkinCodeId: checkinCode.id,
         method,
