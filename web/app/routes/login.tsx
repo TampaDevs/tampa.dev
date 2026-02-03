@@ -183,11 +183,11 @@ export default function Login() {
 
           <p className="mt-6 text-center text-sm text-white/40">
             By signing in, you agree to our{" "}
-            <Link to="/terms" className="text-coral hover:underline">
+            <Link to="/policies/terms" className="text-coral hover:underline">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link to="/privacy" className="text-coral hover:underline">
+            <Link to="/policies/privacy" className="text-coral hover:underline">
               Privacy Policy
             </Link>
           </p>
