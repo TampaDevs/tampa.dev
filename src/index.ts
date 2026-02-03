@@ -285,8 +285,10 @@ const SCOPES_SUPPORTED = [
   'admin',
   // Standard OAuth scope for refresh token issuance (required by clients like ChatGPT)
   'offline_access',
-  // Legacy scopes (kept for backwards compatibility with existing OAuth tokens)
+  // OIDC standard aliases (resolved via LEGACY_SCOPE_ALIASES in scopes.ts)
   'profile',
+  'email',
+  // Legacy scopes (kept for backwards compatibility with existing OAuth tokens)
   'events:read',
   'groups:read',
   'rsvp:read',

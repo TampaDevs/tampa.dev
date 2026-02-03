@@ -47,7 +47,10 @@ export const SCOPE_HIERARCHY: Partial<Record<Scope, Scope[]>> = {
  * This ensures tokens issued before the scope rename still work.
  */
 const LEGACY_SCOPE_ALIASES: Record<string, Scope> = {
+  // OIDC standard scope aliases
   'profile': 'user',
+  'email': 'user:email',
+  // Legacy Tampa.dev scope aliases
   'events:read': 'read:events',
   'groups:read': 'read:groups',
   'rsvp:read': 'read:events',    // RSVPs are part of event data

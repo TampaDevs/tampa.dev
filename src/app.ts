@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
+import { SCOPES } from './lib/scopes.js';
 
 /**
  * Environment bindings for Cloudflare Workers
@@ -58,6 +59,33 @@ export function createApp() {
 
   // Favicon handler
   app.get('/favicon.ico', (c) => c.text('', 404));
+
+  // OpenID Connect Discovery (fallback for clients that check openid-configuration
+  // instead of RFC 8414 oauth-authorization-server served by OAuthProvider)
+  app.get('/.well-known/openid-configuration', (c) => {
+    const url = new URL(c.req.url);
+    const origin = url.origin;
+    const isStaging = url.hostname.includes('staging');
+    const authBase = isStaging ? 'https://staging.tampa.dev' : 'https://tampa.dev';
+
+    return c.json({
+      issuer: origin,
+      authorization_endpoint: `${authBase}/oauth/authorize`,
+      token_endpoint: `${origin}/oauth/token`,
+      registration_endpoint: `${origin}/oauth/register`,
+      scopes_supported: [
+        ...Object.keys(SCOPES),
+        'offline_access',
+        // OIDC standard aliases (resolved via LEGACY_SCOPE_ALIASES in scopes.ts)
+        'profile',
+        'email',
+      ],
+      response_types_supported: ['code'],
+      grant_types_supported: ['authorization_code', 'refresh_token'],
+      code_challenge_methods_supported: ['S256'],
+      token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+    }, 200, { 'Cache-Control': 'public, max-age=3600' });
+  });
 
   // MCP Server Discovery (RFC well-known endpoint)
   app.get('/.well-known/mcp-configuration', (c) => {

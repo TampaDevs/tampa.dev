@@ -118,6 +118,10 @@ zone_name = "tampa.dev"
 pattern = "staging.tampa.dev/.well-known/oauth-authorization-server*"
 zone_name = "tampa.dev"
 
+[[env.staging.routes]]
+pattern = "staging.tampa.dev/.well-known/openid-configuration*"
+zone_name = "tampa.dev"
+
 [env.staging.durable_objects]
 bindings = [
   { name = "USER_NOTIFICATIONS", class_name = "UserNotificationDO" },
@@ -229,6 +233,10 @@ zone_name = "tampa.dev"
 
 [[env.production.routes]]
 pattern = "tampa.dev/.well-known/oauth-authorization-server*"
+zone_name = "tampa.dev"
+
+[[env.production.routes]]
+pattern = "tampa.dev/.well-known/openid-configuration*"
 zone_name = "tampa.dev"
 
 [env.production.durable_objects]
