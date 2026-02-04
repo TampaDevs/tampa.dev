@@ -697,3 +697,26 @@ export const groupCreationRequests = sqliteTable('group_creation_requests', {
 
 export type GroupCreationRequest = typeof groupCreationRequests.$inferSelect;
 export type NewGroupCreationRequest = typeof groupCreationRequests.$inferInsert;
+
+// ============== OAuth Client Registry ==============
+// Tracks OAuth client registrations (both DCR and developer portal) in D1
+// for efficient lifecycle management and automated cleanup.
+
+export const oauthClientRegistry = sqliteTable('oauth_client_registry', {
+  clientId: text('client_id').primaryKey(),
+  source: text('source').notNull(), // 'dcr' | 'developer_portal'
+  ownerId: text('owner_id'),
+  clientName: text('client_name'),
+  registeredAt: text('registered_at').notNull().default(sql`(datetime('now'))`),
+  lastGrantAt: text('last_grant_at'),
+}, (table) => [
+  index('ocr_source_idx').on(table.source),
+  index('ocr_owner_idx').on(table.ownerId),
+  index('ocr_registered_at_idx').on(table.registeredAt),
+  index('ocr_last_grant_at_idx').on(table.lastGrantAt),
+  index('ocr_source_registered_idx').on(table.source, table.registeredAt),
+  index('ocr_source_last_grant_idx').on(table.source, table.lastGrantAt),
+]);
+
+export type OAuthClientRegistryEntry = typeof oauthClientRegistry.$inferSelect;
+export type NewOAuthClientRegistryEntry = typeof oauthClientRegistry.$inferInsert;

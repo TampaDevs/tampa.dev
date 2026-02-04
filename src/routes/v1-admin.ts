@@ -39,6 +39,7 @@ import {
   groupClaimRequests,
   groupClaimInvites,
   groupCreationRequests,
+  oauthClientRegistry,
   EventPlatform,
   GroupMemberRole,
 } from '../db/schema.js';
@@ -746,6 +747,7 @@ export function createV1AdminRoutes() {
 
     await db.delete(sessions).where(eq(sessions.userId, id));
     await db.delete(userIdentities).where(eq(userIdentities.userId, id));
+    await db.delete(oauthClientRegistry).where(eq(oauthClientRegistry.ownerId, id));
     await db.delete(users).where(eq(users.id, id));
 
     return success(c, { message: 'User deleted' });
@@ -794,6 +796,7 @@ export function createV1AdminRoutes() {
     await db.delete(sessions).where(eq(sessions.userId, mergeUserId));
     await db.delete(userIdentities).where(eq(userIdentities.userId, mergeUserId));
     await db.delete(userFavorites).where(eq(userFavorites.userId, mergeUserId));
+    await db.delete(oauthClientRegistry).where(eq(oauthClientRegistry.ownerId, mergeUserId));
     await db.delete(users).where(eq(users.id, mergeUserId));
 
     return success(c, { message: 'Users merged successfully', transferredIdentities, skippedIdentities, transferredFavorites });

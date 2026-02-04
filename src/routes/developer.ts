@@ -9,7 +9,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { webhooks, webhookDeliveries } from '../db/schema';
+import { webhooks, webhookDeliveries, oauthClientRegistry } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getCurrentUser } from '../lib/auth.js';
 import { hasAdminRestrictedEvents, getAdminRestrictedFromList } from '../lib/webhook-events';
@@ -238,6 +238,16 @@ export function createDeveloperRoutes() {
     // Store in KV
     await kv.put(`client:${clientId}`, JSON.stringify(clientData));
 
+    // Track in D1 for lifecycle management (automated cleanup of unused clients)
+    const db = createDatabase(c.env.DB);
+    await db.insert(oauthClientRegistry).values({
+      clientId,
+      source: 'developer_portal',
+      ownerId: user.id,
+      clientName: data.name,
+      registeredAt: new Date().toISOString(),
+    }).onConflictDoNothing();
+
     // Emit event for achievement tracking
     emitEvent(c, {
       type: 'dev.tampa.developer.application_registered',
@@ -460,8 +470,11 @@ export function createDeveloperRoutes() {
       }
     }
 
-    // Delete the client
+    // Delete the client from KV and D1 registry
     await kv.delete(`client:${clientId}`);
+    const db = createDatabase(c.env.DB);
+    await db.delete(oauthClientRegistry)
+      .where(eq(oauthClientRegistry.clientId, clientId));
 
     return c.json({
       deleted: true,

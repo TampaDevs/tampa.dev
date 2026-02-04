@@ -9,7 +9,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, and, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements, groups } from '../db/schema';
+import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements, groups, oauthClientRegistry } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { deleteCookie } from 'hono/cookie';
@@ -381,7 +381,10 @@ export function createProfileRoutes() {
     // 3. Delete user favorites
     await db.delete(userFavorites).where(eq(userFavorites.userId, user.id));
 
-    // 4. Clean up OAuth grants/tokens from KV (best-effort)
+    // 4. Delete OAuth client registry entries owned by this user
+    await db.delete(oauthClientRegistry).where(eq(oauthClientRegistry.ownerId, user.id));
+
+    // 5. Clean up OAuth grants/tokens from KV (best-effort)
     if (c.env.OAUTH_KV) {
       try {
         const grantList = await c.env.OAUTH_KV.list({ prefix: `grant:${user.id}:` });
@@ -393,10 +396,10 @@ export function createProfileRoutes() {
       }
     }
 
-    // 5. Delete the user record
+    // 6. Delete the user record
     await db.delete(users).where(eq(users.id, user.id));
 
-    // 6. Clear session cookie
+    // 7. Clear session cookie
     deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
 
     return success(c, { message: 'Account deleted' });

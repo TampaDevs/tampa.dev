@@ -165,13 +165,13 @@ Entitlements are API-only and never exposed on public profiles.
 
 ## Portfolio
 
-### GET /v1/portfolio
+### GET /v1/profile/portfolio
 
 List the authenticated user's portfolio items. Scope: `read:portfolio`.
 
 ```bash
 curl -H "Authorization: Bearer td_pat_abc123..." \
-  https://api.tampa.dev/v1/portfolio
+  https://api.tampa.dev/v1/profile/portfolio
 ```
 
 ```json
@@ -191,7 +191,7 @@ curl -H "Authorization: Bearer td_pat_abc123..." \
 }
 ```
 
-### POST /v1/portfolio
+### POST /v1/profile/portfolio
 
 Create a portfolio item. Scope: `write:portfolio`.
 
@@ -204,7 +204,7 @@ curl -X POST \
     "url": "https://example.com",
     "description": "A cool project"
   }' \
-  https://api.tampa.dev/v1/portfolio
+  https://api.tampa.dev/v1/profile/portfolio
 ```
 
 ```json
@@ -222,7 +222,7 @@ curl -X POST \
 }
 ```
 
-### PATCH /v1/portfolio/:id
+### PATCH /v1/profile/portfolio/:id
 
 Update a portfolio item. Scope: `write:portfolio`.
 
@@ -231,17 +231,17 @@ curl -X PATCH \
   -H "Authorization: Bearer td_pat_abc123..." \
   -H "Content-Type: application/json" \
   -d '{"title": "Updated Title", "sortOrder": 1}' \
-  https://api.tampa.dev/v1/portfolio/pf_def456
+  https://api.tampa.dev/v1/profile/portfolio/pf_def456
 ```
 
-### DELETE /v1/portfolio/:id
+### DELETE /v1/profile/portfolio/:id
 
 Delete a portfolio item. Scope: `write:portfolio`. Returns `204 No Content`.
 
 ```bash
 curl -X DELETE \
   -H "Authorization: Bearer td_pat_abc123..." \
-  https://api.tampa.dev/v1/portfolio/pf_def456
+  https://api.tampa.dev/v1/profile/portfolio/pf_def456
 ```
 
 ---
@@ -349,20 +349,12 @@ curl -X POST \
 
 ### DELETE /v1/profile/tokens/:id
 
-Revoke a PAT. Scope: `user`.
+Revoke a PAT. Scope: `user`. Returns `204 No Content`.
 
 ```bash
 curl -X DELETE \
   -H "Authorization: Bearer td_pat_abc123..." \
   https://api.tampa.dev/v1/profile/tokens/tok_def456
-```
-
-```json
-{
-  "data": {
-    "success": true
-  }
-}
 ```
 
 ---
@@ -371,7 +363,7 @@ curl -X DELETE \
 
 ### GET /v1/me/linked-accounts
 
-List connected OAuth providers. Scope: `user:linked-accounts`.
+List connected OAuth providers. Scope: `read:user`.
 
 ```bash
 curl -H "Authorization: Bearer td_pat_abc123..." \
@@ -405,9 +397,8 @@ curl -H "Authorization: Bearer td_pat_abc123..." \
 |--------|----------|-------|-------------|
 | `POST` | `/v1/users/:username/follow` | `user` | Follow a user |
 | `DELETE` | `/v1/users/:username/follow` | `user` | Unfollow a user |
-| `GET` | `/v1/users/:username/followers` | -- | List a user's followers |
-| `GET` | `/v1/users/:username/following` | -- | List who a user follows |
-| `GET` | `/v1/me/following/:username` | `read:user` | Check if you follow a user |
+| `GET` | `/v1/users/:username/followers` | `read:user` | List a user's followers |
+| `GET` | `/v1/users/:username/following` | `read:user` | List who a user follows |
 
 ### POST /v1/users/:username/follow
 
@@ -417,10 +408,20 @@ curl -X POST \
   https://api.tampa.dev/v1/users/johndoe/follow
 ```
 
+**New follow (201 Created):**
 ```json
 {
   "data": {
-    "success": true
+    "following": true
+  }
+}
+```
+
+**Already following (200 OK):**
+```json
+{
+  "data": {
+    "alreadyFollowing": true
   }
 }
 ```

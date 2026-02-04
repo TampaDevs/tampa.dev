@@ -7,11 +7,10 @@
  */
 
 import { Hono } from 'hono';
-import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
-import { users, userIdentities, sessions } from '../db/schema.js';
+import { users, userIdentities, sessions, oauthClientRegistry } from '../db/schema.js';
 import { filterScopesForUser } from '../lib/scopes.js';
 import { getAuthUser } from '../middleware/auth.js';
 import type { Env } from '../../types/worker.js';
@@ -39,6 +38,14 @@ const parseAuthRequestSchema = z.object({
   url: z.string().url(),
 });
 
+/** Check if an OAuth client is a public client (no client secret, uses PKCE only) */
+function isPublicOAuthClient(clientInfo: unknown): boolean {
+  const info = clientInfo as Record<string, unknown>;
+  // The library type uses camelCase (tokenEndpointAuthMethod), but DCR-registered
+  // clients may store the RFC snake_case form (token_endpoint_auth_method).
+  return info.tokenEndpointAuthMethod === 'none' || info.token_endpoint_auth_method === 'none';
+}
+
 export function createOAuthInternalRoutes() {
   const app = new Hono<{ Bindings: Env }>();
 
@@ -48,8 +55,13 @@ export function createOAuthInternalRoutes() {
    *
    * Called by web app to parse OAuth params from the authorization URL
    */
-  app.post('/parse-request', zValidator('json', parseAuthRequestSchema), async (c) => {
-    const { url } = c.req.valid('json');
+  app.post('/parse-request', async (c) => {
+    const body = await c.req.json();
+    const parsed = parseAuthRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ success: false, error: 'Invalid request: url is required and must be a valid URL' }, 400);
+    }
+    const { url } = parsed.data;
 
     try {
       // Create a mock request to parse
@@ -58,6 +70,17 @@ export function createOAuthInternalRoutes() {
 
       // Look up client info
       const clientInfo = await c.env.OAUTH_PROVIDER.lookupClient(oauthReqInfo.clientId);
+
+      // Enforce PKCE for public clients (OAuth 2.1 requirement).
+      // Public clients (token_endpoint_auth_method === 'none') cannot securely
+      // store a client secret, so PKCE is the only protection against
+      // authorization code interception attacks.
+      if (clientInfo && isPublicOAuthClient(clientInfo) && !oauthReqInfo.codeChallenge) {
+        return c.json({
+          success: false,
+          error: 'code_challenge is required for public clients (PKCE)',
+        }, 400);
+      }
 
       return c.json({
         success: true,
@@ -79,8 +102,13 @@ export function createOAuthInternalRoutes() {
    *
    * Called by web app after user approves the authorization
    */
-  app.post('/complete', zValidator('json', completeAuthSchema), async (c) => {
-    const { oauthRequest, userId, approvedScopes } = c.req.valid('json');
+  app.post('/complete', async (c) => {
+    const body = await c.req.json();
+    const parsed = completeAuthSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ success: false, error: 'Invalid request' }, 400);
+    }
+    const { oauthRequest, userId, approvedScopes } = parsed.data;
 
     // Defense-in-depth: validate the caller's session matches the userId
     // in the request body. These routes are meant to be internal-only (called
@@ -115,14 +143,42 @@ export function createOAuthInternalRoutes() {
     });
 
     try {
+      // Defense-in-depth: enforce PKCE for public clients at the completion step.
+      // The primary check is in parse-request, but this guards against callers
+      // that bypass parse-request or tamper with the oauthRequest object.
+      try {
+        const clientInfo = await c.env.OAUTH_PROVIDER.lookupClient(oauthRequest.clientId);
+        if (clientInfo && isPublicOAuthClient(clientInfo) && !oauthRequest.codeChallenge) {
+          return c.json({
+            success: false,
+            error: 'code_challenge is required for public clients (PKCE)',
+          }, 400);
+        }
+      } catch {
+        // Fail closed: if we can't determine the client type, require PKCE.
+        // This prevents a transient lookup failure from bypassing PKCE
+        // enforcement for public clients. Confidential clients that hit this
+        // path would need to include PKCE, which is best practice anyway.
+        if (!oauthRequest.codeChallenge) {
+          return c.json({
+            success: false,
+            error: 'code_challenge is required (unable to verify client type)',
+          }, 400);
+        }
+      }
+
       // Filter scopes: strip role-gated scopes the user isn't eligible for.
       // This is the security boundary — non-admin users cannot mint tokens
       // with the 'admin' scope, even if the client requested it.
       const filteredScopes = filterScopesForUser(approvedScopes, user);
 
       // Complete the authorization via OAuthProvider
+      // The oauthRequest was originally returned by parseAuthRequest() (which produces
+      // a full AuthRequest), then round-tripped through JSON by the web frontend.
+      // Optional fields in our Zod schema default to undefined after deserialization,
+      // but the library handles this at runtime.
       const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
-        request: oauthRequest,
+        request: oauthRequest as Parameters<typeof c.env.OAUTH_PROVIDER.completeAuthorization>[0]['request'],
         userId: user.id,
         metadata: {
           email: user.email,
@@ -140,6 +196,15 @@ export function createOAuthInternalRoutes() {
           scopes: filteredScopes,
         },
       });
+
+      // Track grant creation for OAuth client lifecycle management.
+      // Fire-and-forget: a failure here doesn't affect the OAuth flow.
+      c.executionCtx.waitUntil(
+        db.update(oauthClientRegistry)
+          .set({ lastGrantAt: new Date().toISOString() })
+          .where(eq(oauthClientRegistry.clientId, oauthRequest.clientId))
+          .catch((e: unknown) => console.error('Failed to update lastGrantAt:', e))
+      );
 
       return c.json({
         success: true,
