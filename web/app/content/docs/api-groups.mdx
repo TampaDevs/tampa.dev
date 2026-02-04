@@ -130,30 +130,32 @@ curl -X POST \
   https://api.tampa.dev/v1/favorites/react-tampa
 ```
 
+**New favorite (201 Created):**
 ```json
 {
   "data": {
-    "success": true
+    "groupSlug": "react-tampa"
+  }
+}
+```
+
+**Already favorited (200 OK):**
+```json
+{
+  "data": {
+    "alreadyFavorited": true
   }
 }
 ```
 
 ### DELETE /v1/favorites/:groupSlug
 
-Remove a group from favorites. Scope: `write:favorites`.
+Remove a group from favorites. Scope: `write:favorites`. Returns `204 No Content`.
 
 ```bash
 curl -X DELETE \
   -H "Authorization: Bearer td_pat_abc123..." \
   https://api.tampa.dev/v1/favorites/react-tampa
-```
-
-```json
-{
-  "data": {
-    "success": true
-  }
-}
 ```
 
 ---
@@ -228,7 +230,6 @@ curl -X POST \
 ```json
 {
   "data": {
-    "success": true,
     "badge": {
       "name": "Workshop Attendee",
       "slug": "workshop-attendee"

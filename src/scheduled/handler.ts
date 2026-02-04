@@ -5,10 +5,10 @@
  * and perform periodic data maintenance.
  */
 
-import { lt, sql } from 'drizzle-orm';
+import { lt, sql, eq, and, or, isNull } from 'drizzle-orm';
 import type { Env } from '../../types/worker.js';
 import { createDatabase } from '../db/index.js';
-import { syncLogs, badgeClaimLinks, eventCheckinCodes, eventCheckins } from '../db/schema.js';
+import { syncLogs, badgeClaimLinks, eventCheckinCodes, eventCheckins, oauthClientRegistry } from '../db/schema.js';
 import { SyncService } from '../services/sync.js';
 import { providerRegistry } from '../providers/index.js';
 
@@ -112,4 +112,73 @@ async function handleTruncation(env: Env): Promise<void> {
     )`);
 
   console.log('Truncation complete: expired checkin data deleted');
+
+  // Clean up stale OAuth client registrations
+  await cleanupStaleOAuthClients(env);
+}
+
+/**
+ * OAuth client cleanup - removes unused client registrations.
+ *
+ * Two-tier policy:
+ * - DCR clients: removed if registered > 48 hours ago and never used to sign in
+ * - Developer portal clients: removed if unused for > 1 year (or registered > 1 year ago and never used)
+ *
+ * Deleting a client from KV prevents new auth flows. Existing access tokens
+ * expire via their natural TTL; refresh attempts fail because lookupClient()
+ * returns null for deleted clients.
+ */
+async function cleanupStaleOAuthClients(env: Env): Promise<void> {
+  const db = createDatabase(env.DB);
+  const kv = env.OAUTH_KV;
+  if (!kv) return;
+
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Stale DCR clients: registered > 48h ago, never used to sign in.
+  // Bounded to 500 per run to stay within Workers CPU limits.
+  const staleDCR = await db.select({ clientId: oauthClientRegistry.clientId })
+    .from(oauthClientRegistry)
+    .where(and(
+      eq(oauthClientRegistry.source, 'dcr'),
+      isNull(oauthClientRegistry.lastGrantAt),
+      lt(oauthClientRegistry.registeredAt, twoDaysAgo),
+    ))
+    .limit(500);
+
+  // Stale developer portal clients: never used AND registered > 1 year ago,
+  // OR last sign-in > 1 year ago.
+  // Bounded to 500 per run; remainder caught on the next cron cycle.
+  const staleDevPortal = await db.select({ clientId: oauthClientRegistry.clientId })
+    .from(oauthClientRegistry)
+    .where(and(
+      eq(oauthClientRegistry.source, 'developer_portal'),
+      or(
+        and(isNull(oauthClientRegistry.lastGrantAt), lt(oauthClientRegistry.registeredAt, oneYearAgo)),
+        lt(oauthClientRegistry.lastGrantAt, oneYearAgo),
+      ),
+    ))
+    .limit(500);
+
+  const allStale = [...staleDCR, ...staleDevPortal];
+  let deleted = 0;
+
+  for (const client of allStale) {
+    try {
+      // Delete D1 registry row first. If this fails, the row persists and
+      // will be retried on the next cron run. KV remains intact so the
+      // client is still functional until the next successful cleanup.
+      await db.delete(oauthClientRegistry)
+        .where(eq(oauthClientRegistry.clientId, client.clientId));
+      // Delete from KV (prevents new auth flows). This is the
+      // security-critical step that actually blocks further use.
+      await kv.delete(`client:${client.clientId}`);
+      deleted++;
+    } catch (e) {
+      console.error(`Failed to clean up OAuth client ${client.clientId}:`, e);
+    }
+  }
+
+  console.log(`OAuth cleanup: ${deleted}/${allStale.length} stale clients removed (${staleDCR.length} DCR, ${staleDevPortal.length} dev portal)`);
 }

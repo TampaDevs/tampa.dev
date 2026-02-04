@@ -101,7 +101,7 @@ export function requireScope(
  *
  * Returns null if not authenticated.
  */
-export async function getCurrentUser(c: { env: Env; req: { raw: Request } }): Promise<AuthResult | null> {
+export async function getCurrentUser(c: { env: Env; req: { raw: Request }; executionCtx?: ExecutionContext }): Promise<AuthResult | null> {
   // 1. Check for Bearer token
   const authHeader = c.req.raw.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
@@ -109,7 +109,7 @@ export async function getCurrentUser(c: { env: Env; req: { raw: Request } }): Pr
 
     if (token.startsWith('td_pat_')) {
       // 1a. Personal Access Token
-      return resolvePatToken(c.env, token);
+      return resolvePatToken(c.env, token, c.executionCtx);
     }
 
     // 1b. OAuth access token
@@ -120,13 +120,14 @@ export async function getCurrentUser(c: { env: Env; req: { raw: Request } }): Pr
   return resolveSession(c.env, c.req.raw);
 }
 
-// ============== Internal: PAT Resolution ==============
+// ============== PAT Resolution ==============
 
 /**
  * Resolve a Personal Access Token (td_pat_...) to an AuthResult.
- * Same SHA-256 algorithm as resolveExternalToken in index.ts.
+ * Exported for reuse by OAuthProvider's resolveExternalToken callback
+ * in src/index.ts. SHA-256 hashes the raw token to match stored hashes.
  */
-async function resolvePatToken(env: Env, token: string): Promise<AuthResult | null> {
+export async function resolvePatToken(env: Env, token: string, ctx?: ExecutionContext): Promise<AuthResult | null> {
   const db = createDatabase(env.DB);
 
   // Hash the token with SHA-256 (matches how PATs are stored)
@@ -149,14 +150,43 @@ async function resolvePatToken(env: Env, token: string): Promise<AuthResult | nu
   });
   if (!user) return null;
 
-  // Update last_used_at (fire-and-forget)
-  db.update(apiTokens)
+  // Update last_used_at in the background
+  const lastUsedUpdate = db.update(apiTokens)
     .set({ lastUsedAt: new Date().toISOString() })
     .where(eq(apiTokens.id, tokenRecord.id))
-    .then(() => {})
+    .execute()
     .catch(() => {});
 
+  if (ctx) {
+    ctx.waitUntil(lastUsedUpdate);
+  }
+
   return { user, scopes: JSON.parse(tokenRecord.scopes) };
+}
+
+// ============== External Token Resolution (OAuthProvider) ==============
+
+/**
+ * Callback for OAuthProvider's resolveExternalToken option.
+ *
+ * The OAuthProvider intercepts all requests to apiRoute (/v1/) and validates
+ * Bearer tokens. Native OAuth tokens are handled internally, but PATs
+ * (td_pat_...) are "external" tokens that need this callback. Without it,
+ * PATs are rejected with 401 before reaching the Hono app.
+ *
+ * The returned props are set on ctx.props by the OAuthProvider but are not
+ * used downstream -- getCurrentUser() independently re-resolves auth in
+ * route handlers.
+ */
+export async function resolveExternalToken(
+  input: { token: string; request: Request; env: Env },
+): Promise<{ props: Record<string, unknown> } | null> {
+  if (!input.token.startsWith('td_pat_')) return null;
+
+  const auth = await resolvePatToken(input.env, input.token);
+  if (!auth) return null;
+
+  return { props: { userId: auth.user.id } };
 }
 
 // ============== Internal: OAuth Token Resolution ==============

@@ -35,6 +35,15 @@ function createEnvWithOAuthCapture() {
 
   const { env, mockQueue } = createTestEnv({
     OAUTH_PROVIDER: {
+      // Return a confidential client so PKCE enforcement doesn't interfere
+      // with scope filtering tests
+      lookupClient: async () => ({
+        clientId: 'test-client-id',
+        clientName: 'Test App',
+        clientSecret: 'tds_secret',
+        redirectUris: ['https://example.com/callback'],
+        token_endpoint_auth_method: 'client_secret_post',
+      }),
       completeAuthorization: async (opts: {
         scope: string[];
         props: Record<string, unknown>;

@@ -42,6 +42,7 @@ import {
   groupClaimInvites,
   groupCreationRequests,
   sessions,
+  oauthClientRegistry,
 } from '../../db/schema.js';
 import { isPlatformAdmin } from '../../lib/auth.js';
 import type { ToolContext, ToolResult } from '../types.js';
@@ -218,8 +219,10 @@ defineTool({
       });
     }
 
-    // Cascade deletes are handled by FK constraints, but clean up sessions explicitly
+    // Cascade deletes are handled by FK constraints, but clean up sessions
+    // and OAuth client registry entries explicitly (no FK on ownerId)
     await db.delete(sessions).where(eq(sessions.userId, args.userId));
+    await db.delete(oauthClientRegistry).where(eq(oauthClientRegistry.ownerId, args.userId));
     await db.delete(users).where(eq(users.id, args.userId));
 
     return ok({ success: true, deletedUserId: args.userId });

@@ -171,13 +171,17 @@ curl -H "Authorization: Bearer ACCESS_TOKEN" \
 
 ```json
 {
-  "id": "user-uuid",
-  "email": "dev@example.com",
-  "name": "Jane Developer",
-  "avatarUrl": "https://avatars.githubusercontent.com/...",
-  "githubUsername": "janedev"
+  "data": {
+    "id": "user-uuid",
+    "name": "Jane Developer",
+    "avatarUrl": "https://avatars.githubusercontent.com/...",
+    "username": "janedev",
+    "email": "dev@example.com"
+  }
 }
 ```
+
+The `email` field is only included when the token has the `user:email` scope.
 
 ---
 
@@ -259,7 +263,7 @@ app.get('/callback', async (req, res) => {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
 
-  const user = await userRes.json();
+  const { data: user } = await userRes.json();
   res.json({ user, tokens: { scope: tokens.scope } });
 });
 
@@ -298,58 +302,6 @@ The easiest approach -- link directly to the hosted button image:
   <img src="https://api.tampa.dev/assets/signin-button.svg?theme=dark"
        alt="Sign in with Tampa.dev"
        height="40" />
-</a>
-```
-
-### Self-Contained HTML Button
-
-If you prefer not to load an external image, use this copy-pasteable HTML. It includes the Tampa.dev icon mark inline and requires no external assets:
-
-**Light variant:**
-
-```html
-<a href="https://tampa.dev/oauth/authorize?..."
-   style="display:inline-flex;align-items:center;gap:10px;
-          padding:10px 20px 10px 12px;border-radius:6px;
-          background:#fff;border:1px solid #dadce0;
-          font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-          font-size:14px;font-weight:600;color:#1a1a1a;
-          text-decoration:none;cursor:pointer;
-          transition:background .15s,box-shadow .15s;"
-   onmouseover="this.style.background='#f8f9fa';this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)'"
-   onmouseout="this.style.background='#fff';this.style.boxShadow='none'">
-  <svg width="20" height="20" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
-    <rect width="192" height="192" rx="32" ry="32" fill="#F97066"/>
-    <text x="96" y="128" font-family="Inter,sans-serif" font-size="108"
-          font-weight="800" fill="white" text-anchor="middle">T</text>
-    <text x="130" y="140" font-family="Inter,sans-serif" font-size="32"
-          font-weight="700" fill="white" text-anchor="middle" opacity="0.95">.</text>
-  </svg>
-  Sign in with Tampa.dev
-</a>
-```
-
-**Dark variant:**
-
-```html
-<a href="https://tampa.dev/oauth/authorize?..."
-   style="display:inline-flex;align-items:center;gap:10px;
-          padding:10px 20px 10px 12px;border-radius:6px;
-          background:#1a1a1a;border:1px solid #3a3a3a;
-          font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-          font-size:14px;font-weight:600;color:#fff;
-          text-decoration:none;cursor:pointer;
-          transition:background .15s,box-shadow .15s;"
-   onmouseover="this.style.background='#2a2a2a';this.style.boxShadow='0 1px 3px rgba(0,0,0,0.3)'"
-   onmouseout="this.style.background='#1a1a1a';this.style.boxShadow='none'">
-  <svg width="20" height="20" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
-    <rect width="192" height="192" rx="32" ry="32" fill="#F97066"/>
-    <text x="96" y="128" font-family="Inter,sans-serif" font-size="108"
-          font-weight="800" fill="white" text-anchor="middle">T</text>
-    <text x="130" y="140" font-family="Inter,sans-serif" font-size="32"
-          font-weight="700" fill="white" text-anchor="middle" opacity="0.95">.</text>
-  </svg>
-  Sign in with Tampa.dev
 </a>
 ```
 

@@ -7,6 +7,9 @@
 
 import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
 import { createApp, addOpenAPIRoutes } from './app.js';
+import { resolveExternalToken } from './lib/auth.js';
+import { createDatabase } from './db/index.js';
+import { oauthClientRegistry } from './db/schema.js';
 import { registerEventRoutes } from './routes/events.js';
 import { registerGroupRoutes } from './routes/groups.js';
 import { registerSchemaRoutes } from './routes/schemas.js';
@@ -197,10 +200,10 @@ Interactive docs: https://api.tampa.dev/docs
 - GET /v1/me/linked-accounts - Connected OAuth providers
 
 ### Portfolio (scope: read:portfolio, write:portfolio)
-- GET /v1/portfolio - List portfolio items
-- POST /v1/portfolio - Create portfolio item
-- PATCH /v1/portfolio/:id - Update portfolio item
-- DELETE /v1/portfolio/:id - Delete portfolio item
+- GET /v1/profile/portfolio - List portfolio items
+- POST /v1/profile/portfolio - Create portfolio item
+- PATCH /v1/profile/portfolio/:id - Update portfolio item
+- DELETE /v1/profile/portfolio/:id - Delete portfolio item
 
 ### Tokens (scope: user)
 - GET /v1/profile/tokens - List PATs
@@ -298,18 +301,23 @@ const SCOPES_SUPPORTED = [
 ];
 
 // Create the OAuthProvider instance
-// Note: /v1/ API routes are handled by the Hono app via getCurrentUser() tri-auth.
-// The OAuthProvider only handles OAuth protocol endpoints (/oauth/token, /oauth/register).
+// The OAuthProvider handles OAuth protocol endpoints (/oauth/token, /oauth/register)
+// and validates Bearer tokens on apiRoute (/v1/). PATs are resolved via
+// resolveExternalToken so they aren't rejected before reaching the Hono app.
 const oauthProvider = new OAuthProvider({
-  // /v1/ routes are handled by the Hono app via getCurrentUser() tri-auth.
-  // The OAuthProvider requires apiRoute + apiHandler, so we point it at the
-  // same defaultHandler. The provider unwraps OAuth tokens for /v1/ requests,
-  // but getCurrentUser() independently handles all auth (PAT, OAuth, session).
+  // /v1/ routes require valid Bearer tokens. OAuth tokens are validated
+  // internally by the provider; PATs are validated via resolveExternalToken.
+  // After validation, the request reaches the Hono app where getCurrentUser()
+  // performs the canonical tri-auth resolution in route handlers.
   apiRoute: '/v1/',
   apiHandler: defaultHandler,
 
   // All other requests also go to the Hono app
   defaultHandler,
+
+  // Resolve PAT tokens (td_pat_...) on /v1/ routes. Without this, the
+  // OAuthProvider rejects PATs with 401 before they reach getCurrentUser().
+  resolveExternalToken,
 
   // OAuth endpoints
   // The authorize endpoint is on the web app (tampa.dev) for nice UI
@@ -371,7 +379,71 @@ export default {
     if (request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
       return app.fetch(request, env, ctx);
     }
-    return oauthProvider.fetch(stripLegacyApiPrefix(request), env, ctx);
+
+    const processedRequest = stripLegacyApiPrefix(request);
+
+    // Rate limit dynamic client registration (DCR) before OAuthProvider handles it.
+    // OAuthProvider intercepts /oauth/register before the Hono app, so rate
+    // limiting must happen here at the worker entry point.
+    if (processedRequest.method === 'POST') {
+      const reqUrl = new URL(processedRequest.url);
+      if (reqUrl.pathname === '/oauth/register' && env.kv) {
+        const ip =
+          processedRequest.headers.get('CF-Connecting-IP') ||
+          processedRequest.headers.get('X-Forwarded-For') ||
+          'unknown';
+        const key = `rate:${ip}:oauth-register`;
+
+        try {
+          const current = await env.kv.get(key);
+          const count = current ? parseInt(current, 10) : 0;
+
+          if (count >= 10) {
+            return new Response(JSON.stringify({ error: 'Too many requests' }), {
+              status: 429,
+              headers: {
+                'Content-Type': 'application/json',
+                'Retry-After': '3600',
+              },
+            });
+          }
+
+          await env.kv.put(key, String(count + 1), { expirationTtl: 3600 });
+        } catch {
+          // If KV operations fail, allow the request through
+        }
+      }
+    }
+
+    const response = await oauthProvider.fetch(processedRequest, env, ctx);
+
+    // Track successful DCR registrations in D1 for lifecycle management.
+    // OAuthProvider handles /oauth/register internally, so we intercept the
+    // response to record the client for automated cleanup of unused registrations.
+    if (processedRequest.method === 'POST' && response.status === 201) {
+      const reqUrl = new URL(processedRequest.url);
+      if (reqUrl.pathname === '/oauth/register') {
+        const cloned = response.clone();
+        ctx.waitUntil((async () => {
+          try {
+            const body = await cloned.json() as { client_id?: string; client_name?: string };
+            if (body.client_id) {
+              const db = createDatabase(env.DB);
+              await db.insert(oauthClientRegistry).values({
+                clientId: body.client_id,
+                source: 'dcr',
+                clientName: body.client_name || null,
+                registeredAt: new Date().toISOString(),
+              }).onConflictDoNothing();
+            }
+          } catch (e) {
+            console.error('Failed to track DCR client registration:', e);
+          }
+        })());
+      }
+    }
+
+    return response;
   },
   scheduled: handleScheduled,
   queue: handleQueueBatch,

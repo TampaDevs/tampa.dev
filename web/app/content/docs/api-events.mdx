@@ -106,16 +106,18 @@ curl -H "Authorization: Bearer td_pat_abc123..." \
 ```json
 {
   "data": {
-    "id": "rsvp_xyz789",
-    "eventId": "evt_abc123",
-    "status": "confirmed",
-    "rsvpAt": "2026-02-01T10:00:00Z",
-    "waitlistPosition": null
+    "rsvp": {
+      "id": "rsvp_xyz789",
+      "eventId": "evt_abc123",
+      "status": "confirmed",
+      "rsvpAt": "2026-02-01T10:00:00Z",
+      "waitlistPosition": null
+    }
   }
 }
 ```
 
-If the user has not RSVPed, returns `404`.
+If the user has not RSVPed, `rsvp` is `null`.
 
 ### GET /v1/events/:eventId/rsvp-summary
 
@@ -187,10 +189,13 @@ curl -X DELETE \
 ```json
 {
   "data": {
-    "success": true
+    "success": true,
+    "promotedUserId": null
   }
 }
 ```
+
+If a confirmed user cancels and there are waitlisted users, `promotedUserId` contains the ID of the user promoted from the waitlist.
 
 ---
 
