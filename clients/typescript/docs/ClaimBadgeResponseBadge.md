@@ -7,6 +7,11 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **string** |  | [default to undefined]
 **slug** | **string** |  | [default to undefined]
+**description** | **string** |  | [default to undefined]
+**icon** | **string** |  | [default to undefined]
+**iconUrl** | **string** |  | [default to undefined]
+**color** | **string** |  | [default to undefined]
+**points** | **number** |  | [default to undefined]
 
 ## Example
 
@@ -16,6 +21,11 @@ import { VClaimBadgeResponseBadge } from '@tampadevs/events-api-client';
 const instance: VClaimBadgeResponseBadge = {
     name,
     slug,
+    description,
+    icon,
+    iconUrl,
+    color,
+    points,
 };
 ```
 

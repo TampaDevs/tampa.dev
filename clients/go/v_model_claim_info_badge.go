@@ -25,6 +25,8 @@ type VClaimInfoBadge struct {
 	Slug string `json:"slug"`
 	Description string `json:"description"`
 	Icon string `json:"icon"`
+	// URL to the high-quality emoji image, or null if unavailable
+	IconUrl string `json:"iconUrl"`
 	Color string `json:"color"`
 	Points float32 `json:"points"`
 }
@@ -35,12 +37,13 @@ type _VClaimInfoBadge VClaimInfoBadge
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVClaimInfoBadge(name string, slug string, description string, icon string, color string, points float32) *VClaimInfoBadge {
+func NewVClaimInfoBadge(name string, slug string, description string, icon string, iconUrl string, color string, points float32) *VClaimInfoBadge {
 	this := VClaimInfoBadge{}
 	this.Name = name
 	this.Slug = slug
 	this.Description = description
 	this.Icon = icon
+	this.IconUrl = iconUrl
 	this.Color = color
 	this.Points = points
 	return &this
@@ -150,6 +153,30 @@ func (o *VClaimInfoBadge) SetIcon(v string) {
 	o.Icon = v
 }
 
+// GetIconUrl returns the IconUrl field value
+func (o *VClaimInfoBadge) GetIconUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.IconUrl
+}
+
+// GetIconUrlOk returns a tuple with the IconUrl field value
+// and a boolean to check if the value has been set.
+func (o *VClaimInfoBadge) GetIconUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.IconUrl, true
+}
+
+// SetIconUrl sets field value
+func (o *VClaimInfoBadge) SetIconUrl(v string) {
+	o.IconUrl = v
+}
+
 // GetColor returns the Color field value
 func (o *VClaimInfoBadge) GetColor() string {
 	if o == nil {
@@ -212,6 +239,7 @@ func (o VClaimInfoBadge) ToMap() (map[string]interface{}, error) {
 	toSerialize["slug"] = o.Slug
 	toSerialize["description"] = o.Description
 	toSerialize["icon"] = o.Icon
+	toSerialize["iconUrl"] = o.IconUrl
 	toSerialize["color"] = o.Color
 	toSerialize["points"] = o.Points
 	return toSerialize, nil
@@ -226,6 +254,7 @@ func (o *VClaimInfoBadge) UnmarshalJSON(data []byte) (err error) {
 		"slug",
 		"description",
 		"icon",
+		"iconUrl",
 		"color",
 		"points",
 	}

@@ -25,46 +25,16 @@ type PagesAPIService service
 type ApiHtmlGetRequest struct {
 	ctx context.Context
 	ApiService *PagesAPIService
-	groups *string
-	noonline *string
-	withinHours *string
-	withinDays *string
-	noempty *string
 }
 
-func (r ApiHtmlGetRequest) Groups(groups string) ApiHtmlGetRequest {
-	r.groups = &groups
-	return r
-}
-
-func (r ApiHtmlGetRequest) Noonline(noonline string) ApiHtmlGetRequest {
-	r.noonline = &noonline
-	return r
-}
-
-func (r ApiHtmlGetRequest) WithinHours(withinHours string) ApiHtmlGetRequest {
-	r.withinHours = &withinHours
-	return r
-}
-
-func (r ApiHtmlGetRequest) WithinDays(withinDays string) ApiHtmlGetRequest {
-	r.withinDays = &withinDays
-	return r
-}
-
-func (r ApiHtmlGetRequest) Noempty(noempty string) ApiHtmlGetRequest {
-	r.noempty = &noempty
-	return r
-}
-
-func (r ApiHtmlGetRequest) Execute() (string, *http.Response, error) {
+func (r ApiHtmlGetRequest) Execute() (*http.Response, error) {
 	return r.ApiService.HtmlGetExecute(r)
 }
 
 /*
-HtmlGet HTML page with upcoming events
+HtmlGet Deprecated — redirects to calendar
 
-Returns a formatted HTML page displaying upcoming events
+Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiHtmlGetRequest
@@ -77,18 +47,16 @@ func (a *PagesAPIService) HtmlGet(ctx context.Context) ApiHtmlGetRequest {
 }
 
 // Execute executes the request
-//  @return string
-func (a *PagesAPIService) HtmlGetExecute(r ApiHtmlGetRequest) (string, *http.Response, error) {
+func (a *PagesAPIService) HtmlGetExecute(r ApiHtmlGetRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  string
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PagesAPIService.HtmlGet")
 	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/html"
@@ -97,21 +65,6 @@ func (a *PagesAPIService) HtmlGetExecute(r ApiHtmlGetRequest) (string, *http.Res
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
-	if r.groups != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "groups", r.groups, "form", "")
-	}
-	if r.noonline != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "noonline", r.noonline, "form", "")
-	}
-	if r.withinHours != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "within_hours", r.withinHours, "form", "")
-	}
-	if r.withinDays != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "within_days", r.withinDays, "form", "")
-	}
-	if r.noempty != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "noempty", r.noempty, "form", "")
-	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -122,7 +75,7 @@ func (a *PagesAPIService) HtmlGetExecute(r ApiHtmlGetRequest) (string, *http.Res
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"text/html"}
+	localVarHTTPHeaderAccepts := []string{}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -131,19 +84,19 @@ func (a *PagesAPIService) HtmlGetExecute(r ApiHtmlGetRequest) (string, *http.Res
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -151,64 +104,25 @@ func (a *PagesAPIService) HtmlGetExecute(r ApiHtmlGetRequest) (string, *http.Res
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
+		return localVarHTTPResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
+	return localVarHTTPResponse, nil
 }
 
 type ApiUpcomingEventsGetRequest struct {
 	ctx context.Context
 	ApiService *PagesAPIService
-	groups *string
-	noonline *string
-	withinHours *string
-	withinDays *string
-	noempty *string
 }
 
-func (r ApiUpcomingEventsGetRequest) Groups(groups string) ApiUpcomingEventsGetRequest {
-	r.groups = &groups
-	return r
-}
-
-func (r ApiUpcomingEventsGetRequest) Noonline(noonline string) ApiUpcomingEventsGetRequest {
-	r.noonline = &noonline
-	return r
-}
-
-func (r ApiUpcomingEventsGetRequest) WithinHours(withinHours string) ApiUpcomingEventsGetRequest {
-	r.withinHours = &withinHours
-	return r
-}
-
-func (r ApiUpcomingEventsGetRequest) WithinDays(withinDays string) ApiUpcomingEventsGetRequest {
-	r.withinDays = &withinDays
-	return r
-}
-
-func (r ApiUpcomingEventsGetRequest) Noempty(noempty string) ApiUpcomingEventsGetRequest {
-	r.noempty = &noempty
-	return r
-}
-
-func (r ApiUpcomingEventsGetRequest) Execute() (string, *http.Response, error) {
+func (r ApiUpcomingEventsGetRequest) Execute() (*http.Response, error) {
 	return r.ApiService.UpcomingEventsGetExecute(r)
 }
 
 /*
-UpcomingEventsGet Upcoming events HTML page
+UpcomingEventsGet Deprecated — redirects to calendar
 
-Alias for /html - returns a formatted HTML page displaying upcoming events
+Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiUpcomingEventsGetRequest
@@ -221,18 +135,16 @@ func (a *PagesAPIService) UpcomingEventsGet(ctx context.Context) ApiUpcomingEven
 }
 
 // Execute executes the request
-//  @return string
-func (a *PagesAPIService) UpcomingEventsGetExecute(r ApiUpcomingEventsGetRequest) (string, *http.Response, error) {
+func (a *PagesAPIService) UpcomingEventsGetExecute(r ApiUpcomingEventsGetRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  string
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PagesAPIService.UpcomingEventsGet")
 	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/upcoming-events"
@@ -241,21 +153,6 @@ func (a *PagesAPIService) UpcomingEventsGetExecute(r ApiUpcomingEventsGetRequest
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
-	if r.groups != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "groups", r.groups, "form", "")
-	}
-	if r.noonline != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "noonline", r.noonline, "form", "")
-	}
-	if r.withinHours != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "within_hours", r.withinHours, "form", "")
-	}
-	if r.withinDays != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "within_days", r.withinDays, "form", "")
-	}
-	if r.noempty != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "noempty", r.noempty, "form", "")
-	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -266,7 +163,7 @@ func (a *PagesAPIService) UpcomingEventsGetExecute(r ApiUpcomingEventsGetRequest
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"text/html"}
+	localVarHTTPHeaderAccepts := []string{}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -275,19 +172,19 @@ func (a *PagesAPIService) UpcomingEventsGetExecute(r ApiUpcomingEventsGetRequest
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -295,17 +192,8 @@ func (a *PagesAPIService) UpcomingEventsGetExecute(r ApiUpcomingEventsGetRequest
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
+		return localVarHTTPResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
+	return localVarHTTPResponse, nil
 }

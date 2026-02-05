@@ -108,8 +108,8 @@ Class | Method | HTTP request | Description
 *MCPAPI* | [**McpDelete**](docs/MCPAPI.md#mcpdelete) | **Delete** /mcp | MCP session termination
 *MCPAPI* | [**McpGet**](docs/MCPAPI.md#mcpget) | **Get** /mcp | MCP SSE endpoint (not supported)
 *MCPAPI* | [**McpPost**](docs/MCPAPI.md#mcppost) | **Post** /mcp | MCP JSON-RPC endpoint
-*PagesAPI* | [**HtmlGet**](docs/PagesAPI.md#htmlget) | **Get** /html | HTML page with upcoming events
-*PagesAPI* | [**UpcomingEventsGet**](docs/PagesAPI.md#upcomingeventsget) | **Get** /upcoming-events | Upcoming events HTML page
+*PagesAPI* | [**HtmlGet**](docs/PagesAPI.md#htmlget) | **Get** /html | Deprecated — redirects to calendar
+*PagesAPI* | [**UpcomingEventsGet**](docs/PagesAPI.md#upcomingeventsget) | **Get** /upcoming-events | Deprecated — redirects to calendar
 *SchemasAPI* | [**Call20260125SchemasGet**](docs/SchemasAPI.md#call20260125schemasget) | **Get** /2026-01-25/schemas | List all JSON schemas
 *SchemasAPI* | [**Call20260125SchemasNameGet**](docs/SchemasAPI.md#call20260125schemasnameget) | **Get** /2026-01-25/schemas/{name} | Get specific JSON schema
 *ScopesAPI* | [**V1ScopesGet**](docs/ScopesAPI.md#v1scopesget) | **Get** /v1/scopes | List OAuth scopes

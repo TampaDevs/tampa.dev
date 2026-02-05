@@ -7,6 +7,11 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **str** |  | 
 **slug** | **str** |  | 
+**description** | **str** |  | 
+**icon** | **str** |  | 
+**icon_url** | **str** |  | 
+**color** | **str** |  | 
+**points** | **float** |  | 
 
 ## Example
 

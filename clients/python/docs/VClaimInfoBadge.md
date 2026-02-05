@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **slug** | **str** |  | 
 **description** | **str** |  | 
 **icon** | **str** |  | 
+**icon_url** | **str** | URL to the high-quality emoji image, or null if unavailable | 
 **color** | **str** |  | 
 **points** | **float** |  | 
 

@@ -106,8 +106,8 @@ Class | Method | HTTP request | Description
 *TampaEventsAPI::MCPApi* | [**mcp_delete**](docs/MCPApi.md#mcp_delete) | **DELETE** /mcp | MCP session termination
 *TampaEventsAPI::MCPApi* | [**mcp_get**](docs/MCPApi.md#mcp_get) | **GET** /mcp | MCP SSE endpoint (not supported)
 *TampaEventsAPI::MCPApi* | [**mcp_post**](docs/MCPApi.md#mcp_post) | **POST** /mcp | MCP JSON-RPC endpoint
-*TampaEventsAPI::PagesApi* | [**html_get**](docs/PagesApi.md#html_get) | **GET** /html | HTML page with upcoming events
-*TampaEventsAPI::PagesApi* | [**upcoming_events_get**](docs/PagesApi.md#upcoming_events_get) | **GET** /upcoming-events | Upcoming events HTML page
+*TampaEventsAPI::PagesApi* | [**html_get**](docs/PagesApi.md#html_get) | **GET** /html | Deprecated — redirects to calendar
+*TampaEventsAPI::PagesApi* | [**upcoming_events_get**](docs/PagesApi.md#upcoming_events_get) | **GET** /upcoming-events | Deprecated — redirects to calendar
 *TampaEventsAPI::SchemasApi* | [**call_20260125_schemas_get**](docs/SchemasApi.md#call_20260125_schemas_get) | **GET** /2026-01-25/schemas | List all JSON schemas
 *TampaEventsAPI::SchemasApi* | [**call_20260125_schemas_name_get**](docs/SchemasApi.md#call_20260125_schemas_name_get) | **GET** /2026-01-25/schemas/{name} | Get specific JSON schema
 *TampaEventsAPI::ScopesApi* | [**v1_scopes_get**](docs/ScopesApi.md#v1_scopes_get) | **GET** /v1/scopes | List OAuth scopes

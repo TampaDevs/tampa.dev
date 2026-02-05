@@ -916,6 +916,11 @@
               "icon": {
                 "type": "string"
               },
+              "iconUrl": {
+                "type": "string",
+                "nullable": true,
+                "description": "URL to the high-quality emoji image, or null if unavailable"
+              },
               "color": {
                 "type": "string",
                 "nullable": true
@@ -929,6 +934,7 @@
               "slug",
               "description",
               "icon",
+              "iconUrl",
               "color",
               "points"
             ]
@@ -979,11 +985,33 @@
               },
               "slug": {
                 "type": "string"
+              },
+              "description": {
+                "type": "string",
+                "nullable": true
+              },
+              "icon": {
+                "type": "string"
+              },
+              "iconUrl": {
+                "type": "string",
+                "nullable": true
+              },
+              "color": {
+                "type": "string"
+              },
+              "points": {
+                "type": "number"
               }
             },
             "required": [
               "name",
-              "slug"
+              "slug",
+              "description",
+              "icon",
+              "iconUrl",
+              "color",
+              "points"
             ]
           }
         },
@@ -2183,146 +2211,28 @@
     },
     "/html": {
       "get": {
-        "summary": "HTML page with upcoming events",
-        "description": "Returns a formatted HTML page displaying upcoming events",
+        "summary": "Deprecated — redirects to calendar",
+        "description": "Formerly returned an HTML page with upcoming events. Now redirects to the calendar.",
         "tags": [
           "Pages"
         ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampadevs,suncoast-js\")",
-              "example": "tampadevs,suncoast-js"
-            },
-            "required": false,
-            "name": "groups",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Exclude online events (set to \"1\" to exclude)",
-              "example": "1"
-            },
-            "required": false,
-            "name": "noonline",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Only show events within the next N hours",
-              "example": "24"
-            },
-            "required": false,
-            "name": "within_hours",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Only show events within the next N days",
-              "example": "7"
-            },
-            "required": false,
-            "name": "within_days",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Exclude groups with no events (set to \"1\" to exclude)",
-              "example": "1"
-            },
-            "required": false,
-            "name": "noempty",
-            "in": "query"
-          }
-        ],
         "responses": {
-          "200": {
-            "description": "HTML page",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
+          "301": {
+            "description": "Permanent redirect to calendar"
           }
         }
       }
     },
     "/upcoming-events": {
       "get": {
-        "summary": "Upcoming events HTML page",
-        "description": "Alias for /html - returns a formatted HTML page displaying upcoming events",
+        "summary": "Deprecated — redirects to calendar",
+        "description": "Formerly returned an HTML page with upcoming events. Now redirects to the calendar.",
         "tags": [
           "Pages"
         ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Comma-separated list of group urlnames to filter (e.g., \"tampadevs,suncoast-js\")",
-              "example": "tampadevs,suncoast-js"
-            },
-            "required": false,
-            "name": "groups",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Exclude online events (set to \"1\" to exclude)",
-              "example": "1"
-            },
-            "required": false,
-            "name": "noonline",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Only show events within the next N hours",
-              "example": "24"
-            },
-            "required": false,
-            "name": "within_hours",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Only show events within the next N days",
-              "example": "7"
-            },
-            "required": false,
-            "name": "within_days",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Exclude groups with no events (set to \"1\" to exclude)",
-              "example": "1"
-            },
-            "required": false,
-            "name": "noempty",
-            "in": "query"
-          }
-        ],
         "responses": {
-          "200": {
-            "description": "HTML page",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
+          "301": {
+            "description": "Permanent redirect to calendar"
           }
         }
       }

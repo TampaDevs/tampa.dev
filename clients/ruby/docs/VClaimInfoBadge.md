@@ -8,6 +8,7 @@
 | **slug** | **String** |  |  |
 | **description** | **String** |  |  |
 | **icon** | **String** |  |  |
+| **icon_url** | **String** | URL to the high-quality emoji image, or null if unavailable |  |
 | **color** | **String** |  |  |
 | **points** | **Float** |  |  |
 
@@ -21,6 +22,7 @@ instance = TampaEventsAPI::VClaimInfoBadge.new(
   slug: null,
   description: null,
   icon: null,
+  icon_url: null,
   color: null,
   points: null
 )

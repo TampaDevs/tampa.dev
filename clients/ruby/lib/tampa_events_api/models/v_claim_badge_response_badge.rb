@@ -19,11 +19,26 @@ module TampaEventsAPI
 
     attr_accessor :slug
 
+    attr_accessor :description
+
+    attr_accessor :icon
+
+    attr_accessor :icon_url
+
+    attr_accessor :color
+
+    attr_accessor :points
+
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'name' => :'name',
-        :'slug' => :'slug'
+        :'slug' => :'slug',
+        :'description' => :'description',
+        :'icon' => :'icon',
+        :'icon_url' => :'iconUrl',
+        :'color' => :'color',
+        :'points' => :'points'
       }
     end
 
@@ -41,7 +56,12 @@ module TampaEventsAPI
     def self.openapi_types
       {
         :'name' => :'String',
-        :'slug' => :'String'
+        :'slug' => :'String',
+        :'description' => :'String',
+        :'icon' => :'String',
+        :'icon_url' => :'String',
+        :'color' => :'String',
+        :'points' => :'Float'
       }
     end
 
@@ -78,6 +98,36 @@ module TampaEventsAPI
       else
         self.slug = nil
       end
+
+      if attributes.key?(:'description')
+        self.description = attributes[:'description']
+      else
+        self.description = nil
+      end
+
+      if attributes.key?(:'icon')
+        self.icon = attributes[:'icon']
+      else
+        self.icon = nil
+      end
+
+      if attributes.key?(:'icon_url')
+        self.icon_url = attributes[:'icon_url']
+      else
+        self.icon_url = nil
+      end
+
+      if attributes.key?(:'color')
+        self.color = attributes[:'color']
+      else
+        self.color = nil
+      end
+
+      if attributes.key?(:'points')
+        self.points = attributes[:'points']
+      else
+        self.points = nil
+      end
     end
 
     # Show invalid properties with the reasons. Usually used together with valid?
@@ -93,6 +143,26 @@ module TampaEventsAPI
         invalid_properties.push('invalid value for "slug", slug cannot be nil.')
       end
 
+      if @description.nil?
+        invalid_properties.push('invalid value for "description", description cannot be nil.')
+      end
+
+      if @icon.nil?
+        invalid_properties.push('invalid value for "icon", icon cannot be nil.')
+      end
+
+      if @icon_url.nil?
+        invalid_properties.push('invalid value for "icon_url", icon_url cannot be nil.')
+      end
+
+      if @color.nil?
+        invalid_properties.push('invalid value for "color", color cannot be nil.')
+      end
+
+      if @points.nil?
+        invalid_properties.push('invalid value for "points", points cannot be nil.')
+      end
+
       invalid_properties
     end
 
@@ -102,6 +172,11 @@ module TampaEventsAPI
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @name.nil?
       return false if @slug.nil?
+      return false if @description.nil?
+      return false if @icon.nil?
+      return false if @icon_url.nil?
+      return false if @color.nil?
+      return false if @points.nil?
       true
     end
 
@@ -125,13 +200,68 @@ module TampaEventsAPI
       @slug = slug
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] description Value to be assigned
+    def description=(description)
+      if description.nil?
+        fail ArgumentError, 'description cannot be nil'
+      end
+
+      @description = description
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] icon Value to be assigned
+    def icon=(icon)
+      if icon.nil?
+        fail ArgumentError, 'icon cannot be nil'
+      end
+
+      @icon = icon
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] icon_url Value to be assigned
+    def icon_url=(icon_url)
+      if icon_url.nil?
+        fail ArgumentError, 'icon_url cannot be nil'
+      end
+
+      @icon_url = icon_url
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] color Value to be assigned
+    def color=(color)
+      if color.nil?
+        fail ArgumentError, 'color cannot be nil'
+      end
+
+      @color = color
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] points Value to be assigned
+    def points=(points)
+      if points.nil?
+        fail ArgumentError, 'points cannot be nil'
+      end
+
+      @points = points
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
           name == o.name &&
-          slug == o.slug
+          slug == o.slug &&
+          description == o.description &&
+          icon == o.icon &&
+          icon_url == o.icon_url &&
+          color == o.color &&
+          points == o.points
     end
 
     # @see the `==` method
@@ -143,7 +273,7 @@ module TampaEventsAPI
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [name, slug].hash
+      [name, slug, description, icon, icon_url, color, points].hash
     end
 
     # Builds the object from hash

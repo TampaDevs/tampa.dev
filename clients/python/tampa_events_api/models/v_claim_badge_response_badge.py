@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictStr
-from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr
+from typing import Any, ClassVar, Dict, List, Union
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -28,7 +28,12 @@ class VClaimBadgeResponseBadge(BaseModel):
     """ # noqa: E501
     name: StrictStr
     slug: StrictStr
-    __properties: ClassVar[List[str]] = ["name", "slug"]
+    description: StrictStr
+    icon: StrictStr
+    icon_url: StrictStr = Field(alias="iconUrl")
+    color: StrictStr
+    points: Union[StrictFloat, StrictInt]
+    __properties: ClassVar[List[str]] = ["name", "slug", "description", "icon", "iconUrl", "color", "points"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -82,7 +87,12 @@ class VClaimBadgeResponseBadge(BaseModel):
 
         _obj = cls.model_validate({
             "name": obj.get("name"),
-            "slug": obj.get("slug")
+            "slug": obj.get("slug"),
+            "description": obj.get("description"),
+            "icon": obj.get("icon"),
+            "iconUrl": obj.get("iconUrl"),
+            "color": obj.get("color"),
+            "points": obj.get("points")
         })
         return _obj
 

@@ -4,13 +4,13 @@ All URIs are relative to *https://api.tampa.dev*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**htmlGet**](#htmlget) | **GET** /html | HTML page with upcoming events|
-|[**upcomingEventsGet**](#upcomingeventsget) | **GET** /upcoming-events | Upcoming events HTML page|
+|[**htmlGet**](#htmlget) | **GET** /html | Deprecated — redirects to calendar|
+|[**upcomingEventsGet**](#upcomingeventsget) | **GET** /upcoming-events | Deprecated — redirects to calendar|
 
 # **htmlGet**
-> string htmlGet()
+> htmlGet()
 
-Returns a formatted HTML page displaying upcoming events
+Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
 ### Example
 
@@ -23,35 +23,16 @@ import {
 const configuration = new Configuration();
 const apiInstance = new PagesApi(configuration);
 
-let groups: string; // (optional) (default to undefined)
-let noonline: string; // (optional) (default to undefined)
-let withinHours: string; // (optional) (default to undefined)
-let withinDays: string; // (optional) (default to undefined)
-let noempty: string; // (optional) (default to undefined)
-
-const { status, data } = await apiInstance.htmlGet(
-    groups,
-    noonline,
-    withinHours,
-    withinDays,
-    noempty
-);
+const { status, data } = await apiInstance.htmlGet();
 ```
 
 ### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **groups** | [**string**] |  | (optional) defaults to undefined|
-| **noonline** | [**string**] |  | (optional) defaults to undefined|
-| **withinHours** | [**string**] |  | (optional) defaults to undefined|
-| **withinDays** | [**string**] |  | (optional) defaults to undefined|
-| **noempty** | [**string**] |  | (optional) defaults to undefined|
+This endpoint does not have any parameters.
 
 
 ### Return type
 
-**string**
+void (empty response body)
 
 ### Authorization
 
@@ -60,20 +41,20 @@ const { status, data } = await apiInstance.htmlGet(
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: text/html
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | HTML page |  -  |
+|**301** | Permanent redirect to calendar |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **upcomingEventsGet**
-> string upcomingEventsGet()
+> upcomingEventsGet()
 
-Alias for /html - returns a formatted HTML page displaying upcoming events
+Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
 ### Example
 
@@ -86,35 +67,16 @@ import {
 const configuration = new Configuration();
 const apiInstance = new PagesApi(configuration);
 
-let groups: string; // (optional) (default to undefined)
-let noonline: string; // (optional) (default to undefined)
-let withinHours: string; // (optional) (default to undefined)
-let withinDays: string; // (optional) (default to undefined)
-let noempty: string; // (optional) (default to undefined)
-
-const { status, data } = await apiInstance.upcomingEventsGet(
-    groups,
-    noonline,
-    withinHours,
-    withinDays,
-    noempty
-);
+const { status, data } = await apiInstance.upcomingEventsGet();
 ```
 
 ### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **groups** | [**string**] |  | (optional) defaults to undefined|
-| **noonline** | [**string**] |  | (optional) defaults to undefined|
-| **withinHours** | [**string**] |  | (optional) defaults to undefined|
-| **withinDays** | [**string**] |  | (optional) defaults to undefined|
-| **noempty** | [**string**] |  | (optional) defaults to undefined|
+This endpoint does not have any parameters.
 
 
 ### Return type
 
-**string**
+void (empty response body)
 
 ### Authorization
 
@@ -123,13 +85,13 @@ const { status, data } = await apiInstance.upcomingEventsGet(
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: text/html
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | HTML page |  -  |
+|**301** | Permanent redirect to calendar |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

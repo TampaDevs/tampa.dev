@@ -632,123 +632,22 @@ paths:
       - Widgets
   /html:
     get:
-      description: Returns a formatted HTML page displaying upcoming events
-      parameters:
-      - explode: true
-        in: query
-        name: groups
-        required: false
-        schema:
-          description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampadevs,suncoast-js\")"
-          example: "tampadevs,suncoast-js"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: noonline
-        required: false
-        schema:
-          description: Exclude online events (set to "1" to exclude)
-          example: "1"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: within_hours
-        required: false
-        schema:
-          description: Only show events within the next N hours
-          example: "24"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: within_days
-        required: false
-        schema:
-          description: Only show events within the next N days
-          example: "7"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: noempty
-        required: false
-        schema:
-          description: Exclude groups with no events (set to "1" to exclude)
-          example: "1"
-          type: string
-        style: form
+      description: Formerly returned an HTML page with upcoming events. Now redirects
+        to the calendar.
       responses:
-        "200":
-          content:
-            text/html:
-              schema:
-                type: string
-          description: HTML page
-      summary: HTML page with upcoming events
+        "301":
+          description: Permanent redirect to calendar
+      summary: Deprecated — redirects to calendar
       tags:
       - Pages
   /upcoming-events:
     get:
-      description: Alias for /html - returns a formatted HTML page displaying upcoming
-        events
-      parameters:
-      - explode: true
-        in: query
-        name: groups
-        required: false
-        schema:
-          description: "Comma-separated list of group urlnames to filter (e.g., \"\
-            tampadevs,suncoast-js\")"
-          example: "tampadevs,suncoast-js"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: noonline
-        required: false
-        schema:
-          description: Exclude online events (set to "1" to exclude)
-          example: "1"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: within_hours
-        required: false
-        schema:
-          description: Only show events within the next N hours
-          example: "24"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: within_days
-        required: false
-        schema:
-          description: Only show events within the next N days
-          example: "7"
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: noempty
-        required: false
-        schema:
-          description: Exclude groups with no events (set to "1" to exclude)
-          example: "1"
-          type: string
-        style: form
+      description: Formerly returned an HTML page with upcoming events. Now redirects
+        to the calendar.
       responses:
-        "200":
-          content:
-            text/html:
-              schema:
-                type: string
-          description: HTML page
-      summary: Upcoming events HTML page
+        "301":
+          description: Permanent redirect to calendar
+      summary: Deprecated — redirects to calendar
       tags:
       - Pages
   /mcp:
@@ -2767,6 +2666,7 @@ components:
           name: name
           icon: icon
           description: description
+          iconUrl: iconUrl
           slug: slug
           points: 0.8008281904610115
         reason: reason
@@ -2791,8 +2691,13 @@ components:
     ClaimBadgeResponse:
       example:
         badge:
+          color: color
           name: name
+          icon: icon
+          description: description
+          iconUrl: iconUrl
           slug: slug
+          points: 0.8008281904610115
       properties:
         badge:
           $ref: "#/components/schemas/ClaimBadgeResponse_badge"
@@ -3533,6 +3438,7 @@ components:
             name: name
             icon: icon
             description: description
+            iconUrl: iconUrl
             slug: slug
             points: 0.8008281904610115
           reason: reason
@@ -3550,8 +3456,13 @@ components:
       example:
         data:
           badge:
+            color: color
             name: name
+            icon: icon
+            description: description
+            iconUrl: iconUrl
             slug: slug
+            points: 0.8008281904610115
       properties:
         data:
           $ref: "#/components/schemas/ClaimBadgeResponse"
@@ -3622,6 +3533,7 @@ components:
         name: name
         icon: icon
         description: description
+        iconUrl: iconUrl
         slug: slug
         points: 0.8008281904610115
       properties:
@@ -3634,6 +3546,10 @@ components:
           nullable: true
         icon:
           type: string
+        iconUrl:
+          description: "URL to the high-quality emoji image, or null if unavailable"
+          type: string
+          nullable: true
         color:
           type: string
           nullable: true
@@ -3643,6 +3559,7 @@ components:
       - color
       - description
       - icon
+      - iconUrl
       - name
       - points
       - slug
@@ -3667,15 +3584,37 @@ components:
       nullable: true
     ClaimBadgeResponse_badge:
       example:
+        color: color
         name: name
+        icon: icon
+        description: description
+        iconUrl: iconUrl
         slug: slug
+        points: 0.8008281904610115
       properties:
         name:
           type: string
         slug:
           type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+        iconUrl:
+          type: string
+          nullable: true
+        color:
+          type: string
+        points:
+          type: number
       required:
+      - color
+      - description
+      - icon
+      - iconUrl
       - name
+      - points
       - slug
   securitySchemes:
     BearerToken:

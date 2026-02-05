@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Union
 from typing import Optional, Set
 from typing_extensions import Self
@@ -30,9 +30,10 @@ class VClaimInfoBadge(BaseModel):
     slug: StrictStr
     description: StrictStr
     icon: StrictStr
+    icon_url: StrictStr = Field(description="URL to the high-quality emoji image, or null if unavailable", alias="iconUrl")
     color: StrictStr
     points: Union[StrictFloat, StrictInt]
-    __properties: ClassVar[List[str]] = ["name", "slug", "description", "icon", "color", "points"]
+    __properties: ClassVar[List[str]] = ["name", "slug", "description", "icon", "iconUrl", "color", "points"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -89,6 +90,7 @@ class VClaimInfoBadge(BaseModel):
             "slug": obj.get("slug"),
             "description": obj.get("description"),
             "icon": obj.get("icon"),
+            "iconUrl": obj.get("iconUrl"),
             "color": obj.get("color"),
             "points": obj.get("points")
         })

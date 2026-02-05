@@ -6,6 +6,11 @@
 | ---- | ---- | ----------- | ----- |
 | **name** | **String** |  |  |
 | **slug** | **String** |  |  |
+| **description** | **String** |  |  |
+| **icon** | **String** |  |  |
+| **icon_url** | **String** |  |  |
+| **color** | **String** |  |  |
+| **points** | **Float** |  |  |
 
 ## Example
 
@@ -14,7 +19,12 @@ require 'tampa_events_api'
 
 instance = TampaEventsAPI::VClaimBadgeResponseBadge.new(
   name: null,
-  slug: null
+  slug: null,
+  description: null,
+  icon: null,
+  icon_url: null,
+  color: null,
+  points: null
 )
 ```
 

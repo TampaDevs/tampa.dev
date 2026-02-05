@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **slug** | **string** |  | [default to undefined]
 **description** | **string** |  | [default to undefined]
 **icon** | **string** |  | [default to undefined]
+**iconUrl** | **string** | URL to the high-quality emoji image, or null if unavailable | [default to undefined]
 **color** | **string** |  | [default to undefined]
 **points** | **number** |  | [default to undefined]
 
@@ -22,6 +23,7 @@ const instance: VClaimInfoBadge = {
     slug,
     description,
     icon,
+    iconUrl,
     color,
     points,
 };

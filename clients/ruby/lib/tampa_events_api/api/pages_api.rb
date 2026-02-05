@@ -19,29 +19,19 @@ module TampaEventsAPI
     def initialize(api_client = ApiClient.default)
       @api_client = api_client
     end
-    # HTML page with upcoming events
-    # Returns a formatted HTML page displaying upcoming events
+    # Deprecated — redirects to calendar
+    # Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :groups 
-    # @option opts [String] :noonline 
-    # @option opts [String] :within_hours 
-    # @option opts [String] :within_days 
-    # @option opts [String] :noempty 
-    # @return [String]
+    # @return [nil]
     def html_get(opts = {})
-      data, _status_code, _headers = html_get_with_http_info(opts)
-      data
+      html_get_with_http_info(opts)
+      nil
     end
 
-    # HTML page with upcoming events
-    # Returns a formatted HTML page displaying upcoming events
+    # Deprecated — redirects to calendar
+    # Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :groups 
-    # @option opts [String] :noonline 
-    # @option opts [String] :within_hours 
-    # @option opts [String] :within_days 
-    # @option opts [String] :noempty 
-    # @return [Array<(String, Integer, Hash)>] String data, response status code and response headers
+    # @return [Array<(nil, Integer, Hash)>] nil, response status code and response headers
     def html_get_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: PagesApi.html_get ...'
@@ -51,16 +41,9 @@ module TampaEventsAPI
 
       # query parameters
       query_params = opts[:query_params] || {}
-      query_params[:'groups'] = opts[:'groups'] if !opts[:'groups'].nil?
-      query_params[:'noonline'] = opts[:'noonline'] if !opts[:'noonline'].nil?
-      query_params[:'within_hours'] = opts[:'within_hours'] if !opts[:'within_hours'].nil?
-      query_params[:'within_days'] = opts[:'within_days'] if !opts[:'within_days'].nil?
-      query_params[:'noempty'] = opts[:'noempty'] if !opts[:'noempty'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['text/html']) unless header_params['Accept']
 
       # form parameters
       form_params = opts[:form_params] || {}
@@ -69,7 +52,7 @@ module TampaEventsAPI
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'String'
+      return_type = opts[:debug_return_type]
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['BearerToken']
@@ -91,29 +74,19 @@ module TampaEventsAPI
       return data, status_code, headers
     end
 
-    # Upcoming events HTML page
-    # Alias for /html - returns a formatted HTML page displaying upcoming events
+    # Deprecated — redirects to calendar
+    # Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :groups 
-    # @option opts [String] :noonline 
-    # @option opts [String] :within_hours 
-    # @option opts [String] :within_days 
-    # @option opts [String] :noempty 
-    # @return [String]
+    # @return [nil]
     def upcoming_events_get(opts = {})
-      data, _status_code, _headers = upcoming_events_get_with_http_info(opts)
-      data
+      upcoming_events_get_with_http_info(opts)
+      nil
     end
 
-    # Upcoming events HTML page
-    # Alias for /html - returns a formatted HTML page displaying upcoming events
+    # Deprecated — redirects to calendar
+    # Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :groups 
-    # @option opts [String] :noonline 
-    # @option opts [String] :within_hours 
-    # @option opts [String] :within_days 
-    # @option opts [String] :noempty 
-    # @return [Array<(String, Integer, Hash)>] String data, response status code and response headers
+    # @return [Array<(nil, Integer, Hash)>] nil, response status code and response headers
     def upcoming_events_get_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: PagesApi.upcoming_events_get ...'
@@ -123,16 +96,9 @@ module TampaEventsAPI
 
       # query parameters
       query_params = opts[:query_params] || {}
-      query_params[:'groups'] = opts[:'groups'] if !opts[:'groups'].nil?
-      query_params[:'noonline'] = opts[:'noonline'] if !opts[:'noonline'].nil?
-      query_params[:'within_hours'] = opts[:'within_hours'] if !opts[:'within_hours'].nil?
-      query_params[:'within_days'] = opts[:'within_days'] if !opts[:'within_days'].nil?
-      query_params[:'noempty'] = opts[:'noempty'] if !opts[:'noempty'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['text/html']) unless header_params['Accept']
 
       # form parameters
       form_params = opts[:form_params] || {}
@@ -141,7 +107,7 @@ module TampaEventsAPI
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'String'
+      return_type = opts[:debug_return_type]
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['BearerToken']
