@@ -60,6 +60,7 @@ import {
   internalError,
   parsePagination,
 } from '../lib/responses.js';
+import { withIconUrl } from '../../lib/emoji.js';
 
 // ============== Validation Schemas ==============
 
@@ -1316,7 +1317,7 @@ export function createV1ManageRoutes() {
         const badgeUsers = await db.query.userBadges.findMany({
           where: eq(userBadges.badgeId, badge.id),
         });
-        return { ...badge, userCount: badgeUsers.length };
+        return withIconUrl({ ...badge, userCount: badgeUsers.length });
       }),
     );
 
@@ -1406,7 +1407,7 @@ export function createV1ManageRoutes() {
       metadata: { userId: user.id, source: 'v1-manage' },
     });
 
-    return created(c, createdBadge);
+    return created(c, createdBadge ? withIconUrl(createdBadge) : createdBadge);
   });
 
   /**
@@ -1459,7 +1460,7 @@ export function createV1ManageRoutes() {
       where: eq(badges.id, badgeId),
     });
 
-    return ok(c, updated);
+    return ok(c, updated ? withIconUrl(updated) : updated);
   });
 
   /**

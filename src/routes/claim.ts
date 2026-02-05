@@ -12,6 +12,7 @@ import type { Env } from '../../types/worker';
 import { getCurrentUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { ok, unauthorized, notFound, conflict, gone } from '../lib/responses.js';
+import { getEmojiUrl } from '../../lib/emoji.js';
 
 export function createClaimRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -68,6 +69,7 @@ export function createClaimRoutes() {
         slug: badge.slug,
         description: badge.description,
         icon: badge.icon,
+        iconUrl: getEmojiUrl(badge.icon),
         color: badge.color,
         points: badge.points,
       },
@@ -195,6 +197,7 @@ export function createClaimRoutes() {
         slug: badge.slug,
         description: badge.description,
         icon: badge.icon,
+        iconUrl: getEmojiUrl(badge.icon),
         color: badge.color,
         points: badge.points,
       } : null,

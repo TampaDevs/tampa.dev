@@ -9,6 +9,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { badges, badgeClaimLinks, userBadges, achievements, achievementProgress, groups } from '../db/schema.js';
 import type { DomainEvent } from '../lib/event-bus.js';
+import { getEmojiUrl } from '../../lib/emoji.js';
 
 type DB = ReturnType<typeof import('../db/index.js').createDatabase>;
 
@@ -20,6 +21,7 @@ export interface ClaimInfoResult {
     slug: string;
     description: string | null;
     icon: string;
+    iconUrl: string | null;
     color: string;
     points: number;
   };
@@ -41,6 +43,7 @@ export interface ClaimBadgeResult {
     slug: string;
     description: string | null;
     icon: string;
+    iconUrl: string | null;
     color: string;
     points: number;
   };
@@ -115,6 +118,7 @@ export async function getClaimInfo(
       slug: badge.slug,
       description: badge.description,
       icon: badge.icon,
+      iconUrl: getEmojiUrl(badge.icon),
       color: badge.color,
       points: badge.points,
     },
@@ -259,6 +263,7 @@ export async function claimBadge(
       slug: badge.slug,
       description: badge.description,
       icon: badge.icon,
+      iconUrl: getEmojiUrl(badge.icon),
       color: badge.color,
       points: badge.points,
     },

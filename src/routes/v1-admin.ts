@@ -60,6 +60,7 @@ import {
   badRequest,
   internalError,
 } from '../lib/responses.js';
+import { withIconUrl } from '../../lib/emoji.js';
 
 // ============== Hono App Type ==============
 
@@ -705,7 +706,7 @@ export function createV1AdminRoutes() {
     const badgesWithInfo = await Promise.all(
       userBadgeRows.map(async (ub) => {
         const badge = await db.query.badges.findFirst({ where: eq(badges.id, ub.badgeId) });
-        return badge ? { ...badge, awardedAt: ub.awardedAt, userBadgeId: ub.id } : null;
+        return badge ? withIconUrl({ ...badge, awardedAt: ub.awardedAt, userBadgeId: ub.id }) : null;
       }),
     );
 
@@ -908,7 +909,7 @@ export function createV1AdminRoutes() {
     const badgesWithCounts = await Promise.all(
       allBadges.map(async (badge) => {
         const badgeUsers = await db.query.userBadges.findMany({ where: eq(userBadges.badgeId, badge.id) });
-        return { ...badge, userCount: badgeUsers.length };
+        return withIconUrl({ ...badge, userCount: badgeUsers.length });
       }),
     );
 
@@ -936,7 +937,7 @@ export function createV1AdminRoutes() {
     });
 
     const createdBadge = await db.query.badges.findFirst({ where: eq(badges.id, id) });
-    return created(c, createdBadge);
+    return created(c, createdBadge ? withIconUrl(createdBadge) : createdBadge);
   });
 
   app.patch('/badges/:id', zValidator('json', updateBadgeSchema), async (c) => {
@@ -960,7 +961,7 @@ export function createV1AdminRoutes() {
     await db.update(badges).set(updateData).where(eq(badges.id, id));
 
     const updated = await db.query.badges.findFirst({ where: eq(badges.id, id) });
-    return ok(c, updated);
+    return ok(c, updated ? withIconUrl(updated) : updated);
   });
 
   app.delete('/badges/:id', async (c) => {

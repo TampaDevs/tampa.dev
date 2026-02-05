@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { eq, and, sql } from 'drizzle-orm';
 import { defineTool } from '../registry.js';
 import { createDatabase } from '../../db/index.js';
+import { withIconUrl } from '../../../lib/emoji.js';
 import {
   badges,
   userBadges,
@@ -54,7 +55,7 @@ defineTool({
       .from(badges)
       .where(eq(badges.groupId, groupId));
 
-    return { content: [{ type: 'text', text: JSON.stringify(badgeList) }] };
+    return { content: [{ type: 'text', text: JSON.stringify(badgeList.map(withIconUrl)) }] };
   },
 });
 
@@ -140,7 +141,7 @@ defineTool({
       }),
     );
 
-    return { content: [{ type: 'text', text: JSON.stringify(created) }] };
+    return { content: [{ type: 'text', text: JSON.stringify(created ? withIconUrl(created) : created) }] };
   },
 });
 
@@ -209,7 +210,7 @@ defineTool({
       }),
     );
 
-    return { content: [{ type: 'text', text: JSON.stringify(updated) }] };
+    return { content: [{ type: 'text', text: JSON.stringify(updated ? withIconUrl(updated) : updated) }] };
   },
 });
 

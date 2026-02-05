@@ -11,6 +11,7 @@ import { defineTool } from '../registry.js';
 import { createDatabase } from '../../db/index.js';
 import { badges, userBadges, users, groups } from '../../db/schema.js';
 import { getClaimInfo, claimBadge, ClaimError } from '../../services/claims.js';
+import { withIconUrl } from '../../../lib/emoji.js';
 import type { ToolResult } from '../types.js';
 
 // ── badges_list ──
@@ -50,7 +51,7 @@ defineTool({
     return {
       content: [{
         type: 'text',
-        text: JSON.stringify({ badges: results, total, limit: args.limit, offset: args.offset }),
+        text: JSON.stringify({ badges: results.map(withIconUrl), total, limit: args.limit, offset: args.offset }),
       }],
     };
   },
@@ -90,7 +91,7 @@ defineTool({
     return {
       content: [{
         type: 'text',
-        text: JSON.stringify({
+        text: JSON.stringify(withIconUrl({
           id: badge.id,
           name: badge.name,
           slug: badge.slug,
@@ -101,7 +102,7 @@ defineTool({
           groupId: badge.groupId,
           groupName,
           createdAt: badge.createdAt,
-        }),
+        })),
       }],
     };
   },
@@ -291,7 +292,7 @@ defineTool({
         type: 'text',
         text: JSON.stringify({
           username: user.username,
-          badges: results,
+          badges: results.map(withIconUrl),
           total: results.length,
         }),
       }],
