@@ -73,6 +73,9 @@ const socialLinksSchema = z.object({
   meetup: z.string().url().optional(),
 }).optional();
 
+// Shared schema fragments
+const themeColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a hex color (e.g. #1a365d)');
+
 const createGroupSchema = z.object({
   urlname: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
   name: z.string().min(1).max(200),
@@ -81,6 +84,7 @@ const createGroupSchema = z.object({
   tags: z.array(z.string()).optional(),
   socialLinks: socialLinksSchema,
   photoUrl: z.string().url().optional(),
+  themeColor: themeColorSchema.optional(),
 });
 
 const updateGroupSchema = z.object({
@@ -92,7 +96,7 @@ const updateGroupSchema = z.object({
   socialLinks: socialLinksSchema.nullable(),
   photoUrl: z.string().url().optional().nullable(),
   heroImageUrl: z.string().url().optional().nullable(),
-  themeColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a hex color (e.g. #1a365d)').optional().nullable(),
+  themeColor: themeColorSchema.optional().nullable(),
 });
 
 const inviteMemberSchema = z.object({

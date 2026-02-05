@@ -10,6 +10,7 @@ import { Link, redirect } from "react-router";
 import { fetchCurrentUser } from "~/lib/api.server";
 import { fetchManagedGroups, type ManagedGroup } from "~/lib/group-manage-api.server";
 import { generateMetaTags } from "~/lib/seo";
+import { GroupAvatar } from "~/components/GroupAvatar";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
@@ -44,16 +45,6 @@ const roleBadgeStyles: Record<string, string> = {
   volunteer: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
   member: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
-
-function GroupInitial({ name }: { name: string }) {
-  return (
-    <div className="w-full h-full bg-gradient-to-br from-navy to-navy-light flex items-center justify-center rounded-xl">
-      <span className="text-2xl font-bold text-white">
-        {name.charAt(0).toUpperCase()}
-      </span>
-    </div>
-  );
-}
 
 export default function ManageGroups({ loaderData }: Route.ComponentProps) {
   const { groups } = loaderData;
@@ -111,15 +102,14 @@ export default function ManageGroups({ loaderData }: Route.ComponentProps) {
                 {/* Group avatar overlay */}
                 <div className="absolute -bottom-6 left-4">
                   <div className="w-14 h-14 rounded-xl border-2 border-white dark:border-gray-800 shadow-sm overflow-hidden bg-white dark:bg-gray-800">
-                    {group.photoUrl ? (
-                      <img
-                        src={group.photoUrl}
-                        alt={group.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <GroupInitial name={group.name} />
-                    )}
+                    <GroupAvatar
+                      photoUrl={group.photoUrl}
+                      name={group.name}
+                      themeColor={group.themeColor}
+                      size="lg"
+                      shape="rounded"
+                      className="w-full h-full"
+                    />
                   </div>
                 </div>
               </div>

@@ -8,7 +8,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, like, or, sql } from 'drizzle-orm';
+import { eq, desc, and, like, or, sql, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, achievements, achievementProgress, webhooks, webhookDeliveries, userEntitlements, badgeClaimLinks, groupPlatformConnections, groupClaimRequests, groupClaimInvites, groupCreationRequests, EventPlatform, UserRole, GroupMemberRole } from '../db/schema';
 import { SyncService } from '../services/sync';
@@ -338,9 +338,8 @@ export function createAdminApiRoutes() {
         columns: { id: true },
       });
       if (groupEvents.length > 0) {
-        for (const evt of groupEvents) {
-          await db.delete(events).where(eq(events.id, evt.id));
-        }
+        const eventIds = groupEvents.map((e) => e.id);
+        await db.delete(events).where(inArray(events.id, eventIds));
       }
 
       // 2. Delete badges and their dependents
@@ -351,10 +350,9 @@ export function createAdminApiRoutes() {
         columns: { id: true },
       });
       if (groupBadges.length > 0) {
-        for (const badge of groupBadges) {
-          await db.delete(badgeClaimLinks).where(eq(badgeClaimLinks.badgeId, badge.id));
-          await db.delete(badges).where(eq(badges.id, badge.id));
-        }
+        const badgeIds = groupBadges.map((b) => b.id);
+        await db.delete(badgeClaimLinks).where(inArray(badgeClaimLinks.badgeId, badgeIds));
+        await db.delete(badges).where(inArray(badges.id, badgeIds));
       }
 
       // 3. Nullify sync log references (historical data, keep logs but unlink group)

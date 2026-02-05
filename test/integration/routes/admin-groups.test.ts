@@ -97,8 +97,9 @@ describe('Admin Group Delete - Soft (DELETE /admin/groups/:id)', () => {
     const admin = await createAdminUser();
     const { cookieHeader } = await createSession(admin.id);
     const group = await createGroup();
-    const event = await createEvent(group.id);
-    const badge = await createBadge({ groupId: group.id, slug: 'soft-del-badge' });
+    // Create related data to verify soft delete preserves them
+    await createEvent(group.id);
+    await createBadge({ groupId: group.id, slug: 'soft-del-badge' });
     const member = await createUser();
     await addGroupMember(group.id, member.id, 'member');
 
