@@ -73,7 +73,19 @@ interface OAuthClient {
   // OAuth 2.1 client authentication method
   // 'none' for public clients (SPAs, mobile apps) using PKCE
   // 'client_secret_post' for confidential clients (server-side apps)
+  tokenEndpointAuthMethod?: 'none' | 'client_secret_post';
+  // Legacy snake_case property (for backwards compatibility with existing KV data)
   token_endpoint_auth_method?: 'none' | 'client_secret_post';
+}
+
+/**
+ * Check if an OAuth client is a public client (no client secret, uses PKCE only).
+ * Handles both camelCase (new) and snake_case (legacy) property names for
+ * backwards compatibility with existing clients stored in KV.
+ */
+function isPublicClient(clientData: OAuthClient): boolean {
+  return clientData.tokenEndpointAuthMethod === 'none'
+    || clientData.token_endpoint_auth_method === 'none';
 }
 
 // ============== Helper Functions ==============
@@ -200,7 +212,7 @@ export function createDeveloperRoutes() {
           logoUri: clientData.logoUri,
           redirectUris: clientData.redirectUris || [],
           createdAt: clientData.registrationDate,
-          isPublicClient: clientData.token_endpoint_auth_method === 'none',
+          isPublicClient: isPublicClient(clientData),
         });
       }
     }
@@ -243,8 +255,8 @@ export function createDeveloperRoutes() {
       tosUri: data.tosUri,
       description: data.description,
       ownerId: user.id,
-      // Set auth method based on client type
-      token_endpoint_auth_method: data.isPublicClient ? 'none' : 'client_secret_post',
+      // Set auth method based on client type (camelCase for workers-oauth-provider compatibility)
+      tokenEndpointAuthMethod: data.isPublicClient ? 'none' : 'client_secret_post',
     };
 
     // Store in KV
@@ -328,7 +340,7 @@ export function createDeveloperRoutes() {
       tosUri: clientData.tosUri,
       createdAt: clientData.registrationDate,
       activeUsers,
-      isPublicClient: clientData.token_endpoint_auth_method === 'none',
+      isPublicClient: isPublicClient(clientData),
     });
   });
 
@@ -415,7 +427,7 @@ export function createDeveloperRoutes() {
     }
 
     // Public clients don't have secrets
-    if (clientData.token_endpoint_auth_method === 'none') {
+    if (isPublicClient(clientData)) {
       return c.json({ error: 'Public clients do not have a client secret' }, 400);
     }
 

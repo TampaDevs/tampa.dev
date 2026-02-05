@@ -126,7 +126,7 @@ describe('Developer Portal - App Creation', () => {
       expect(body.isPublicClient).toBe(true);
     });
 
-    it('stores token_endpoint_auth_method as none for public clients', async () => {
+    it('stores tokenEndpointAuthMethod as none for public clients', async () => {
       const { env } = createTestEnv();
       const user = await createUser();
       const { cookieHeader } = await createSession(user.id);
@@ -145,10 +145,10 @@ describe('Developer Portal - App Creation', () => {
       expect(res.status).toBe(201);
       const { clientId } = await res.json() as { clientId: string };
 
-      // Verify the stored client data in KV
-      const clientData = await env.OAUTH_KV.get(`client:${clientId}`, 'json') as { token_endpoint_auth_method?: string } | null;
+      // Verify the stored client data in KV uses camelCase (for workers-oauth-provider compatibility)
+      const clientData = await env.OAUTH_KV.get(`client:${clientId}`, 'json') as { tokenEndpointAuthMethod?: string } | null;
       expect(clientData).not.toBeNull();
-      expect(clientData!.token_endpoint_auth_method).toBe('none');
+      expect(clientData!.tokenEndpointAuthMethod).toBe('none');
     });
 
     it('rejects secret regeneration for public clients', async () => {
