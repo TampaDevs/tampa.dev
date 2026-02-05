@@ -120,9 +120,9 @@ async function handleTruncation(env: Env): Promise<void> {
 /**
  * OAuth client cleanup - removes unused client registrations.
  *
- * Two-tier policy:
- * - DCR clients: removed if registered > 48 hours ago and never used to sign in
- * - Developer portal clients: removed if unused for > 1 year (or registered > 1 year ago and never used)
+ * Policy:
+ * - DCR clients: removed if (registered > 48h ago and never used) OR (last sign-in > 1 year ago)
+ * - Developer portal clients: removed if (registered > 1 year ago and never used) OR (last sign-in > 1 year ago)
  *
  * Deleting a client from KV prevents new auth flows. Existing access tokens
  * expire via their natural TTL; refresh attempts fail because lookupClient()
@@ -136,14 +136,16 @@ async function cleanupStaleOAuthClients(env: Env): Promise<void> {
   const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
   const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Stale DCR clients: registered > 48h ago, never used to sign in.
+  // Stale DCR clients: (registered > 48h ago AND never used) OR (last sign-in > 1 year ago).
   // Bounded to 500 per run to stay within Workers CPU limits.
   const staleDCR = await db.select({ clientId: oauthClientRegistry.clientId })
     .from(oauthClientRegistry)
     .where(and(
       eq(oauthClientRegistry.source, 'dcr'),
-      isNull(oauthClientRegistry.lastGrantAt),
-      lt(oauthClientRegistry.registeredAt, twoDaysAgo),
+      or(
+        and(isNull(oauthClientRegistry.lastGrantAt), lt(oauthClientRegistry.registeredAt, twoDaysAgo)),
+        lt(oauthClientRegistry.lastGrantAt, oneYearAgo),
+      ),
     ))
     .limit(500);
 

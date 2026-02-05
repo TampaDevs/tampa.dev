@@ -5,8 +5,8 @@
  * - Developer portal registrations create D1 tracking records
  * - Developer portal deletions remove D1 tracking records
  * - Authorization completions update lastGrantAt
- * - Scheduled cleanup removes stale DCR clients (>48h, unused)
- * - Scheduled cleanup removes stale dev portal clients (>1y, unused)
+ * - Scheduled cleanup removes stale DCR clients (>48h unused OR >1y inactive)
+ * - Scheduled cleanup removes stale dev portal clients (>1y unused OR >1y inactive)
  * - Scheduled cleanup preserves active clients
  */
 
@@ -250,7 +250,7 @@ describe('OAuth Client Lifecycle - Scheduled Cleanup', () => {
       expect(await clientExists('fresh-dcr-client')).toBe(true);
     });
 
-    it('preserves DCR clients that have been used (has lastGrantAt)', async () => {
+    it('preserves DCR clients that have been used recently (lastGrantAt < 1 year)', async () => {
       const { env } = createTestEnv();
       const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -265,6 +265,27 @@ describe('OAuth Client Lifecycle - Scheduled Cleanup', () => {
       await runTruncation(env);
 
       expect(await clientExists('used-dcr-client')).toBe(true);
+    });
+
+    it('removes DCR clients whose last sign-in was >1 year ago', async () => {
+      const { env } = createTestEnv();
+      const twoYearsAgo = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
+      const fourteenMonthsAgo = new Date(Date.now() - 14 * 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      await insertRegistryEntry({
+        clientId: 'stale-dcr-old-grant',
+        source: 'dcr',
+        registeredAt: twoYearsAgo,
+        lastGrantAt: fourteenMonthsAgo,
+      });
+
+      await env.OAUTH_KV.put('client:stale-dcr-old-grant', JSON.stringify({ clientId: 'stale-dcr-old-grant' }));
+
+      await runTruncation(env);
+
+      expect(await clientExists('stale-dcr-old-grant')).toBe(false);
+      const kvEntry = await env.OAUTH_KV.get('client:stale-dcr-old-grant');
+      expect(kvEntry).toBeNull();
     });
   });
 
