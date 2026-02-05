@@ -9,6 +9,7 @@ type EventCardVariant = 'default' | 'carousel';
 interface EventCardProps {
   event: Event;
   variant?: EventCardVariant;
+  timeZone?: string;
 }
 
 const containerStyles: Record<EventCardVariant, string> = {
@@ -31,7 +32,7 @@ const contentStyles: Record<EventCardVariant, string> = {
   carousel: 'p-4 md:p-8',
 };
 
-export function EventCard({ event, variant = 'default' }: EventCardProps) {
+export function EventCard({ event, variant = 'default', timeZone }: EventCardProps) {
   const photoUrl = getPhotoUrl(event);
   const tampaDevUrl = `https://tampa.dev/events/${event.id}`;
   const eventUrl = addUtm(tampaDevUrl);
@@ -53,7 +54,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
         <div class={contentStyles[variant]}>
           <div class="uppercase tracking-wide text-sm text-blue-500 font-semibold">
             <a href={eventUrl} target="_blank">
-              {formatDate(event.dateTime)} &bull; {event.rsvpCount} Going
+              {formatDate(event.dateTime, timeZone)} &bull; {event.rsvpCount} Going
             </a>
           </div>
           <a

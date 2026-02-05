@@ -134,18 +134,19 @@ export function createEventManagementRoutes() {
     // Fetch RSVP and checkin counts for each event
     const eventsWithCounts = await Promise.all(
       groupEvents.map(async (event) => {
-        const rsvps = await db.query.eventRsvps.findMany({
-          where: and(
-            eq(eventRsvps.eventId, event.id),
-            eq(eventRsvps.status, 'confirmed'),
-          ),
+        const allRsvps = await db.query.eventRsvps.findMany({
+          where: eq(eventRsvps.eventId, event.id),
         });
         const checkins = await db.query.eventCheckins.findMany({
           where: eq(eventCheckins.eventId, event.id),
         });
         return {
           ...event,
-          confirmedRsvps: rsvps.length,
+          rsvpSummary: {
+            confirmed: allRsvps.filter((r) => r.status === 'confirmed').length,
+            waitlisted: allRsvps.filter((r) => r.status === 'waitlisted').length,
+            cancelled: allRsvps.filter((r) => r.status === 'cancelled').length,
+          },
           checkinCount: checkins.length,
         };
       }),

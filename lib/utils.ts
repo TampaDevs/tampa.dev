@@ -265,9 +265,12 @@ export function markdownToHtml(markdown: string): string {
 /**
  * Convert date string to local formatted date
  */
-export function toLocalDate(dateStr: string): string {
-  const timeZoneMatch = dateStr.match(/([+-][0-9]{2}:[0-9]{2})$/);
-  const timeZone = timeZoneMatch ? timeZoneMatch[0] : 'UTC';
+export function toLocalDate(dateStr: string, overrideTimeZone?: string): string {
+  let timeZone = overrideTimeZone;
+  if (!timeZone) {
+    const timeZoneMatch = dateStr.match(/([+-][0-9]{2}:[0-9]{2})$/);
+    timeZone = timeZoneMatch ? timeZoneMatch[0] : 'America/New_York';
+  }
 
   const dt = new Date(dateStr);
   const options: Intl.DateTimeFormatOptions = {

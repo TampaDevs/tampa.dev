@@ -42,7 +42,7 @@ export default function PlatformDocsLayout() {
 
       <div className="flex gap-8">
         {/* Sidebar Navigation */}
-        <nav className="hidden lg:block w-48 flex-shrink-0 sticky top-20 self-start">
+        <nav className="hidden lg:block w-48 flex-shrink-0 sticky top-20 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
           <ul className="space-y-4">
             {docsByCategory.map(({ category, docs }) => (
               <li key={category}>

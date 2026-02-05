@@ -15,6 +15,27 @@ import { syncLogs } from './db/schema.js';
 import { desc, eq } from 'drizzle-orm';
 
 /**
+ * Bump the cache version by inserting a synthetic sync log entry.
+ * This effectively invalidates all cached responses keyed on the sync version,
+ * since a new version means new cache key URLs.
+ */
+export async function invalidateResponseCache(db: D1Database): Promise<void> {
+  const drizzleDb = createDatabase(db);
+  const now = new Date().toISOString();
+
+  await drizzleDb.insert(syncLogs).values({
+    id: crypto.randomUUID(),
+    platform: 'admin',
+    startedAt: now,
+    completedAt: now,
+    status: 'success',
+    eventsCreated: 0,
+    eventsUpdated: 0,
+    eventsDeleted: 0,
+  });
+}
+
+/**
  * Sync metadata from D1
  */
 export interface SyncMetadata {

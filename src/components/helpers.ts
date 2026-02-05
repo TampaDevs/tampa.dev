@@ -16,8 +16,8 @@ export function getPhotoUrl(event: Event): string | null {
 /**
  * Format date to local string
  */
-export function formatDate(date: Date): string {
-  return toLocalDate(date.toISOString());
+export function formatDate(date: Date, timeZone?: string): string {
+  return toLocalDate(date.toISOString(), timeZone);
 }
 
 /**

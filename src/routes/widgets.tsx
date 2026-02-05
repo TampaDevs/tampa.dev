@@ -69,55 +69,78 @@ const carouselWidgetRoute = createRoute({
 });
 
 /**
+ * Extract the visitor's IANA timezone from Cloudflare's geolocation data.
+ * Falls back to America/New_York (Tampa Bay local time).
+ */
+function getVisitorTimeZone(request: Request): string {
+  const cf = (request as unknown as { cf?: { timezone?: string } }).cf;
+  return cf?.timezone || 'America/New_York';
+}
+
+/**
+ * Create a cache-key request that includes the visitor's timezone,
+ * so different timezones get separately cached responses.
+ */
+function withTimeZoneCacheKey(request: Request, timeZone: string): Request {
+  const url = new URL(request.url);
+  url.searchParams.set('_tz', timeZone);
+  return new Request(url.toString(), request);
+}
+
+/**
  * Register widget routes with the app
  */
 export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // GET /widget/next-event
   app.openapi(nextEventWidgetRoute, async (c) => {
     const syncVersion = await getSyncVersion(c.env.DB);
+    const timeZone = getVisitorTimeZone(c.req.raw);
+    const cacheReq = withTimeZoneCacheKey(c.req.raw, timeZone);
 
     // Check for conditional request (If-None-Match)
-    if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
+    if (syncVersion && checkConditionalRequest(cacheReq, syncVersion)) {
       return createNotModifiedResponse(syncVersion);
     }
 
-    // Check cache first
-    const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
+    // Check cache first (keyed by timezone)
+    const cached = await getCachedResponse(cacheReq, syncVersion || undefined);
     if (cached) {
       return cached;
     }
 
-    // Generate fresh response
+    // Generate fresh response with visitor's timezone
     const events = await EventController.getNextEvents(c);
-    const html = await c.html(<WidgetNextEvent events={events} />);
+    const html = await c.html(<WidgetNextEvent events={events} timeZone={timeZone} />);
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, html, syncVersion || undefined, waitUntil);
+    return cacheResponse(cacheReq, html, syncVersion || undefined, waitUntil);
   });
 
   // GET /widget/carousel
   app.openapi(carouselWidgetRoute, async (c) => {
     const syncVersion = await getSyncVersion(c.env.DB);
+    const timeZone = getVisitorTimeZone(c.req.raw);
+    const cacheReq = withTimeZoneCacheKey(c.req.raw, timeZone);
 
     // Check for conditional request (If-None-Match)
-    if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
+    if (syncVersion && checkConditionalRequest(cacheReq, syncVersion)) {
       return createNotModifiedResponse(syncVersion);
     }
 
-    // Check cache first
-    const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
+    // Check cache first (keyed by timezone)
+    const cached = await getCachedResponse(cacheReq, syncVersion || undefined);
     if (cached) {
       return cached;
     }
 
-    // Generate fresh response
+    // Generate fresh response with visitor's timezone
     const events = await EventController.getAllEvents(c);
     const sortedEvents = util.getSortedEvents(events);
-    const html = await c.html(<WidgetCarousel events={sortedEvents} />);
+    const html = await c.html(<WidgetCarousel events={sortedEvents} timeZone={timeZone} />);
 
     // Cache and return (pass waitUntil to ensure cache operation completes)
     const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
-    return cacheResponse(c.req.raw, html, syncVersion || undefined, waitUntil);
+    return cacheResponse(cacheReq, html, syncVersion || undefined, waitUntil);
   });
 }

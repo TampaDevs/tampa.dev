@@ -17,6 +17,7 @@ import type { Env } from '../../types/worker';
 import { emitEvent } from '../lib/event-bus.js';
 import { requireAdmin, type AuthUser } from '../middleware/auth.js';
 import { ok, created, list, success, notFound, conflict, badRequest, internalError } from '../lib/responses.js';
+import { invalidateResponseCache } from '../cache.js';
 
 // ============== Validation Schemas ==============
 
@@ -291,6 +292,11 @@ export function createAdminApiRoutes() {
       .set(updateData)
       .where(eq(groups.id, id));
 
+    // Invalidate response cache if display-affecting fields changed
+    if (data.isFeatured !== undefined || data.displayOnSite !== undefined || data.isActive !== undefined) {
+      await invalidateResponseCache(c.env.DB);
+    }
+
     const updated = await db.query.groups.findFirst({
       where: eq(groups.id, id),
     });
@@ -299,12 +305,16 @@ export function createAdminApiRoutes() {
   });
 
   /**
-   * Delete a group (soft delete by setting isActive = false)
+   * Delete a group
    * DELETE /api/admin/groups/:id
+   *
+   * By default performs a soft delete (isActive = false).
+   * Pass ?hard=true to permanently delete the group and all related data.
    */
   app.delete('/groups/:id', async (c) => {
     const db = createDatabase(c.env.DB);
     const id = c.req.param('id');
+    const hard = c.req.query('hard') === 'true';
 
     const existing = await db.query.groups.findFirst({
       where: eq(groups.id, id),
@@ -312,6 +322,56 @@ export function createAdminApiRoutes() {
 
     if (!existing) {
       return notFound(c, 'Group not found');
+    }
+
+    if (hard) {
+      // Hard delete — remove all dependent records, then the group itself.
+      // Tables with ON DELETE CASCADE (groupMembers, userFavorites,
+      // groupPlatformConnections, groupFeatureFlags, groupClaimRequests,
+      // groupClaimInvites) are handled automatically.
+      // Tables without CASCADE need manual cleanup.
+
+      // 1. Delete events and their dependents (RSVPs, checkins, checkin codes cascade from events)
+      const groupEvents = await db.query.events.findMany({
+        where: eq(events.groupId, id),
+        columns: { id: true },
+      });
+      if (groupEvents.length > 0) {
+        for (const evt of groupEvents) {
+          await db.delete(events).where(eq(events.id, evt.id));
+        }
+      }
+
+      // 2. Delete badges and their dependents (userBadges, badgeClaimLinks cascade from badges)
+      const groupBadges = await db.query.badges.findMany({
+        where: eq(badges.groupId, id),
+        columns: { id: true },
+      });
+      if (groupBadges.length > 0) {
+        for (const badge of groupBadges) {
+          await db.delete(badges).where(eq(badges.id, badge.id));
+        }
+      }
+
+      // 3. Nullify sync log references (historical data, keep logs but unlink group)
+      await db
+        .update(syncLogs)
+        .set({ groupId: null })
+        .where(eq(syncLogs.groupId, id));
+
+      // 4. Nullify group creation request references
+      await db
+        .update(groupCreationRequests)
+        .set({ groupId: null })
+        .where(eq(groupCreationRequests.groupId, id));
+
+      // 5. Delete the group (cascades: groupMembers, userFavorites,
+      //    groupPlatformConnections, groupFeatureFlags, groupClaimRequests, groupClaimInvites)
+      await db.delete(groups).where(eq(groups.id, id));
+
+      await invalidateResponseCache(c.env.DB);
+
+      return success(c, { message: 'Group permanently deleted' });
     }
 
     // Soft delete - just mark as inactive
@@ -322,6 +382,8 @@ export function createAdminApiRoutes() {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(groups.id, id));
+
+    await invalidateResponseCache(c.env.DB);
 
     return success(c, { message: 'Group deactivated' });
   });

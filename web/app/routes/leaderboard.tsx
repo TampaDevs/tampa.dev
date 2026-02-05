@@ -1,7 +1,7 @@
 import type { Route } from "./+types/leaderboard";
 import { useLoaderData, useRevalidator, Link } from "react-router";
 import { useEffect, useCallback, useRef, useState } from "react";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import { Emoji } from "~/components/Emoji";
 import { generateMetaTags } from "~/lib/seo";
 import { useWS } from "~/hooks/WebSocketProvider";
@@ -235,6 +235,7 @@ function PodiumCard({
                 name={entry.name}
                 size={config.avatarSize}
                 ring
+                ringColor={config.accent}
               />
               <div className="min-w-0">
                 <h3
@@ -376,8 +377,13 @@ export default function LeaderboardPage() {
     });
   }, [personal, revalidator]);
 
+  const INITIAL_DISPLAY = 22;
+  const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY);
+
   const topThree = entries.filter((e) => e.rank <= 3);
   const rest = entries.filter((e) => e.rank > 3);
+  const displayedRest = rest.slice(0, displayCount);
+  const hasMoreEntries = displayCount < rest.length;
 
   // Find current user's rank
   const currentUserEntry = currentUser
@@ -556,7 +562,23 @@ export default function LeaderboardPage() {
       )}
 
       {/* ─── Remaining entries ─── */}
-      {rest.length > 0 && <CompactList entries={rest} />}
+      {rest.length > 0 && <CompactList entries={displayedRest} />}
+
+      {/* Show more button */}
+      {hasMoreEntries && (
+        <div className="flex justify-center py-6">
+          <button
+            type="button"
+            onClick={() => setDisplayCount(rest.length)}
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            Show all {rest.length} entries
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

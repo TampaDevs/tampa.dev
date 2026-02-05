@@ -7,14 +7,15 @@ import { EventCard, EmptyState } from './EventCard.js';
 
 interface WidgetNextEventProps {
   events: Event[];
+  timeZone?: string;
 }
 
-export function WidgetNextEvent({ events }: WidgetNextEventProps) {
+export function WidgetNextEvent({ events, timeZone }: WidgetNextEventProps) {
   return (
     <PageLayout>
       {events.length > 0 ? (
         events.map((event) => (
-          <EventCard key={event.id} event={event} />
+          <EventCard key={event.id} event={event} timeZone={timeZone} />
         ))
       ) : (
         <EmptyState />
