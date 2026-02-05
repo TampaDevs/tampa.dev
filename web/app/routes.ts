@@ -5,6 +5,7 @@ export default [
   route("events", "routes/events.tsx"),
   route("events/:id", "routes/events.$id.tsx"),
   route("groups", "routes/groups._index.tsx"),
+  route("groups/manage", "routes/groups.manage.tsx"),
   route("groups/:slug", "routes/groups.$slug.tsx"),
   route("groups/:slug/members", "routes/groups.$slug.members.tsx"),
 
