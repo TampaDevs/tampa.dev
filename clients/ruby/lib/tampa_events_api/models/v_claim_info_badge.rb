@@ -23,6 +23,9 @@ module TampaEventsAPI
 
     attr_accessor :icon
 
+    # URL to the high-quality emoji image, or null if unavailable
+    attr_accessor :icon_url
+
     attr_accessor :color
 
     attr_accessor :points
@@ -34,6 +37,7 @@ module TampaEventsAPI
         :'slug' => :'slug',
         :'description' => :'description',
         :'icon' => :'icon',
+        :'icon_url' => :'iconUrl',
         :'color' => :'color',
         :'points' => :'points'
       }
@@ -56,6 +60,7 @@ module TampaEventsAPI
         :'slug' => :'String',
         :'description' => :'String',
         :'icon' => :'String',
+        :'icon_url' => :'String',
         :'color' => :'String',
         :'points' => :'Float'
       }
@@ -107,6 +112,12 @@ module TampaEventsAPI
         self.icon = nil
       end
 
+      if attributes.key?(:'icon_url')
+        self.icon_url = attributes[:'icon_url']
+      else
+        self.icon_url = nil
+      end
+
       if attributes.key?(:'color')
         self.color = attributes[:'color']
       else
@@ -141,6 +152,10 @@ module TampaEventsAPI
         invalid_properties.push('invalid value for "icon", icon cannot be nil.')
       end
 
+      if @icon_url.nil?
+        invalid_properties.push('invalid value for "icon_url", icon_url cannot be nil.')
+      end
+
       if @color.nil?
         invalid_properties.push('invalid value for "color", color cannot be nil.')
       end
@@ -160,6 +175,7 @@ module TampaEventsAPI
       return false if @slug.nil?
       return false if @description.nil?
       return false if @icon.nil?
+      return false if @icon_url.nil?
       return false if @color.nil?
       return false if @points.nil?
       true
@@ -206,6 +222,16 @@ module TampaEventsAPI
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] icon_url Value to be assigned
+    def icon_url=(icon_url)
+      if icon_url.nil?
+        fail ArgumentError, 'icon_url cannot be nil'
+      end
+
+      @icon_url = icon_url
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] color Value to be assigned
     def color=(color)
       if color.nil?
@@ -234,6 +260,7 @@ module TampaEventsAPI
           slug == o.slug &&
           description == o.description &&
           icon == o.icon &&
+          icon_url == o.icon_url &&
           color == o.color &&
           points == o.points
     end
@@ -247,7 +274,7 @@ module TampaEventsAPI
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [name, slug, description, icon, color, points].hash
+      [name, slug, description, icon, icon_url, color, points].hash
     end
 
     # Builds the object from hash

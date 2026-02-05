@@ -132,6 +132,11 @@ export interface VClaimBadgeResponse {
 export interface VClaimBadgeResponseBadge {
     'name': string;
     'slug': string;
+    'description': string;
+    'icon': string;
+    'iconUrl': string;
+    'color': string;
+    'points': number;
 }
 export interface VClaimInfo {
     'badge': VClaimInfoBadge;
@@ -144,6 +149,10 @@ export interface VClaimInfoBadge {
     'slug': string;
     'description': string;
     'icon': string;
+    /**
+     * URL to the high-quality emoji image, or null if unavailable
+     */
+    'iconUrl': string;
     'color': string;
     'points': number;
 }
@@ -3063,17 +3072,12 @@ export class MCPApi extends BaseAPI {
 export const PagesApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Returns a formatted HTML page displaying upcoming events
-         * @summary HTML page with upcoming events
-         * @param {string} [groups] 
-         * @param {string} [noonline] 
-         * @param {string} [withinHours] 
-         * @param {string} [withinDays] 
-         * @param {string} [noempty] 
+         * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+         * @summary Deprecated — redirects to calendar
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        htmlGet: async (groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        htmlGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/html`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3090,27 +3094,6 @@ export const PagesApiAxiosParamCreator = function (configuration?: Configuration
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-            if (groups !== undefined) {
-                localVarQueryParameter['groups'] = groups;
-            }
-
-            if (noonline !== undefined) {
-                localVarQueryParameter['noonline'] = noonline;
-            }
-
-            if (withinHours !== undefined) {
-                localVarQueryParameter['within_hours'] = withinHours;
-            }
-
-            if (withinDays !== undefined) {
-                localVarQueryParameter['within_days'] = withinDays;
-            }
-
-            if (noempty !== undefined) {
-                localVarQueryParameter['noempty'] = noempty;
-            }
-
-            localVarHeaderParameter['Accept'] = 'text/html';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -3122,17 +3105,12 @@ export const PagesApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Alias for /html - returns a formatted HTML page displaying upcoming events
-         * @summary Upcoming events HTML page
-         * @param {string} [groups] 
-         * @param {string} [noonline] 
-         * @param {string} [withinHours] 
-         * @param {string} [withinDays] 
-         * @param {string} [noempty] 
+         * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+         * @summary Deprecated — redirects to calendar
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        upcomingEventsGet: async (groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        upcomingEventsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/upcoming-events`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3149,27 +3127,6 @@ export const PagesApiAxiosParamCreator = function (configuration?: Configuration
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-            if (groups !== undefined) {
-                localVarQueryParameter['groups'] = groups;
-            }
-
-            if (noonline !== undefined) {
-                localVarQueryParameter['noonline'] = noonline;
-            }
-
-            if (withinHours !== undefined) {
-                localVarQueryParameter['within_hours'] = withinHours;
-            }
-
-            if (withinDays !== undefined) {
-                localVarQueryParameter['within_days'] = withinDays;
-            }
-
-            if (noempty !== undefined) {
-                localVarQueryParameter['noempty'] = noempty;
-            }
-
-            localVarHeaderParameter['Accept'] = 'text/html';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -3190,35 +3147,25 @@ export const PagesApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = PagesApiAxiosParamCreator(configuration)
     return {
         /**
-         * Returns a formatted HTML page displaying upcoming events
-         * @summary HTML page with upcoming events
-         * @param {string} [groups] 
-         * @param {string} [noonline] 
-         * @param {string} [withinHours] 
-         * @param {string} [withinDays] 
-         * @param {string} [noempty] 
+         * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+         * @summary Deprecated — redirects to calendar
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async htmlGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.htmlGet(groups, noonline, withinHours, withinDays, noempty, options);
+        async htmlGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.htmlGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['PagesApi.htmlGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Alias for /html - returns a formatted HTML page displaying upcoming events
-         * @summary Upcoming events HTML page
-         * @param {string} [groups] 
-         * @param {string} [noonline] 
-         * @param {string} [withinHours] 
-         * @param {string} [withinDays] 
-         * @param {string} [noempty] 
+         * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+         * @summary Deprecated — redirects to calendar
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async upcomingEventsGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.upcomingEventsGet(groups, noonline, withinHours, withinDays, noempty, options);
+        async upcomingEventsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.upcomingEventsGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['PagesApi.upcomingEventsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3233,32 +3180,22 @@ export const PagesApiFactory = function (configuration?: Configuration, basePath
     const localVarFp = PagesApiFp(configuration)
     return {
         /**
-         * Returns a formatted HTML page displaying upcoming events
-         * @summary HTML page with upcoming events
-         * @param {string} [groups] 
-         * @param {string} [noonline] 
-         * @param {string} [withinHours] 
-         * @param {string} [withinDays] 
-         * @param {string} [noempty] 
+         * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+         * @summary Deprecated — redirects to calendar
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        htmlGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): AxiosPromise<string> {
-            return localVarFp.htmlGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(axios, basePath));
+        htmlGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.htmlGet(options).then((request) => request(axios, basePath));
         },
         /**
-         * Alias for /html - returns a formatted HTML page displaying upcoming events
-         * @summary Upcoming events HTML page
-         * @param {string} [groups] 
-         * @param {string} [noonline] 
-         * @param {string} [withinHours] 
-         * @param {string} [withinDays] 
-         * @param {string} [noempty] 
+         * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+         * @summary Deprecated — redirects to calendar
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        upcomingEventsGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig): AxiosPromise<string> {
-            return localVarFp.upcomingEventsGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(axios, basePath));
+        upcomingEventsGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.upcomingEventsGet(options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -3268,33 +3205,23 @@ export const PagesApiFactory = function (configuration?: Configuration, basePath
  */
 export class PagesApi extends BaseAPI {
     /**
-     * Returns a formatted HTML page displaying upcoming events
-     * @summary HTML page with upcoming events
-     * @param {string} [groups] 
-     * @param {string} [noonline] 
-     * @param {string} [withinHours] 
-     * @param {string} [withinDays] 
-     * @param {string} [noempty] 
+     * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+     * @summary Deprecated — redirects to calendar
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public htmlGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig) {
-        return PagesApiFp(this.configuration).htmlGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(this.axios, this.basePath));
+    public htmlGet(options?: RawAxiosRequestConfig) {
+        return PagesApiFp(this.configuration).htmlGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * Alias for /html - returns a formatted HTML page displaying upcoming events
-     * @summary Upcoming events HTML page
-     * @param {string} [groups] 
-     * @param {string} [noonline] 
-     * @param {string} [withinHours] 
-     * @param {string} [withinDays] 
-     * @param {string} [noempty] 
+     * Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
+     * @summary Deprecated — redirects to calendar
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public upcomingEventsGet(groups?: string, noonline?: string, withinHours?: string, withinDays?: string, noempty?: string, options?: RawAxiosRequestConfig) {
-        return PagesApiFp(this.configuration).upcomingEventsGet(groups, noonline, withinHours, withinDays, noempty, options).then((request) => request(this.axios, this.basePath));
+    public upcomingEventsGet(options?: RawAxiosRequestConfig) {
+        return PagesApiFp(this.configuration).upcomingEventsGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

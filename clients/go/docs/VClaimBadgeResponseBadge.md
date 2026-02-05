@@ -6,12 +6,17 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Name** | **string** |  | 
 **Slug** | **string** |  | 
+**Description** | **string** |  | 
+**Icon** | **string** |  | 
+**IconUrl** | **string** |  | 
+**Color** | **string** |  | 
+**Points** | **float32** |  | 
 
 ## Methods
 
 ### NewVClaimBadgeResponseBadge
 
-`func NewVClaimBadgeResponseBadge(name string, slug string, ) *VClaimBadgeResponseBadge`
+`func NewVClaimBadgeResponseBadge(name string, slug string, description string, icon string, iconUrl string, color string, points float32, ) *VClaimBadgeResponseBadge`
 
 NewVClaimBadgeResponseBadge instantiates a new VClaimBadgeResponseBadge object
 This constructor will assign default values to properties that have it defined,
@@ -64,6 +69,106 @@ and a boolean to check if the value has been set.
 `func (o *VClaimBadgeResponseBadge) SetSlug(v string)`
 
 SetSlug sets Slug field to given value.
+
+
+### GetDescription
+
+`func (o *VClaimBadgeResponseBadge) GetDescription() string`
+
+GetDescription returns the Description field if non-nil, zero value otherwise.
+
+### GetDescriptionOk
+
+`func (o *VClaimBadgeResponseBadge) GetDescriptionOk() (*string, bool)`
+
+GetDescriptionOk returns a tuple with the Description field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDescription
+
+`func (o *VClaimBadgeResponseBadge) SetDescription(v string)`
+
+SetDescription sets Description field to given value.
+
+
+### GetIcon
+
+`func (o *VClaimBadgeResponseBadge) GetIcon() string`
+
+GetIcon returns the Icon field if non-nil, zero value otherwise.
+
+### GetIconOk
+
+`func (o *VClaimBadgeResponseBadge) GetIconOk() (*string, bool)`
+
+GetIconOk returns a tuple with the Icon field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIcon
+
+`func (o *VClaimBadgeResponseBadge) SetIcon(v string)`
+
+SetIcon sets Icon field to given value.
+
+
+### GetIconUrl
+
+`func (o *VClaimBadgeResponseBadge) GetIconUrl() string`
+
+GetIconUrl returns the IconUrl field if non-nil, zero value otherwise.
+
+### GetIconUrlOk
+
+`func (o *VClaimBadgeResponseBadge) GetIconUrlOk() (*string, bool)`
+
+GetIconUrlOk returns a tuple with the IconUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIconUrl
+
+`func (o *VClaimBadgeResponseBadge) SetIconUrl(v string)`
+
+SetIconUrl sets IconUrl field to given value.
+
+
+### GetColor
+
+`func (o *VClaimBadgeResponseBadge) GetColor() string`
+
+GetColor returns the Color field if non-nil, zero value otherwise.
+
+### GetColorOk
+
+`func (o *VClaimBadgeResponseBadge) GetColorOk() (*string, bool)`
+
+GetColorOk returns a tuple with the Color field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetColor
+
+`func (o *VClaimBadgeResponseBadge) SetColor(v string)`
+
+SetColor sets Color field to given value.
+
+
+### GetPoints
+
+`func (o *VClaimBadgeResponseBadge) GetPoints() float32`
+
+GetPoints returns the Points field if non-nil, zero value otherwise.
+
+### GetPointsOk
+
+`func (o *VClaimBadgeResponseBadge) GetPointsOk() (*float32, bool)`
+
+GetPointsOk returns a tuple with the Points field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPoints
+
+`func (o *VClaimBadgeResponseBadge) SetPoints(v float32)`
+
+SetPoints sets Points field to given value.
 
 
 

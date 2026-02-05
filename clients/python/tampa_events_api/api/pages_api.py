@@ -16,8 +16,6 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import StrictStr
-from typing import Optional
 
 from tampa_events_api.api_client import ApiClient, RequestSerialized
 from tampa_events_api.api_response import ApiResponse
@@ -40,11 +38,6 @@ class PagesApi:
     @validate_call
     def html_get(
         self,
-        groups: Optional[StrictStr] = None,
-        noonline: Optional[StrictStr] = None,
-        within_hours: Optional[StrictStr] = None,
-        within_days: Optional[StrictStr] = None,
-        noempty: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -57,21 +50,11 @@ class PagesApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> str:
-        """HTML page with upcoming events
+    ) -> None:
+        """Deprecated — redirects to calendar
 
-        Returns a formatted HTML page displaying upcoming events
+        Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
-        :param groups:
-        :type groups: str
-        :param noonline:
-        :type noonline: str
-        :param within_hours:
-        :type within_hours: str
-        :param within_days:
-        :type within_days: str
-        :param noempty:
-        :type noempty: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -95,11 +78,6 @@ class PagesApi:
         """ # noqa: E501
 
         _param = self._html_get_serialize(
-            groups=groups,
-            noonline=noonline,
-            within_hours=within_hours,
-            within_days=within_days,
-            noempty=noempty,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -107,7 +85,7 @@ class PagesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "str",
+            '301': None,
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -123,11 +101,6 @@ class PagesApi:
     @validate_call
     def html_get_with_http_info(
         self,
-        groups: Optional[StrictStr] = None,
-        noonline: Optional[StrictStr] = None,
-        within_hours: Optional[StrictStr] = None,
-        within_days: Optional[StrictStr] = None,
-        noempty: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -140,21 +113,11 @@ class PagesApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[str]:
-        """HTML page with upcoming events
+    ) -> ApiResponse[None]:
+        """Deprecated — redirects to calendar
 
-        Returns a formatted HTML page displaying upcoming events
+        Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
-        :param groups:
-        :type groups: str
-        :param noonline:
-        :type noonline: str
-        :param within_hours:
-        :type within_hours: str
-        :param within_days:
-        :type within_days: str
-        :param noempty:
-        :type noempty: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -178,11 +141,6 @@ class PagesApi:
         """ # noqa: E501
 
         _param = self._html_get_serialize(
-            groups=groups,
-            noonline=noonline,
-            within_hours=within_hours,
-            within_days=within_days,
-            noempty=noempty,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -190,7 +148,7 @@ class PagesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "str",
+            '301': None,
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -206,11 +164,6 @@ class PagesApi:
     @validate_call
     def html_get_without_preload_content(
         self,
-        groups: Optional[StrictStr] = None,
-        noonline: Optional[StrictStr] = None,
-        within_hours: Optional[StrictStr] = None,
-        within_days: Optional[StrictStr] = None,
-        noempty: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -224,20 +177,10 @@ class PagesApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """HTML page with upcoming events
+        """Deprecated — redirects to calendar
 
-        Returns a formatted HTML page displaying upcoming events
+        Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
-        :param groups:
-        :type groups: str
-        :param noonline:
-        :type noonline: str
-        :param within_hours:
-        :type within_hours: str
-        :param within_days:
-        :type within_days: str
-        :param noempty:
-        :type noempty: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -261,11 +204,6 @@ class PagesApi:
         """ # noqa: E501
 
         _param = self._html_get_serialize(
-            groups=groups,
-            noonline=noonline,
-            within_hours=within_hours,
-            within_days=within_days,
-            noempty=noempty,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -273,7 +211,7 @@ class PagesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "str",
+            '301': None,
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -284,11 +222,6 @@ class PagesApi:
 
     def _html_get_serialize(
         self,
-        groups,
-        noonline,
-        within_hours,
-        within_days,
-        noempty,
         _request_auth,
         _content_type,
         _headers,
@@ -311,38 +244,11 @@ class PagesApi:
 
         # process the path parameters
         # process the query parameters
-        if groups is not None:
-            
-            _query_params.append(('groups', groups))
-            
-        if noonline is not None:
-            
-            _query_params.append(('noonline', noonline))
-            
-        if within_hours is not None:
-            
-            _query_params.append(('within_hours', within_hours))
-            
-        if within_days is not None:
-            
-            _query_params.append(('within_days', within_days))
-            
-        if noempty is not None:
-            
-            _query_params.append(('noempty', noempty))
-            
         # process the header parameters
         # process the form parameters
         # process the body parameter
 
 
-        # set the HTTP header `Accept`
-        if 'Accept' not in _header_params:
-            _header_params['Accept'] = self.api_client.select_header_accept(
-                [
-                    'text/html'
-                ]
-            )
 
 
         # authentication setting
@@ -371,11 +277,6 @@ class PagesApi:
     @validate_call
     def upcoming_events_get(
         self,
-        groups: Optional[StrictStr] = None,
-        noonline: Optional[StrictStr] = None,
-        within_hours: Optional[StrictStr] = None,
-        within_days: Optional[StrictStr] = None,
-        noempty: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -388,21 +289,11 @@ class PagesApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> str:
-        """Upcoming events HTML page
+    ) -> None:
+        """Deprecated — redirects to calendar
 
-        Alias for /html - returns a formatted HTML page displaying upcoming events
+        Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
-        :param groups:
-        :type groups: str
-        :param noonline:
-        :type noonline: str
-        :param within_hours:
-        :type within_hours: str
-        :param within_days:
-        :type within_days: str
-        :param noempty:
-        :type noempty: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -426,11 +317,6 @@ class PagesApi:
         """ # noqa: E501
 
         _param = self._upcoming_events_get_serialize(
-            groups=groups,
-            noonline=noonline,
-            within_hours=within_hours,
-            within_days=within_days,
-            noempty=noempty,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -438,7 +324,7 @@ class PagesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "str",
+            '301': None,
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -454,11 +340,6 @@ class PagesApi:
     @validate_call
     def upcoming_events_get_with_http_info(
         self,
-        groups: Optional[StrictStr] = None,
-        noonline: Optional[StrictStr] = None,
-        within_hours: Optional[StrictStr] = None,
-        within_days: Optional[StrictStr] = None,
-        noempty: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -471,21 +352,11 @@ class PagesApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[str]:
-        """Upcoming events HTML page
+    ) -> ApiResponse[None]:
+        """Deprecated — redirects to calendar
 
-        Alias for /html - returns a formatted HTML page displaying upcoming events
+        Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
-        :param groups:
-        :type groups: str
-        :param noonline:
-        :type noonline: str
-        :param within_hours:
-        :type within_hours: str
-        :param within_days:
-        :type within_days: str
-        :param noempty:
-        :type noempty: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -509,11 +380,6 @@ class PagesApi:
         """ # noqa: E501
 
         _param = self._upcoming_events_get_serialize(
-            groups=groups,
-            noonline=noonline,
-            within_hours=within_hours,
-            within_days=within_days,
-            noempty=noempty,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -521,7 +387,7 @@ class PagesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "str",
+            '301': None,
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -537,11 +403,6 @@ class PagesApi:
     @validate_call
     def upcoming_events_get_without_preload_content(
         self,
-        groups: Optional[StrictStr] = None,
-        noonline: Optional[StrictStr] = None,
-        within_hours: Optional[StrictStr] = None,
-        within_days: Optional[StrictStr] = None,
-        noempty: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -555,20 +416,10 @@ class PagesApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """Upcoming events HTML page
+        """Deprecated — redirects to calendar
 
-        Alias for /html - returns a formatted HTML page displaying upcoming events
+        Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
-        :param groups:
-        :type groups: str
-        :param noonline:
-        :type noonline: str
-        :param within_hours:
-        :type within_hours: str
-        :param within_days:
-        :type within_days: str
-        :param noempty:
-        :type noempty: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -592,11 +443,6 @@ class PagesApi:
         """ # noqa: E501
 
         _param = self._upcoming_events_get_serialize(
-            groups=groups,
-            noonline=noonline,
-            within_hours=within_hours,
-            within_days=within_days,
-            noempty=noempty,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -604,7 +450,7 @@ class PagesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "str",
+            '301': None,
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -615,11 +461,6 @@ class PagesApi:
 
     def _upcoming_events_get_serialize(
         self,
-        groups,
-        noonline,
-        within_hours,
-        within_days,
-        noempty,
         _request_auth,
         _content_type,
         _headers,
@@ -642,38 +483,11 @@ class PagesApi:
 
         # process the path parameters
         # process the query parameters
-        if groups is not None:
-            
-            _query_params.append(('groups', groups))
-            
-        if noonline is not None:
-            
-            _query_params.append(('noonline', noonline))
-            
-        if within_hours is not None:
-            
-            _query_params.append(('within_hours', within_hours))
-            
-        if within_days is not None:
-            
-            _query_params.append(('within_days', within_days))
-            
-        if noempty is not None:
-            
-            _query_params.append(('noempty', noempty))
-            
         # process the header parameters
         # process the form parameters
         # process the body parameter
 
 
-        # set the HTTP header `Accept`
-        if 'Accept' not in _header_params:
-            _header_params['Accept'] = self.api_client.select_header_accept(
-                [
-                    'text/html'
-                ]
-            )
 
 
         # authentication setting

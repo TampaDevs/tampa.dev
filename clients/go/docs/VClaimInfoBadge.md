@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **Slug** | **string** |  | 
 **Description** | **string** |  | 
 **Icon** | **string** |  | 
+**IconUrl** | **string** | URL to the high-quality emoji image, or null if unavailable | 
 **Color** | **string** |  | 
 **Points** | **float32** |  | 
 
@@ -15,7 +16,7 @@ Name | Type | Description | Notes
 
 ### NewVClaimInfoBadge
 
-`func NewVClaimInfoBadge(name string, slug string, description string, icon string, color string, points float32, ) *VClaimInfoBadge`
+`func NewVClaimInfoBadge(name string, slug string, description string, icon string, iconUrl string, color string, points float32, ) *VClaimInfoBadge`
 
 NewVClaimInfoBadge instantiates a new VClaimInfoBadge object
 This constructor will assign default values to properties that have it defined,
@@ -108,6 +109,26 @@ and a boolean to check if the value has been set.
 `func (o *VClaimInfoBadge) SetIcon(v string)`
 
 SetIcon sets Icon field to given value.
+
+
+### GetIconUrl
+
+`func (o *VClaimInfoBadge) GetIconUrl() string`
+
+GetIconUrl returns the IconUrl field if non-nil, zero value otherwise.
+
+### GetIconUrlOk
+
+`func (o *VClaimInfoBadge) GetIconUrlOk() (*string, bool)`
+
+GetIconUrlOk returns a tuple with the IconUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIconUrl
+
+`func (o *VClaimInfoBadge) SetIconUrl(v string)`
+
+SetIconUrl sets IconUrl field to given value.
 
 
 ### GetColor

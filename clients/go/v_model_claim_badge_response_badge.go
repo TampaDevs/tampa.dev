@@ -23,6 +23,11 @@ var _ MappedNullable = &VClaimBadgeResponseBadge{}
 type VClaimBadgeResponseBadge struct {
 	Name string `json:"name"`
 	Slug string `json:"slug"`
+	Description string `json:"description"`
+	Icon string `json:"icon"`
+	IconUrl string `json:"iconUrl"`
+	Color string `json:"color"`
+	Points float32 `json:"points"`
 }
 
 type _VClaimBadgeResponseBadge VClaimBadgeResponseBadge
@@ -31,10 +36,15 @@ type _VClaimBadgeResponseBadge VClaimBadgeResponseBadge
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVClaimBadgeResponseBadge(name string, slug string) *VClaimBadgeResponseBadge {
+func NewVClaimBadgeResponseBadge(name string, slug string, description string, icon string, iconUrl string, color string, points float32) *VClaimBadgeResponseBadge {
 	this := VClaimBadgeResponseBadge{}
 	this.Name = name
 	this.Slug = slug
+	this.Description = description
+	this.Icon = icon
+	this.IconUrl = iconUrl
+	this.Color = color
+	this.Points = points
 	return &this
 }
 
@@ -94,6 +104,126 @@ func (o *VClaimBadgeResponseBadge) SetSlug(v string) {
 	o.Slug = v
 }
 
+// GetDescription returns the Description field value
+func (o *VClaimBadgeResponseBadge) GetDescription() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Description
+}
+
+// GetDescriptionOk returns a tuple with the Description field value
+// and a boolean to check if the value has been set.
+func (o *VClaimBadgeResponseBadge) GetDescriptionOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Description, true
+}
+
+// SetDescription sets field value
+func (o *VClaimBadgeResponseBadge) SetDescription(v string) {
+	o.Description = v
+}
+
+// GetIcon returns the Icon field value
+func (o *VClaimBadgeResponseBadge) GetIcon() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Icon
+}
+
+// GetIconOk returns a tuple with the Icon field value
+// and a boolean to check if the value has been set.
+func (o *VClaimBadgeResponseBadge) GetIconOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Icon, true
+}
+
+// SetIcon sets field value
+func (o *VClaimBadgeResponseBadge) SetIcon(v string) {
+	o.Icon = v
+}
+
+// GetIconUrl returns the IconUrl field value
+func (o *VClaimBadgeResponseBadge) GetIconUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.IconUrl
+}
+
+// GetIconUrlOk returns a tuple with the IconUrl field value
+// and a boolean to check if the value has been set.
+func (o *VClaimBadgeResponseBadge) GetIconUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.IconUrl, true
+}
+
+// SetIconUrl sets field value
+func (o *VClaimBadgeResponseBadge) SetIconUrl(v string) {
+	o.IconUrl = v
+}
+
+// GetColor returns the Color field value
+func (o *VClaimBadgeResponseBadge) GetColor() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Color
+}
+
+// GetColorOk returns a tuple with the Color field value
+// and a boolean to check if the value has been set.
+func (o *VClaimBadgeResponseBadge) GetColorOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Color, true
+}
+
+// SetColor sets field value
+func (o *VClaimBadgeResponseBadge) SetColor(v string) {
+	o.Color = v
+}
+
+// GetPoints returns the Points field value
+func (o *VClaimBadgeResponseBadge) GetPoints() float32 {
+	if o == nil {
+		var ret float32
+		return ret
+	}
+
+	return o.Points
+}
+
+// GetPointsOk returns a tuple with the Points field value
+// and a boolean to check if the value has been set.
+func (o *VClaimBadgeResponseBadge) GetPointsOk() (*float32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Points, true
+}
+
+// SetPoints sets field value
+func (o *VClaimBadgeResponseBadge) SetPoints(v float32) {
+	o.Points = v
+}
+
 func (o VClaimBadgeResponseBadge) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -106,6 +236,11 @@ func (o VClaimBadgeResponseBadge) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["name"] = o.Name
 	toSerialize["slug"] = o.Slug
+	toSerialize["description"] = o.Description
+	toSerialize["icon"] = o.Icon
+	toSerialize["iconUrl"] = o.IconUrl
+	toSerialize["color"] = o.Color
+	toSerialize["points"] = o.Points
 	return toSerialize, nil
 }
 
@@ -116,6 +251,11 @@ func (o *VClaimBadgeResponseBadge) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"name",
 		"slug",
+		"description",
+		"icon",
+		"iconUrl",
+		"color",
+		"points",
 	}
 
 	allProperties := make(map[string]interface{})

@@ -4,16 +4,16 @@ All URIs are relative to *https://api.tampa.dev*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**html_get**](PagesApi.md#html_get) | **GET** /html | HTML page with upcoming events
-[**upcoming_events_get**](PagesApi.md#upcoming_events_get) | **GET** /upcoming-events | Upcoming events HTML page
+[**html_get**](PagesApi.md#html_get) | **GET** /html | Deprecated — redirects to calendar
+[**upcoming_events_get**](PagesApi.md#upcoming_events_get) | **GET** /upcoming-events | Deprecated — redirects to calendar
 
 
 # **html_get**
-> str html_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
+> html_get()
 
-HTML page with upcoming events
+Deprecated — redirects to calendar
 
-Returns a formatted HTML page displaying upcoming events
+Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
 ### Example
 
@@ -44,17 +44,10 @@ configuration = tampa_events_api.Configuration(
 with tampa_events_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tampa_events_api.PagesApi(api_client)
-    groups = 'tampadevs,suncoast-js' # str |  (optional)
-    noonline = '1' # str |  (optional)
-    within_hours = '24' # str |  (optional)
-    within_days = '7' # str |  (optional)
-    noempty = '1' # str |  (optional)
 
     try:
-        # HTML page with upcoming events
-        api_response = api_instance.html_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
-        print("The response of PagesApi->html_get:\n")
-        pprint(api_response)
+        # Deprecated — redirects to calendar
+        api_instance.html_get()
     except Exception as e:
         print("Exception when calling PagesApi->html_get: %s\n" % e)
 ```
@@ -63,18 +56,11 @@ with tampa_events_api.ApiClient(configuration) as api_client:
 
 ### Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **groups** | **str**|  | [optional] 
- **noonline** | **str**|  | [optional] 
- **within_hours** | **str**|  | [optional] 
- **within_days** | **str**|  | [optional] 
- **noempty** | **str**|  | [optional] 
+This endpoint does not need any parameter.
 
 ### Return type
 
-**str**
+void (empty response body)
 
 ### Authorization
 
@@ -83,22 +69,22 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: text/html
+ - **Accept**: Not defined
 
 ### HTTP response details
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | HTML page |  -  |
+**301** | Permanent redirect to calendar |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **upcoming_events_get**
-> str upcoming_events_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
+> upcoming_events_get()
 
-Upcoming events HTML page
+Deprecated — redirects to calendar
 
-Alias for /html - returns a formatted HTML page displaying upcoming events
+Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
 
 ### Example
 
@@ -129,17 +115,10 @@ configuration = tampa_events_api.Configuration(
 with tampa_events_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tampa_events_api.PagesApi(api_client)
-    groups = 'tampadevs,suncoast-js' # str |  (optional)
-    noonline = '1' # str |  (optional)
-    within_hours = '24' # str |  (optional)
-    within_days = '7' # str |  (optional)
-    noempty = '1' # str |  (optional)
 
     try:
-        # Upcoming events HTML page
-        api_response = api_instance.upcoming_events_get(groups=groups, noonline=noonline, within_hours=within_hours, within_days=within_days, noempty=noempty)
-        print("The response of PagesApi->upcoming_events_get:\n")
-        pprint(api_response)
+        # Deprecated — redirects to calendar
+        api_instance.upcoming_events_get()
     except Exception as e:
         print("Exception when calling PagesApi->upcoming_events_get: %s\n" % e)
 ```
@@ -148,18 +127,11 @@ with tampa_events_api.ApiClient(configuration) as api_client:
 
 ### Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **groups** | **str**|  | [optional] 
- **noonline** | **str**|  | [optional] 
- **within_hours** | **str**|  | [optional] 
- **within_days** | **str**|  | [optional] 
- **noempty** | **str**|  | [optional] 
+This endpoint does not need any parameter.
 
 ### Return type
 
-**str**
+void (empty response body)
 
 ### Authorization
 
@@ -168,13 +140,13 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: text/html
+ - **Accept**: Not defined
 
 ### HTTP response details
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | HTML page |  -  |
+**301** | Permanent redirect to calendar |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

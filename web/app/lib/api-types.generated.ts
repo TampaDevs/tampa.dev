@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY
  *
  * Generated from: http://localhost:8787/openapi.json
- * Generated at: 2026-02-01T22:36:49.636Z
+ * Generated at: 2026-02-05T04:25:28.896Z
  *
  * Regenerate with: npm run generate:types
  */
@@ -712,32 +712,24 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * HTML page with upcoming events
-         * @description Returns a formatted HTML page displaying upcoming events
+         * Deprecated — redirects to calendar
+         * @description Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
          */
         get: {
             parameters: {
-                query?: {
-                    groups?: string;
-                    noonline?: string;
-                    within_hours?: string;
-                    within_days?: string;
-                    noempty?: string;
-                };
+                query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description HTML page */
-                200: {
+                /** @description Permanent redirect to calendar */
+                301: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content: {
-                        "text/html": string;
-                    };
+                    content?: never;
                 };
             };
         };
@@ -757,32 +749,24 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Upcoming events HTML page
-         * @description Alias for /html - returns a formatted HTML page displaying upcoming events
+         * Deprecated — redirects to calendar
+         * @description Formerly returned an HTML page with upcoming events. Now redirects to the calendar.
          */
         get: {
             parameters: {
-                query?: {
-                    groups?: string;
-                    noonline?: string;
-                    within_hours?: string;
-                    within_days?: string;
-                    noempty?: string;
-                };
+                query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description HTML page */
-                200: {
+                /** @description Permanent redirect to calendar */
+                301: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content: {
-                        "text/html": string;
-                    };
+                    content?: never;
                 };
             };
         };
@@ -3019,6 +3003,8 @@ export interface components {
                 slug: string;
                 description: string | null;
                 icon: string;
+                /** @description URL to the high-quality emoji image, or null if unavailable */
+                iconUrl: string | null;
                 color: string | null;
                 points: number;
             };
@@ -3034,6 +3020,11 @@ export interface components {
             badge: {
                 name: string;
                 slug: string;
+                description: string | null;
+                icon: string;
+                iconUrl: string | null;
+                color: string;
+                points: number;
             };
         };
         Scope: {
