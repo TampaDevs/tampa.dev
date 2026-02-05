@@ -269,11 +269,11 @@ describe('/v1/ Profile', () => {
     expect(body.data.themeColor).toBe('#0891B2');
   });
 
-  it('GET /v1/profile/badges returns user badges with rarity', async () => {
+  it('GET /v1/profile/badges returns user badges with rarity and iconUrl', async () => {
     const { env } = createTestEnv();
     const user = await createUser();
     const { authHeader } = await createPatToken(user.id, ['read:user']);
-    const badge = await createBadge({ name: 'Early Adopter', slug: 'early-adopter' });
+    const badge = await createBadge({ name: 'Early Adopter', slug: 'early-adopter', icon: '🚀' });
     await awardBadge(user.id, badge.id);
 
     const res = await appRequest('/v1/profile/badges', {
@@ -286,6 +286,8 @@ describe('/v1/ Profile', () => {
     expect(body.data.length).toBe(1);
     expect(body.data[0].name).toBe('Early Adopter');
     expect(body.data[0].slug).toBe('early-adopter');
+    expect(body.data[0].icon).toBe('🚀');
+    expect(body.data[0].iconUrl).toMatch(/td-uploads-public\.tampa\.dev\/emoji/);
     expect(body.data[0].awardedAt).toBeDefined();
     expect(body.data[0].rarity).toBeDefined();
     expect(body.data[0].rarity.tier).toBeDefined();

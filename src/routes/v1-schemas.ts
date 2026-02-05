@@ -152,6 +152,7 @@ export const UserBadgeSchema = z.object({
   slug: z.string(),
   description: z.string().nullable(),
   icon: z.string(),
+  iconUrl: z.string().nullable().openapi({ description: 'URL to the high-quality emoji image, or null if unavailable' }),
   color: z.string(),
   points: z.number(),
   awardedAt: z.string().nullable(),

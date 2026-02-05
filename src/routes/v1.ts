@@ -35,6 +35,7 @@ import {
   parsePagination,
 } from '../lib/responses.js';
 import { emitEvent, emitEvents } from '../lib/event-bus.js';
+import { getEmojiUrl } from '../../lib/emoji.js';
 import type { Env } from '../../types/worker.js';
 
 // Service imports
@@ -650,6 +651,7 @@ function createV1Routes() {
         slug: badge.slug,
         description: badge.description,
         icon: badge.icon,
+        iconUrl: getEmojiUrl(badge.icon),
         color: badge.color,
         points: badge.points,
         awardedAt: ubEntry.awardedAt,
