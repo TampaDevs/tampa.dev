@@ -618,7 +618,7 @@ function CredentialsModal({
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const isPublic = credentials.isPublicClient || !credentials.clientSecret;
+  const isPublic = credentials.isPublicClient === true;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

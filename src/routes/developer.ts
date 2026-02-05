@@ -32,6 +32,7 @@ const createAppSchema = z.object({
   isPublicClient: z.boolean().optional().default(false),
 });
 
+// Note: isPublicClient is intentionally omitted - client type cannot be changed after creation
 const updateAppSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),

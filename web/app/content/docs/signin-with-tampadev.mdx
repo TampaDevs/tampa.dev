@@ -22,9 +22,12 @@ You need a `client_id` before your app can authenticate users. There are two way
 #### Developer Portal (Recommended)
 
 1. Sign in to [tampa.dev](https://tampa.dev) and go to the [Developer Portal](/developer)
-2. Click **Create Application**
-3. Fill in your app name and at least one redirect URI
-4. Save your `client_id` and `client_secret`
+2. Click **Register New Application**
+3. Choose your **Client Type**:
+   - **Confidential** for server-side apps that can securely store a client secret
+   - **Public** for SPAs or mobile apps that use PKCE only (no client secret)
+4. Fill in your app name and at least one redirect URI
+5. Save your `client_id` (and `client_secret` for confidential clients)
 
 #### Dynamic Client Registration
 
