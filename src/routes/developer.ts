@@ -28,6 +28,8 @@ const createAppSchema = z.object({
   logoUri: z.string().url().optional(),
   policyUri: z.string().url().optional(),
   tosUri: z.string().url().optional(),
+  /** True for SPAs/mobile apps using PKCE without a client secret */
+  isPublicClient: z.boolean().optional().default(false),
 });
 
 const updateAppSchema = z.object({
@@ -67,6 +69,10 @@ interface OAuthClient {
   description?: string;
   // Ownership tracking
   ownerId?: string;
+  // OAuth 2.1 client authentication method
+  // 'none' for public clients (SPAs, mobile apps) using PKCE
+  // 'client_secret_post' for confidential clients (server-side apps)
+  token_endpoint_auth_method?: 'none' | 'client_secret_post';
 }
 
 // ============== Helper Functions ==============
@@ -179,6 +185,7 @@ export function createDeveloperRoutes() {
       logoUri?: string;
       redirectUris: string[];
       createdAt: string;
+      isPublicClient: boolean;
     }> = [];
 
     for (const key of clientList.keys) {
@@ -192,6 +199,7 @@ export function createDeveloperRoutes() {
           logoUri: clientData.logoUri,
           redirectUris: clientData.redirectUris || [],
           createdAt: clientData.registrationDate,
+          isPublicClient: clientData.token_endpoint_auth_method === 'none',
         });
       }
     }
@@ -218,12 +226,13 @@ export function createDeveloperRoutes() {
 
     // Generate credentials
     const clientId = generateClientId();
-    const clientSecret = generateClientSecret();
+    // Public clients (SPAs, mobile apps) don't get a secret - they use PKCE only
+    const clientSecret = data.isPublicClient ? undefined : generateClientSecret();
 
     // Create client data
     const clientData: OAuthClient = {
       clientId,
-      clientSecret, // Stored hashed in production
+      ...(clientSecret ? { clientSecret } : {}),
       clientName: data.name,
       clientUri: data.website,
       logoUri: data.logoUri,
@@ -233,6 +242,8 @@ export function createDeveloperRoutes() {
       tosUri: data.tosUri,
       description: data.description,
       ownerId: user.id,
+      // Set auth method based on client type
+      token_endpoint_auth_method: data.isPublicClient ? 'none' : 'client_secret_post',
     };
 
     // Store in KV
@@ -255,13 +266,14 @@ export function createDeveloperRoutes() {
       metadata: { userId: user.id, source: 'developer' },
     });
 
-    // Return credentials (secret shown only once!)
+    // Return credentials (secret shown only once for confidential clients!)
     return c.json({
       clientId,
-      clientSecret, // Only shown on creation!
+      ...(clientSecret ? { clientSecret } : {}), // Only shown on creation, only for confidential clients
       name: data.name,
       redirectUris: data.redirectUris,
       createdAt: clientData.registrationDate,
+      isPublicClient: data.isPublicClient,
     }, 201);
   });
 
@@ -315,6 +327,7 @@ export function createDeveloperRoutes() {
       tosUri: clientData.tosUri,
       createdAt: clientData.registrationDate,
       activeUsers,
+      isPublicClient: clientData.token_endpoint_auth_method === 'none',
     });
   });
 
@@ -398,6 +411,11 @@ export function createDeveloperRoutes() {
     // Verify ownership
     if (clientData.ownerId !== user.id) {
       return c.json({ error: 'Not authorized to modify this app' }, 403);
+    }
+
+    // Public clients don't have secrets
+    if (clientData.token_endpoint_auth_method === 'none') {
+      return c.json({ error: 'Public clients do not have a client secret' }, 400);
     }
 
     // Generate new secret

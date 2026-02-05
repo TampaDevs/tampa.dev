@@ -19,6 +19,8 @@ interface DeveloperApp {
   redirectUris: string[];
   createdAt: string;
   activeUsers?: number;
+  /** True if this is a public client (SPA/mobile) without a secret */
+  isPublicClient?: boolean;
 }
 
 interface DeveloperWebhook {
@@ -106,6 +108,7 @@ export async function action({ request }: Route.ActionArgs) {
       .filter(Boolean);
     const website = formData.get("website") as string;
     const logoUri = formData.get("logoUri") as string | null;
+    const isPublicClient = formData.get("isPublicClient") === "true";
 
     try {
       const response = await fetch(`${apiUrl}/developer/apps`, {
@@ -120,11 +123,12 @@ export async function action({ request }: Route.ActionArgs) {
           redirectUris,
           website: website || undefined,
           logoUri: logoUri || undefined,
+          isPublicClient,
         }),
       });
 
       if (response.ok) {
-        const data = await response.json() as { clientId: string; clientSecret: string };
+        const data = await response.json() as { clientId: string; clientSecret?: string; isPublicClient?: boolean };
         return { success: true, created: data };
       } else {
         const error = await response.json() as { error?: string };
@@ -448,10 +452,11 @@ function LogoUpload({
   );
 }
 
-function CreateAppForm({ onSuccess }: { onSuccess: (data: { clientId: string; clientSecret: string }) => void }) {
-  const fetcher = useFetcher<{ success: boolean; created?: { clientId: string; clientSecret: string }; error?: string }>();
+function CreateAppForm({ onSuccess }: { onSuccess: (data: { clientId: string; clientSecret?: string; isPublicClient?: boolean }) => void }) {
+  const fetcher = useFetcher<{ success: boolean; created?: { clientId: string; clientSecret?: string; isPublicClient?: boolean }; error?: string }>();
   const isSubmitting = fetcher.state !== "idle";
   const [logoUri, setLogoUri] = useState<string | null>(null);
+  const [isPublicClient, setIsPublicClient] = useState(false);
 
   // Handle successful creation
   if (fetcher.data?.success && fetcher.data.created) {
@@ -462,6 +467,7 @@ function CreateAppForm({ onSuccess }: { onSuccess: (data: { clientId: string; cl
     <fetcher.Form method="post" className="space-y-4">
       <input type="hidden" name="intent" value="create" />
       {logoUri && <input type="hidden" name="logoUri" value={logoUri} />}
+      <input type="hidden" name="isPublicClient" value={isPublicClient ? "true" : "false"} />
 
       <div className="flex items-center gap-4">
         <LogoUpload
@@ -471,6 +477,53 @@ function CreateAppForm({ onSuccess }: { onSuccess: (data: { clientId: string; cl
         <div className="text-sm text-gray-500 dark:text-gray-400">
           <p className="font-medium text-gray-700 dark:text-gray-300">App Icon</p>
           <p>JPEG, PNG, GIF, or WebP. Max 1MB.</p>
+        </div>
+      </div>
+
+      {/* Client Type Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Client Type *
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setIsPublicClient(false)}
+            className={`p-4 rounded-lg border-2 text-left transition-colors ${
+              !isPublicClient
+                ? "border-coral bg-coral/5 dark:bg-coral/10"
+                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+              </svg>
+              <span className="font-medium text-gray-900 dark:text-white">Confidential</span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Server-side apps that can securely store a client secret
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPublicClient(true)}
+            className={`p-4 rounded-lg border-2 text-left transition-colors ${
+              isPublicClient
+                ? "border-coral bg-coral/5 dark:bg-coral/10"
+                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span className="font-medium text-gray-900 dark:text-white">Public</span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              SPAs or mobile apps using PKCE (no client secret)
+            </p>
+          </button>
         </div>
       </div>
 
@@ -554,7 +607,7 @@ function CredentialsModal({
   credentials,
   onClose,
 }: {
-  credentials: { clientId: string; clientSecret: string };
+  credentials: { clientId: string; clientSecret?: string; isPublicClient?: boolean };
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState<"id" | "secret" | null>(null);
@@ -564,6 +617,8 @@ function CredentialsModal({
     setCopied(type);
     setTimeout(() => setCopied(null), 2000);
   };
+
+  const isPublic = credentials.isPublicClient || !credentials.clientSecret;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -577,11 +632,19 @@ function CredentialsModal({
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">App Created!</h2>
         </div>
 
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            <strong>Important:</strong> Copy your client secret now. You won't be able to see it again!
-          </p>
-        </div>
+        {isPublic ? (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Public Client:</strong> This app uses PKCE for security instead of a client secret. Make sure to implement PKCE in your authorization flow.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              <strong>Important:</strong> Copy your client secret now. You won't be able to see it again!
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>
@@ -601,29 +664,31 @@ function CredentialsModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Client Secret
-            </label>
-            <div className="flex gap-2">
-              <code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-mono text-gray-900 dark:text-white overflow-x-auto">
-                {credentials.clientSecret}
-              </code>
-              <button
-                onClick={() => copyToClipboard(credentials.clientSecret, "secret")}
-                className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                {copied === "secret" ? "Copied!" : "Copy"}
-              </button>
+          {credentials.clientSecret && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Client Secret
+              </label>
+              <div className="flex gap-2">
+                <code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-mono text-gray-900 dark:text-white overflow-x-auto">
+                  {credentials.clientSecret}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(credentials.clientSecret!, "secret")}
+                  className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  {copied === "secret" ? "Copied!" : "Copy"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <button
           onClick={onClose}
           className="mt-6 w-full px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
         >
-          I've saved my credentials
+          {isPublic ? "Got it!" : "I've saved my credentials"}
         </button>
       </div>
     </div>
@@ -652,7 +717,14 @@ function AppCard({ app, onDelete, onLogoUpdate }: { app: DeveloperApp; onDelete:
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white truncate">{app.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 dark:text-white truncate">{app.name}</h3>
+                {app.isPublicClient && (
+                  <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                    Public
+                  </span>
+                )}
+              </div>
               {app.description && (
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{app.description}</p>
               )}
@@ -697,17 +769,20 @@ function AppCard({ app, onDelete, onLogoUpdate }: { app: DeveloperApp; onDelete:
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <fetcher.Form method="post">
-          <input type="hidden" name="intent" value="regenerate" />
-          <input type="hidden" name="clientId" value={app.clientId} />
-          <button
-            type="submit"
-            disabled={fetcher.state !== "idle"}
-            className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {fetcher.state !== "idle" ? "..." : "Regenerate Secret"}
-          </button>
-        </fetcher.Form>
+        {/* Only show regenerate secret button for confidential clients */}
+        {!app.isPublicClient && (
+          <fetcher.Form method="post">
+            <input type="hidden" name="intent" value="regenerate" />
+            <input type="hidden" name="clientId" value={app.clientId} />
+            <button
+              type="submit"
+              disabled={fetcher.state !== "idle"}
+              className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {fetcher.state !== "idle" ? "..." : "Regenerate Secret"}
+            </button>
+          </fetcher.Form>
+        )}
 
         {confirmDelete ? (
           <div className="flex gap-2">
@@ -1004,7 +1079,7 @@ export default function DeveloperPortal() {
   const [activeTab, setActiveTab] = useState<"apps" | "webhooks">("apps");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showWebhookForm, setShowWebhookForm] = useState(false);
-  const [newCredentials, setNewCredentials] = useState<{ clientId: string; clientSecret: string } | null>(null);
+  const [newCredentials, setNewCredentials] = useState<{ clientId: string; clientSecret?: string; isPublicClient?: boolean } | null>(null);
   const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEventTypes, setWebhookEventTypes] = useState("*");
@@ -1020,7 +1095,7 @@ export default function DeveloperPortal() {
     setWebhookEventTypes("*");
   }
 
-  const handleAppCreated = (credentials: { clientId: string; clientSecret: string }) => {
+  const handleAppCreated = (credentials: { clientId: string; clientSecret?: string; isPublicClient?: boolean }) => {
     setNewCredentials(credentials);
     setShowCreateForm(false);
   };
