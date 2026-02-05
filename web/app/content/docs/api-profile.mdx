@@ -53,7 +53,7 @@ curl -H "Authorization: Bearer td_pat_abc123..." \
     "username": "janedev",
     "avatarUrl": "https://avatars.githubusercontent.com/u/12345",
     "heroImageUrl": null,
-    "themeColor": "ocean",
+    "themeColor": "#0891B2",
     "bio": "Full-stack developer in Tampa",
     "location": "Tampa, FL",
     "socialLinks": ["https://github.com/janedev", "https://twitter.com/janedev"],
@@ -77,7 +77,7 @@ curl -X PATCH \
   -d '{
     "bio": "Building cool stuff in Tampa",
     "location": "Tampa, FL",
-    "themeColor": "coral"
+    "themeColor": "#E85A4F"
   }' \
   https://api.tampa.dev/v1/profile
 ```
@@ -90,7 +90,7 @@ curl -X PATCH \
     "username": "janedev",
     "bio": "Building cool stuff in Tampa",
     "location": "Tampa, FL",
-    "themeColor": "coral"
+    "themeColor": "#E85A4F"
   }
 }
 ```
@@ -287,6 +287,71 @@ curl -H "Authorization: Bearer td_pat_abc123..." \
   ]
 }
 ```
+
+---
+
+## Badges
+
+### GET /v1/profile/badges
+
+Get the authenticated user's earned badges with rarity information. Scope: `read:user`.
+
+```bash
+curl -H "Authorization: Bearer td_pat_abc123..." \
+  https://api.tampa.dev/v1/profile/badges
+```
+
+```json
+{
+  "data": [
+    {
+      "name": "Early Adopter",
+      "slug": "early-adopter",
+      "description": "Joined the Tampa.dev community early",
+      "icon": "rocket",
+      "color": "#4CAF50",
+      "points": 100,
+      "awardedAt": "2025-06-15T10:30:00Z",
+      "group": null,
+      "rarity": {
+        "tier": "legendary",
+        "percentage": 2.5
+      }
+    },
+    {
+      "name": "First Event",
+      "slug": "first-event",
+      "description": "Attended your first community event",
+      "icon": "calendar",
+      "color": "#2196F3",
+      "points": 50,
+      "awardedAt": "2025-08-20T19:00:00Z",
+      "group": {
+        "id": "grp_abc123",
+        "name": "Tampa.dev",
+        "urlname": "tampadevs",
+        "photoUrl": "https://cdn.tampa.dev/groups/tampadevs/logo.png"
+      },
+      "rarity": {
+        "tier": "common",
+        "percentage": 45.2
+      }
+    }
+  ]
+}
+```
+
+**Rarity tiers:**
+
+| Tier | Percentage Held |
+|------|-----------------|
+| `legendary` | < 5% |
+| `epic` | 5-10% |
+| `rare` | 10-25% |
+| `uncommon` | 25-50% |
+| `common` | > 50% |
+
+Rarity is calculated dynamically based on the percentage of all platform users who hold each badge.
 
 ---
 

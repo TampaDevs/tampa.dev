@@ -18,6 +18,8 @@ import {
   createEvent,
   createPatToken,
   createFollow,
+  createBadge,
+  awardBadge,
   appRequest,
 } from '../helpers';
 
@@ -221,6 +223,126 @@ describe('/v1/ Profile', () => {
     expect(body.data.bio).toBe('Test bio');
     expect(body.data.location).toBe('Tampa');
     expect(body.data.profileVisibility).toBeDefined();
+  });
+
+  it('GET /v1/profile returns themeColor as hex value', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser({ themeColor: 'coral' });
+    const { authHeader } = await createPatToken(user.id, ['read:user']);
+
+    const res = await appRequest('/v1/profile', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data.themeColor).toBe('#E85A4F');
+  });
+
+  it('GET /v1/profile returns null themeColor when not set', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser({ themeColor: null });
+    const { authHeader } = await createPatToken(user.id, ['read:user']);
+
+    const res = await appRequest('/v1/profile', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data.themeColor).toBeNull();
+  });
+
+  it('PATCH /v1/profile returns themeColor as hex value after update', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['user']);
+
+    const res = await appRequest('/v1/profile', {
+      env,
+      method: 'PATCH',
+      headers: { Authorization: authHeader },
+      body: { themeColor: 'ocean' },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data.themeColor).toBe('#0891B2');
+  });
+
+  it('GET /v1/profile/badges returns user badges with rarity', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['read:user']);
+    const badge = await createBadge({ name: 'Early Adopter', slug: 'early-adopter' });
+    await awardBadge(user.id, badge.id);
+
+    const res = await appRequest('/v1/profile/badges', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data).toBeInstanceOf(Array);
+    expect(body.data.length).toBe(1);
+    expect(body.data[0].name).toBe('Early Adopter');
+    expect(body.data[0].slug).toBe('early-adopter');
+    expect(body.data[0].awardedAt).toBeDefined();
+    expect(body.data[0].rarity).toBeDefined();
+    expect(body.data[0].rarity.tier).toBeDefined();
+    expect(body.data[0].rarity.percentage).toBeDefined();
+  });
+
+  it('GET /v1/profile/badges returns empty array when user has no badges', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['read:user']);
+
+    const res = await appRequest('/v1/profile/badges', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data).toBeInstanceOf(Array);
+    expect(body.data.length).toBe(0);
+  });
+
+  it('GET /v1/profile/badges includes group info for group badges', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['read:user']);
+    const group = await createGroup({ name: 'Tampa.dev' });
+    const badge = await createBadge({ name: 'Group Badge', slug: 'group-badge', groupId: group.id });
+    await awardBadge(user.id, badge.id);
+
+    const res = await appRequest('/v1/profile/badges', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data.length).toBe(1);
+    expect(body.data[0].group).not.toBeNull();
+    expect(body.data[0].group.name).toBe('Tampa.dev');
+  });
+
+  it('GET /v1/profile/badges requires read:user scope', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['read:events']);
+
+    const res = await appRequest('/v1/profile/badges', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('GET /v1/profile/badges rejects unauthenticated requests', async () => {
+    const { env } = createTestEnv();
+
+    const res = await appRequest('/v1/profile/badges', { env });
+    expect(res.status).toBe(401);
   });
 });
 

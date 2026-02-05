@@ -24,6 +24,8 @@ import {
   achievements,
   achievementProgress,
   userEntitlements,
+  badges,
+  userBadges,
 } from '../db/schema.js';
 import { getCurrentUser, requireScope, isPlatformAdmin } from '../lib/auth.js';
 import { SCOPES, SCOPE_HIERARCHY, type Scope } from '../lib/scopes.js';
@@ -66,6 +68,7 @@ import {
   LinkedAccountSchema,
   PortfolioItemResponseSchema,
   AchievementProgressSchema,
+  UserBadgeSchema,
   TokenSchema,
   TokenCreatedSchema,
   EventListItemSchema,
@@ -119,6 +122,26 @@ function normalizeSocialLinks(raw: string | null): string[] | null {
     }
     return null;
   } catch { return null; }
+}
+
+// ============================================================
+// Helper: Convert theme color alias to hex value
+// ============================================================
+
+const THEME_COLOR_HEX: Record<string, string> = {
+  coral: '#E85A4F',
+  ocean: '#0891B2',
+  sunset: '#F59E0B',
+  forest: '#059669',
+  violet: '#7C3AED',
+  rose: '#E11D48',
+  slate: '#475569',
+  sky: '#0284C7',
+};
+
+function themeColorToHex(alias: string | null): string | null {
+  if (!alias) return null;
+  return THEME_COLOR_HEX[alias] ?? alias; // Return as-is if already a hex value or unknown
 }
 
 // ============================================================
@@ -203,7 +226,7 @@ function createV1Routes() {
       username: user.username,
       avatarUrl: user.avatarUrl,
       heroImageUrl: user.heroImageUrl,
-      themeColor: user.themeColor,
+      themeColor: themeColorToHex(user.themeColor),
       bio: user.bio,
       location: user.location,
       socialLinks: normalizeSocialLinks(user.socialLinks),
@@ -268,7 +291,7 @@ function createV1Routes() {
         username: user.username,
         avatarUrl: user.avatarUrl,
         heroImageUrl: user.heroImageUrl,
-        themeColor: user.themeColor,
+        themeColor: themeColorToHex(user.themeColor),
         bio: user.bio,
         location: user.location,
         socialLinks: normalizeSocialLinks(user.socialLinks),
@@ -539,6 +562,109 @@ function createV1Routes() {
         hidden: def.hidden === 1,
       };
     });
+
+    return ok(c, result);
+  });
+
+  /**
+   * GET /v1/profile/badges -- User's earned badges
+   */
+  const listBadgesRoute = createRoute({
+    method: 'get',
+    path: '/profile/badges',
+    summary: 'Get earned badges',
+    description: 'Returns all badges earned by the authenticated user, with rarity information.',
+    tags: ['User'],
+    security: [{ BearerToken: ['read:user'] }],
+    responses: {
+      200: dataResponse(z.array(UserBadgeSchema), 'User badges'),
+      ...AuthErrors,
+    },
+  });
+
+  // @ts-expect-error Response type mismatch with TypedResponse - handlers return Response from helpers
+  app.openapi(listBadgesRoute, async (c) => {
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+
+    const scopeErr = requireScope(auth, 'read:user', c);
+    if (scopeErr) return scopeErr;
+
+    const db = createDatabase(c.env.DB);
+
+    // Get user's badges
+    const ub = await db.query.userBadges.findMany({
+      where: eq(userBadges.userId, auth.user.id),
+    });
+
+    if (ub.length === 0) {
+      return ok(c, []);
+    }
+
+    // Fetch badge details
+    const badgeIds = ub.map((b) => b.badgeId);
+    const badgeResults = await db.query.badges.findMany({
+      where: inArray(badges.id, badgeIds),
+    });
+
+    // Get group details for group badges
+    const groupIds = [...new Set(badgeResults.filter((b) => b.groupId).map((b) => b.groupId!))];
+    const groupResults = groupIds.length > 0
+      ? await db.query.groups.findMany({ where: inArray(groups.id, groupIds) })
+      : [];
+    const groupMap = new Map(groupResults.map((g) => [g.id, g]));
+
+    // Compute rarity for each badge
+    const totalUsersResult = await db
+      .select({ count: count() })
+      .from(users)
+      .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
+    const totalUsers = totalUsersResult[0]?.count ?? 0;
+
+    // Count holders per badge
+    const holderCounts = await db
+      .select({ badgeId: userBadges.badgeId, count: count() })
+      .from(userBadges)
+      .where(inArray(userBadges.badgeId, badgeIds))
+      .groupBy(userBadges.badgeId);
+    const holderCountMap = new Map(holderCounts.map((h) => [h.badgeId, h.count]));
+
+    const getRarityTier = (percentage: number): 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' => {
+      if (percentage < 1) return 'legendary';
+      if (percentage < 5) return 'epic';
+      if (percentage < 15) return 'rare';
+      if (percentage < 50) return 'uncommon';
+      return 'common';
+    };
+
+    const result = ub.map((ubEntry) => {
+      const badge = badgeResults.find((b) => b.id === ubEntry.badgeId);
+      if (!badge) return null;
+
+      const group = badge.groupId ? groupMap.get(badge.groupId) : null;
+      const awardedCount = holderCountMap.get(badge.id) ?? 0;
+      const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
+
+      return {
+        name: badge.name,
+        slug: badge.slug,
+        description: badge.description,
+        icon: badge.icon,
+        color: badge.color,
+        points: badge.points,
+        awardedAt: ubEntry.awardedAt,
+        group: group ? {
+          id: group.id,
+          name: group.name,
+          urlname: group.urlname,
+          photoUrl: group.photoUrl,
+        } : null,
+        rarity: {
+          tier: getRarityTier(rarityPercentage),
+          percentage: Math.round(rarityPercentage * 10) / 10,
+        },
+      };
+    }).filter((b): b is NonNullable<typeof b> => b !== null);
 
     return ok(c, result);
   });

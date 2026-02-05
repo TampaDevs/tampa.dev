@@ -146,6 +146,27 @@ export const AchievementProgressSchema = z.object({
   hidden: z.boolean(),
 }).openapi('AchievementProgress');
 
+/** User badge with rarity info */
+export const UserBadgeSchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().nullable(),
+  icon: z.string(),
+  color: z.string(),
+  points: z.number(),
+  awardedAt: z.string().nullable(),
+  group: z.object({
+    id: z.string(),
+    name: z.string(),
+    urlname: z.string().nullable(),
+    photoUrl: z.string().nullable(),
+  }).nullable(),
+  rarity: z.object({
+    tier: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']),
+    percentage: z.number(),
+  }),
+}).openapi('UserBadge');
+
 /** Personal Access Token (list view, no token value) */
 export const TokenSchema = z.object({
   id: z.string(),
