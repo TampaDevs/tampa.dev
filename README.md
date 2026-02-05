@@ -108,6 +108,8 @@ end
 
 Add Tampa.dev authentication to your app with OAuth 2.1 + PKCE. Give your users single sign-on with the Tampa Bay tech community.
 
+Check out this [demonstration app](https://tampadev-signin-demo.pages.dev) with [source code](https://github.com/TampaDevs/tampadev-signin-demo).
+
 [![Sign in with Tampa.dev](https://api.tampa.dev/assets/signin-button.svg)](https://api.tampa.dev/developer/docs/signin-with-tampadev) [![Sign in with Tampa.dev](https://api.tampa.dev/assets/signin-button.svg?theme=dark)](https://api.tampa.dev/developer/docs/signin-with-tampadev)
 
 1. Register your app in the [Developer Portal](https://tampa.dev/developer) or via the dynamic client registration API
