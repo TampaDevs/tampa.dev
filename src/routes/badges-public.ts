@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { eq, and, sql, isNull } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { badges, userBadges, users } from '../db/schema';
+import { getEmojiUrl } from '../../lib/emoji.js';
 import type { Env } from '../../types/worker';
 
 function getRarityTierName(percentage: number): string {
@@ -54,6 +55,7 @@ export function createBadgesPublicRoutes() {
           slug: badge.slug,
           description: badge.description,
           icon: badge.icon,
+          iconUrl: getEmojiUrl(badge.icon),
           color: badge.color,
           points: badge.points,
           sortOrder: badge.sortOrder,
@@ -105,6 +107,7 @@ export function createBadgesPublicRoutes() {
       slug: badge.slug,
       description: badge.description,
       icon: badge.icon,
+      iconUrl: getEmojiUrl(badge.icon),
       color: badge.color,
       points: badge.points,
       sortOrder: badge.sortOrder,

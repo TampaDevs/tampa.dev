@@ -18,6 +18,7 @@ import { emitEvent } from '../lib/event-bus.js';
 import { requireAdmin, type AuthUser } from '../middleware/auth.js';
 import { ok, created, list, success, notFound, conflict, badRequest, internalError } from '../lib/responses.js';
 import { invalidateResponseCache } from '../cache.js';
+import { withIconUrl } from '../../lib/emoji.js';
 
 // ============== Validation Schemas ==============
 
@@ -342,13 +343,16 @@ export function createAdminApiRoutes() {
         }
       }
 
-      // 2. Delete badges and their dependents (userBadges, badgeClaimLinks cascade from badges)
+      // 2. Delete badges and their dependents
+      //    userBadges has ON DELETE CASCADE from badges, but badgeClaimLinks does not,
+      //    so claim links must be deleted explicitly before badges.
       const groupBadges = await db.query.badges.findMany({
         where: eq(badges.groupId, id),
         columns: { id: true },
       });
       if (groupBadges.length > 0) {
         for (const badge of groupBadges) {
+          await db.delete(badgeClaimLinks).where(eq(badgeClaimLinks.badgeId, badge.id));
           await db.delete(badges).where(eq(badges.id, badge.id));
         }
       }
@@ -1267,7 +1271,7 @@ export function createAdminApiRoutes() {
         const badgeUsers = await db.query.userBadges.findMany({
           where: eq(userBadges.badgeId, badge.id),
         });
-        return { ...badge, userCount: badgeUsers.length };
+        return withIconUrl({ ...badge, userCount: badgeUsers.length });
       })
     );
 
@@ -1307,7 +1311,7 @@ export function createAdminApiRoutes() {
       where: eq(badges.id, id),
     });
 
-    return created(c, createdBadge);
+    return created(c, createdBadge ? withIconUrl(createdBadge) : createdBadge);
   });
 
   /**
@@ -1347,7 +1351,7 @@ export function createAdminApiRoutes() {
       where: eq(badges.id, id),
     });
 
-    return ok(c, updated);
+    return ok(c, updated ? withIconUrl(updated) : updated);
   });
 
   /**

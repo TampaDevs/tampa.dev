@@ -1640,6 +1640,11 @@ function createV1Routes() {
           badge: z.object({
             name: z.string(),
             slug: z.string(),
+            description: z.string().nullable(),
+            icon: z.string(),
+            iconUrl: z.string().nullable(),
+            color: z.string(),
+            points: z.number(),
           }),
         }).openapi('ClaimBadgeResponse'),
         'Badge claimed',

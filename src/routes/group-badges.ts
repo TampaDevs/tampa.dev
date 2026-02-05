@@ -29,6 +29,7 @@ import type { Env } from '../../types/worker.js';
 import { getCurrentUser, requireGroupRole, requireScope } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { ok, created, success, unauthorized, forbidden, notFound, badRequest, conflict } from '../lib/responses.js';
+import { withIconUrl } from '../../lib/emoji.js';
 
 // ============== Validation Schemas ==============
 
@@ -122,7 +123,7 @@ export function createGroupBadgeRoutes() {
         const badgeUsers = await db.query.userBadges.findMany({
           where: eq(userBadges.badgeId, badge.id),
         });
-        return { ...badge, userCount: badgeUsers.length };
+        return withIconUrl({ ...badge, userCount: badgeUsers.length });
       }),
     );
 
@@ -214,7 +215,7 @@ export function createGroupBadgeRoutes() {
       metadata: { userId: user.id, source: 'group-badges' },
     });
 
-    return created(c, createdBadge);
+    return created(c, createdBadge ? withIconUrl(createdBadge) : createdBadge);
   });
 
   /**
@@ -269,7 +270,7 @@ export function createGroupBadgeRoutes() {
       where: eq(badges.id, badgeId),
     });
 
-    return ok(c, updated);
+    return ok(c, updated ? withIconUrl(updated) : updated);
   });
 
   /**
