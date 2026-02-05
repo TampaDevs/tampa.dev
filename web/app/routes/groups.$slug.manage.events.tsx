@@ -113,7 +113,7 @@ export default function ManageEventsPage({ loaderData }: Route.ComponentProps) {
           Events
         </h2>
         <Link
-          to="events/new"
+          to="new"
           className="inline-flex items-center gap-2 bg-gradient-to-b from-coral to-coral-dark hover:from-coral-light hover:to-coral text-white px-4 py-2 rounded-lg font-semibold transition-all shadow-sm"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -177,7 +177,7 @@ export default function ManageEventsPage({ loaderData }: Route.ComponentProps) {
           </p>
           {activeFilter === "all" && (
             <Link
-              to="events/new"
+              to="new"
               className="inline-flex items-center gap-2 text-coral hover:text-coral-dark dark:hover:text-coral-light font-medium"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -196,7 +196,7 @@ export default function ManageEventsPage({ loaderData }: Route.ComponentProps) {
             return (
               <Link
                 key={event.id}
-                to={`events/${event.id}`}
+                to={`/groups/${group.urlname}/manage/events/${event.id}`}
                 className="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 hover:border-coral/30 dark:hover:border-coral/30 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -217,6 +217,11 @@ export default function ManageEventsPage({ loaderData }: Route.ComponentProps) {
                       >
                         {event.status}
                       </span>
+                      {event.platform && event.platform !== "tampa.dev" && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                          {event.platform}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">

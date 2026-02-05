@@ -70,6 +70,7 @@ export interface ManagedEvent {
   timezone: string;
   eventType: "physical" | "online" | "hybrid";
   status: "active" | "draft" | "cancelled";
+  platform: "meetup" | "eventbrite" | "luma" | "tampa.dev";
   maxAttendees: number | null;
   photoUrl: string | null;
   duration: string | null;

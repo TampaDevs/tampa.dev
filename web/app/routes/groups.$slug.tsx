@@ -1,6 +1,7 @@
 import type { Route } from "./+types/groups.$slug";
 import { Link } from "react-router";
-import { fetchEvents, fetchGroupBySlug, toLocalGroup } from "~/lib/api.server";
+import { fetchEvents, fetchGroupBySlug, fetchCurrentUser, toLocalGroup } from "~/lib/api.server";
+import { fetchMyRole } from "~/lib/group-manage-api.server";
 import { generateMetaTags } from "~/lib/seo";
 import { groupToJsonLd, eventsToJsonLd } from "~/lib/structured-data";
 import { AddToCalendar, EventCard, FavoriteButton, StructuredData } from "~/components";
@@ -30,7 +31,7 @@ export const meta: Route.MetaFunction = ({ data }) => {
   return tags;
 };
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const apiGroup = await fetchGroupBySlug(params.slug!);
 
   if (!apiGroup) {
@@ -39,13 +40,25 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   const group = toLocalGroup(apiGroup);
 
-  let events: Awaited<ReturnType<typeof fetchEvents>> = [];
+  const cookieHeader = request.headers.get("Cookie") || undefined;
 
-  // Fetch events using the group's urlname (which is slug for the API)
-  events = await fetchEvents({
-    groups: [apiGroup.urlname],
-    withinDays: 60,
-  });
+  // Fetch events and check if user can manage this group in parallel
+  const [events, canManage] = await Promise.all([
+    fetchEvents({
+      groups: [apiGroup.urlname],
+      withinDays: 60,
+    }),
+    (async () => {
+      try {
+        const user = await fetchCurrentUser(cookieHeader);
+        if (!user) return false;
+        const roleData = await fetchMyRole(apiGroup.id, cookieHeader);
+        return roleData.permissions.canViewDashboard;
+      } catch {
+        return false;
+      }
+    })(),
+  ]);
 
   const apiHost = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
   const apiBase = `${apiHost}/2026-01-25`;
@@ -54,11 +67,12 @@ export async function loader({ params }: Route.LoaderArgs) {
     group,
     events,
     apiBase,
+    canManage,
   };
 }
 
 export default function GroupDetail({ loaderData }: Route.ComponentProps) {
-  const { group, events, apiBase } = loaderData;
+  const { group, events, apiBase, canManage } = loaderData;
 
   return (
     <>
@@ -177,6 +191,34 @@ export default function GroupDetail({ loaderData }: Route.ComponentProps) {
                   />
                 </svg>
               </a>
+
+              {canManage && (
+                <Link
+                  to={`/groups/${group.slug}/manage`}
+                  className="inline-flex items-center gap-2 bg-navy hover:bg-navy-light text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  Manage
+                </Link>
+              )}
 
               <AddToCalendar
                 groupUrlname={group.slug}

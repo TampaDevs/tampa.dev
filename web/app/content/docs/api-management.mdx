@@ -266,10 +266,12 @@ curl -H "Authorization: Bearer td_pat_abc123..." \
     "timezone": "America/New_York",
     "location": "Tampa Innovation Hub",
     "eventType": "in_person",
-    "maxAttendees": 30,
-    "totalConfirmed": 24,
-    "totalWaitlisted": 3,
-    "totalCheckedIn": 18
+    "rsvpSummary": {
+      "confirmed": 24,
+      "waitlisted": 3,
+      "capacity": 30
+    },
+    "checkinCount": 18
   }
 }
 ```

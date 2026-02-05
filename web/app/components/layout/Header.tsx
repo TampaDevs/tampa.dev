@@ -188,6 +188,16 @@ function UserMenu({ user }: { user: User }) {
               </svg>
               Achievements
             </Link>
+            <Link
+              to="/groups/manage"
+              onClick={closeMenu}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              Manage Groups
+            </Link>
             {(user.role === "admin" || user.role === "superadmin") && (
               <Link
                 to="/admin"
@@ -240,7 +250,7 @@ export function Header({ user }: HeaderProps) {
               </span>
             </Link>
 
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
                 <NavLink
                   key={link.to}
@@ -264,7 +274,7 @@ export function Header({ user }: HeaderProps) {
               href="https://talent.tampa.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -284,12 +294,12 @@ export function Header({ user }: HeaderProps) {
 
             {user ? (
               <>
-                <div className="hidden md:block">
+                <div className="hidden lg:block">
                   <UserMenu user={user} />
                 </div>
                 <Link
                   to="/profile"
-                  className="md:hidden flex items-center"
+                  className="lg:hidden flex items-center"
                 >
                   <Avatar
                     src={user.avatarUrl || undefined}
@@ -302,7 +312,7 @@ export function Header({ user }: HeaderProps) {
               <>
                 <Link
                   to="/favorites"
-                  className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   <svg
                     className="w-5 h-5"
@@ -322,7 +332,7 @@ export function Header({ user }: HeaderProps) {
 
                 <a
                   href="/#newsletter"
-                  className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   <svg
                     className="w-5 h-5"
@@ -342,7 +352,7 @@ export function Header({ user }: HeaderProps) {
 
                 <Link
                   to="/login"
-                  className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-coral text-white hover:bg-coral-dark transition-colors ${wiggleSignIn ? "animate-wave-wiggle" : ""}`}
+                  className={`hidden lg:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-coral text-white hover:bg-coral-dark transition-colors ${wiggleSignIn ? "animate-wave-wiggle" : ""}`}
                   onAnimationEnd={() => setWiggleSignIn(false)}
                 >
                   Sign In
@@ -352,7 +362,7 @@ export function Header({ user }: HeaderProps) {
 
             <button
               type="button"
-              className="md:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="lg:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               <svg
@@ -383,7 +393,7 @@ export function Header({ user }: HeaderProps) {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800 h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-hide touch-pan-y overscroll-contain">
+          <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-800 h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-hide touch-pan-y overscroll-contain">
             {/* Explore */}
             <div className="px-3 pt-1 pb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Explore</span>
@@ -467,6 +477,16 @@ export function Header({ user }: HeaderProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4h12v4a6 6 0 01-12 0V4zM12 14v4m-4 2h8M6 4H3v3a4 4 0 004 4M18 4h3v3a4 4 0 01-4 4" />
                     </svg>
                     Achievements
+                  </Link>
+                  <Link
+                    to="/groups/manage"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-600 dark:text-gray-400"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Manage Groups
                   </Link>
                   {(user.role === "admin" || user.role === "superadmin") && (
                     <Link

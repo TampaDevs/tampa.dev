@@ -268,7 +268,7 @@ export default function GroupManageDashboard({
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          label="Members"
+          label="Team Members"
           value={members.length}
           accent="navy"
           icon={
@@ -350,7 +350,7 @@ export default function GroupManageDashboard({
           {permissions.canManageMembers && (
             <QuickActionButton
               to={`/groups/${group.urlname}/manage/members`}
-              label="Manage Members"
+              label="Manage Team"
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path

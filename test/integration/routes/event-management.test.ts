@@ -391,11 +391,11 @@ describe('Event Listing (GET /groups/manage/:groupId/events)', () => {
     });
 
     expect(res.status).toBe(200);
-    const { data } = (await res.json()) as { data: { title: string; confirmedRsvps: number; checkinCount: number }[] };
+    const { data } = (await res.json()) as { data: { title: string; rsvpSummary: { confirmed: number; waitlisted: number; cancelled: number }; checkinCount: number }[] };
     expect(data.length).toBe(2);
   });
 
-  it('returns events with confirmedRsvps and checkinCount', async () => {
+  it('returns events with rsvpSummary and checkinCount', async () => {
     const { env } = createTestEnv();
     const { owner, group } = await setupNativeGroupWithOwner();
     const { cookieHeader } = await createSession(owner.id);
@@ -424,10 +424,12 @@ describe('Event Listing (GET /groups/manage/:groupId/events)', () => {
     });
 
     expect(res.status).toBe(200);
-    const { data } = (await res.json()) as { data: { id: string; confirmedRsvps: number; checkinCount: number }[] };
+    const { data } = (await res.json()) as { data: { id: string; rsvpSummary: { confirmed: number; waitlisted: number; cancelled: number }; checkinCount: number }[] };
     const found = data.find((e) => e.id === event.id);
     expect(found).toBeTruthy();
-    expect(found!.confirmedRsvps).toBe(2);
+    expect(found!.rsvpSummary.confirmed).toBe(2);
+    expect(found!.rsvpSummary.waitlisted).toBe(1);
+    expect(found!.rsvpSummary.cancelled).toBe(0);
     expect(found!.checkinCount).toBe(1);
   });
 

@@ -53,7 +53,7 @@ const updateGroupSchema = z.object({
   socialLinks: socialLinksSchema.nullable(),
   photoUrl: z.string().url().optional().nullable(),
   heroImageUrl: z.string().url().optional().nullable(),
-  themeColor: z.string().max(20).optional().nullable(),
+  themeColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a hex color (e.g. #1a365d)').optional().nullable(),
 });
 
 const createGroupSchema = z.object({

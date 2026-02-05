@@ -26,8 +26,8 @@ import {
 
 export const meta: Route.MetaFunction = ({ data }) => {
   const title = data?.group?.name
-    ? `Members - ${data.group.name} | Tampa.dev`
-    : "Group Members | Tampa.dev";
+    ? `${data.group.name} Team | Tampa.dev`
+    : "Team | Tampa.dev";
   return [{ title }];
 };
 
@@ -397,7 +397,7 @@ export default function GroupManageMembers({ loaderData }: Route.ComponentProps)
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Members</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Team</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {members.length} {members.length === 1 ? "member" : "members"}
             </p>
@@ -512,7 +512,7 @@ export default function GroupManageMembers({ loaderData }: Route.ComponentProps)
 
                 return (
                   <MemberRow
-                    key={member.id}
+                    key={`${member.id}-${member.role}`}
                     member={member}
                     currentUserRole={currentUserRole}
                     isOnlyOwner={isOnlyOwner}

@@ -107,14 +107,18 @@ defineTool({
       return { content: [{ type: 'text', text: 'Error: Event not found' }], isError: true };
     }
 
-    const rsvpCount = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(eventRsvps)
-      .where(and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.status, 'confirmed')));
+    const allRsvps = await db.query.eventRsvps.findMany({
+      where: eq(eventRsvps.eventId, eventId),
+    });
 
     const result = {
       ...event,
-      confirmedRsvps: rsvpCount[0]?.count ?? 0,
+      rsvpSummary: {
+        confirmed: allRsvps.filter((r) => r.status === 'confirmed').length,
+        waitlisted: allRsvps.filter((r) => r.status === 'waitlisted').length,
+        cancelled: allRsvps.filter((r) => r.status === 'cancelled').length,
+        capacity: event.maxAttendees,
+      },
     };
 
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };

@@ -7,15 +7,16 @@ import { EventCard, EmptyState } from './EventCard.js';
 
 interface WidgetCarouselProps {
   events: Event[];
+  timeZone?: string;
 }
 
-export function WidgetCarousel({ events }: WidgetCarouselProps) {
+export function WidgetCarousel({ events, timeZone }: WidgetCarouselProps) {
   return (
     <PageLayout>
       {events.length > 0 ? (
         <div class="flex overflow-x-auto py-4 space-x-4">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} variant="carousel" />
+            <EventCard key={event.id} event={event} variant="carousel" timeZone={timeZone} />
           ))}
         </div>
       ) : (
