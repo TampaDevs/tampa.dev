@@ -11,26 +11,11 @@ import { useState } from "react";
 import { Link } from "react-router";
 import type { GroupBadgeGroup, GroupBadgeInfo } from "~/lib/types";
 import { Emoji } from "~/components/Emoji";
+import { GroupAvatar } from "~/components/GroupAvatar";
 
 interface GroupBadgeSectionProps {
   groups: GroupBadgeGroup[];
   className?: string;
-}
-
-function GroupInitials({ name }: { name: string }) {
-  const initials = name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w.charAt(0).toUpperCase())
-    .join("");
-
-  return (
-    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
-      <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-        {initials}
-      </span>
-    </div>
-  );
 }
 
 function BadgeIcon({ badge }: { badge: GroupBadgeInfo }) {
@@ -111,15 +96,12 @@ function GroupCard({
         className="w-full flex items-center gap-3 p-3 text-left cursor-pointer hover:bg-white/60 dark:hover:bg-gray-800/60 transition-colors"
       >
         {/* Group photo or initials */}
-        {group.groupPhotoUrl ? (
-          <img
-            src={group.groupPhotoUrl}
-            alt=""
-            className="w-8 h-8 rounded-lg object-cover shrink-0"
-          />
-        ) : (
-          <GroupInitials name={group.groupName} />
-        )}
+        <GroupAvatar
+          photoUrl={group.groupPhotoUrl}
+          name={group.groupName}
+          size="sm"
+          shape="rounded"
+        />
 
         {/* Group name (links to group page) */}
         <Link
