@@ -1021,6 +1021,64 @@ paths:
       summary: Get achievement progress
       tags:
       - User
+  /v1/profile/badges:
+    get:
+      description: "Returns all badges earned by the authenticated user, with rarity\
+        \ information."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_badges_get_200_response"
+          description: User badges
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:user
+      summary: Get earned badges
+      tags:
+      - User
+  /v1/profile/entitlements:
+    get:
+      description: Returns all active entitlements for the authenticated user. Expired
+        entitlements are filtered out.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_v1_profile_entitlements_get_200_response"
+          description: User entitlements
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or invalid authentication
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden — insufficient scope or permissions
+      security:
+      - BearerToken:
+        - read:user
+      summary: Get active entitlements
+      tags:
+      - User
   /v1/profile/tokens:
     get:
       description: Returns all personal access tokens for the authenticated user.
@@ -2292,6 +2350,91 @@ components:
       - key
       - name
       - targetValue
+    UserBadge:
+      example:
+        awardedAt: awardedAt
+        color: color
+        name: name
+        icon: icon
+        description: description
+        iconUrl: iconUrl
+        slug: slug
+        points: 0.8008281904610115
+        group:
+          photoUrl: photoUrl
+          name: name
+          id: id
+          urlname: urlname
+        rarity:
+          tier: common
+          percentage: 6.027456183070403
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+        iconUrl:
+          description: "URL to the high-quality emoji image, or null if unavailable"
+          type: string
+          nullable: true
+        color:
+          type: string
+        points:
+          type: number
+        awardedAt:
+          type: string
+          nullable: true
+        group:
+          $ref: "#/components/schemas/UserBadge_group"
+        rarity:
+          $ref: "#/components/schemas/UserBadge_rarity"
+      required:
+      - awardedAt
+      - color
+      - description
+      - group
+      - icon
+      - iconUrl
+      - name
+      - points
+      - rarity
+      - slug
+    UserEntitlement:
+      example:
+        entitlement: entitlement
+        id: id
+        source: source
+        grantedAt: grantedAt
+        expiresAt: expiresAt
+      properties:
+        id:
+          type: string
+        entitlement:
+          description: "Entitlement key (e.g., dev.tampa.group.create)"
+          type: string
+        grantedAt:
+          description: ISO timestamp when entitlement was granted
+          type: string
+          nullable: true
+        expiresAt:
+          description: "ISO timestamp when entitlement expires, or null if permanent"
+          type: string
+          nullable: true
+        source:
+          description: "How the entitlement was granted (e.g., admin, achievement)"
+          type: string
+          nullable: true
+      required:
+      - entitlement
+      - expiresAt
+      - grantedAt
+      - id
+      - source
     Token:
       example:
         createdAt: createdAt
@@ -3097,6 +3240,68 @@ components:
           type: array
       required:
       - data
+    _v1_profile_badges_get_200_response:
+      example:
+        data:
+        - awardedAt: awardedAt
+          color: color
+          name: name
+          icon: icon
+          description: description
+          iconUrl: iconUrl
+          slug: slug
+          points: 0.8008281904610115
+          group:
+            photoUrl: photoUrl
+            name: name
+            id: id
+            urlname: urlname
+          rarity:
+            tier: common
+            percentage: 6.027456183070403
+        - awardedAt: awardedAt
+          color: color
+          name: name
+          icon: icon
+          description: description
+          iconUrl: iconUrl
+          slug: slug
+          points: 0.8008281904610115
+          group:
+            photoUrl: photoUrl
+            name: name
+            id: id
+            urlname: urlname
+          rarity:
+            tier: common
+            percentage: 6.027456183070403
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/UserBadge"
+          type: array
+      required:
+      - data
+    _v1_profile_entitlements_get_200_response:
+      example:
+        data:
+        - entitlement: entitlement
+          id: id
+          source: source
+          grantedAt: grantedAt
+          expiresAt: expiresAt
+        - entitlement: entitlement
+          id: id
+          source: source
+          grantedAt: grantedAt
+          expiresAt: expiresAt
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/UserEntitlement"
+          type: array
+      required:
+      - data
     _v1_profile_tokens_get_200_response:
       example:
         data:
@@ -3488,6 +3693,47 @@ components:
           type: array
       required:
       - data
+    UserBadge_group:
+      example:
+        photoUrl: photoUrl
+        name: name
+        id: id
+        urlname: urlname
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        urlname:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photoUrl
+      - urlname
+      nullable: true
+    UserBadge_rarity:
+      example:
+        tier: common
+        percentage: 6.027456183070403
+      properties:
+        tier:
+          enum:
+          - common
+          - uncommon
+          - rare
+          - epic
+          - legendary
+          type: string
+        percentage:
+          type: number
+      required:
+      - percentage
+      - tier
     EventListItem_group:
       example:
         name: name

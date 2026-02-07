@@ -48,7 +48,11 @@ docs/VScope.md
 docs/VToken.md
 docs/VTokenCreated.md
 docs/VUpdateProfileRequest.md
+docs/VUserBadge.md
+docs/VUserBadgeGroup.md
+docs/VUserBadgeRarity.md
 docs/VUserBasic.md
+docs/VUserEntitlement.md
 docs/VUserProfile.md
 docs/VV1CheckinCodePost201Response.md
 docs/VV1ClaimCodeGet200Response.md
@@ -69,6 +73,8 @@ docs/VV1GroupsSlugGet200Response.md
 docs/VV1MeGet200Response.md
 docs/VV1MeLinkedAccountsGet200Response.md
 docs/VV1ProfileAchievementsGet200Response.md
+docs/VV1ProfileBadgesGet200Response.md
+docs/VV1ProfileEntitlementsGet200Response.md
 docs/VV1ProfileGet200Response.md
 docs/VV1ProfilePortfolioGet200Response.md
 docs/VV1ProfilePortfolioPost201Response.md
@@ -139,7 +145,11 @@ tampa_events_api/models/v_scope.py
 tampa_events_api/models/v_token.py
 tampa_events_api/models/v_token_created.py
 tampa_events_api/models/v_update_profile_request.py
+tampa_events_api/models/v_user_badge.py
+tampa_events_api/models/v_user_badge_group.py
+tampa_events_api/models/v_user_badge_rarity.py
 tampa_events_api/models/v_user_basic.py
+tampa_events_api/models/v_user_entitlement.py
 tampa_events_api/models/v_user_profile.py
 tampa_events_api/models/vv1_checkin_code_post201_response.py
 tampa_events_api/models/vv1_claim_code_get200_response.py
@@ -160,6 +170,8 @@ tampa_events_api/models/vv1_groups_slug_get200_response.py
 tampa_events_api/models/vv1_me_get200_response.py
 tampa_events_api/models/vv1_me_linked_accounts_get200_response.py
 tampa_events_api/models/vv1_profile_achievements_get200_response.py
+tampa_events_api/models/vv1_profile_badges_get200_response.py
+tampa_events_api/models/vv1_profile_entitlements_get200_response.py
 tampa_events_api/models/vv1_profile_get200_response.py
 tampa_events_api/models/vv1_profile_portfolio_get200_response.py
 tampa_events_api/models/vv1_profile_portfolio_post201_response.py
@@ -175,4 +187,10 @@ tampa_events_api/py.typed
 tampa_events_api/rest.py
 test-requirements.txt
 test/__init__.py
+test/test_v_user_badge.py
+test/test_v_user_badge_group.py
+test/test_v_user_badge_rarity.py
+test/test_v_user_entitlement.py
+test/test_vv1_profile_badges_get200_response.py
+test/test_vv1_profile_entitlements_get200_response.py
 tox.ini

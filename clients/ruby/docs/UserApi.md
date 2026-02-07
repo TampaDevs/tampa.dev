@@ -7,6 +7,8 @@ All URIs are relative to *https://api.tampa.dev*
 | [**v1_me_get**](UserApi.md#v1_me_get) | **GET** /v1/me | Get current user identity |
 | [**v1_me_linked_accounts_get**](UserApi.md#v1_me_linked_accounts_get) | **GET** /v1/me/linked-accounts | List linked OAuth accounts |
 | [**v1_profile_achievements_get**](UserApi.md#v1_profile_achievements_get) | **GET** /v1/profile/achievements | Get achievement progress |
+| [**v1_profile_badges_get**](UserApi.md#v1_profile_badges_get) | **GET** /v1/profile/badges | Get earned badges |
+| [**v1_profile_entitlements_get**](UserApi.md#v1_profile_entitlements_get) | **GET** /v1/profile/entitlements | Get active entitlements |
 | [**v1_profile_get**](UserApi.md#v1_profile_get) | **GET** /v1/profile | Get current user profile |
 | [**v1_profile_patch**](UserApi.md#v1_profile_patch) | **PATCH** /v1/profile | Update current user profile |
 | [**v1_profile_portfolio_get**](UserApi.md#v1_profile_portfolio_get) | **GET** /v1/profile/portfolio | List portfolio items |
@@ -205,6 +207,138 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**VV1ProfileAchievementsGet200Response**](VV1ProfileAchievementsGet200Response.md)
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+
+## v1_profile_badges_get
+
+> <VV1ProfileBadgesGet200Response> v1_profile_badges_get
+
+Get earned badges
+
+Returns all badges earned by the authenticated user, with rarity information.
+
+### Examples
+
+```ruby
+require 'time'
+require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
+
+api_instance = TampaEventsAPI::UserApi.new
+
+begin
+  # Get earned badges
+  result = api_instance.v1_profile_badges_get
+  p result
+rescue TampaEventsAPI::ApiError => e
+  puts "Error when calling UserApi->v1_profile_badges_get: #{e}"
+end
+```
+
+#### Using the v1_profile_badges_get_with_http_info variant
+
+This returns an Array which contains the response data, status code and headers.
+
+> <Array(<VV1ProfileBadgesGet200Response>, Integer, Hash)> v1_profile_badges_get_with_http_info
+
+```ruby
+begin
+  # Get earned badges
+  data, status_code, headers = api_instance.v1_profile_badges_get_with_http_info
+  p status_code # => 2xx
+  p headers # => { ... }
+  p data # => <VV1ProfileBadgesGet200Response>
+rescue TampaEventsAPI::ApiError => e
+  puts "Error when calling UserApi->v1_profile_badges_get_with_http_info: #{e}"
+end
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**VV1ProfileBadgesGet200Response**](VV1ProfileBadgesGet200Response.md)
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+
+## v1_profile_entitlements_get
+
+> <VV1ProfileEntitlementsGet200Response> v1_profile_entitlements_get
+
+Get active entitlements
+
+Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+
+### Examples
+
+```ruby
+require 'time'
+require 'tampa_events_api'
+# setup authorization
+TampaEventsAPI.configure do |config|
+  # Configure Bearer authorization: BearerToken
+  config.access_token = 'YOUR_BEARER_TOKEN'
+end
+
+api_instance = TampaEventsAPI::UserApi.new
+
+begin
+  # Get active entitlements
+  result = api_instance.v1_profile_entitlements_get
+  p result
+rescue TampaEventsAPI::ApiError => e
+  puts "Error when calling UserApi->v1_profile_entitlements_get: #{e}"
+end
+```
+
+#### Using the v1_profile_entitlements_get_with_http_info variant
+
+This returns an Array which contains the response data, status code and headers.
+
+> <Array(<VV1ProfileEntitlementsGet200Response>, Integer, Hash)> v1_profile_entitlements_get_with_http_info
+
+```ruby
+begin
+  # Get active entitlements
+  data, status_code, headers = api_instance.v1_profile_entitlements_get_with_http_info
+  p status_code # => 2xx
+  p headers # => { ... }
+  p data # => <VV1ProfileEntitlementsGet200Response>
+rescue TampaEventsAPI::ApiError => e
+  puts "Error when calling UserApi->v1_profile_entitlements_get_with_http_info: #{e}"
+end
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**VV1ProfileEntitlementsGet200Response**](VV1ProfileEntitlementsGet200Response.md)
 
 ### Authorization
 

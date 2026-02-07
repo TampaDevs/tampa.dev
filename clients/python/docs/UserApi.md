@@ -7,6 +7,8 @@ Method | HTTP request | Description
 [**v1_me_get**](UserApi.md#v1_me_get) | **GET** /v1/me | Get current user identity
 [**v1_me_linked_accounts_get**](UserApi.md#v1_me_linked_accounts_get) | **GET** /v1/me/linked-accounts | List linked OAuth accounts
 [**v1_profile_achievements_get**](UserApi.md#v1_profile_achievements_get) | **GET** /v1/profile/achievements | Get achievement progress
+[**v1_profile_badges_get**](UserApi.md#v1_profile_badges_get) | **GET** /v1/profile/badges | Get earned badges
+[**v1_profile_entitlements_get**](UserApi.md#v1_profile_entitlements_get) | **GET** /v1/profile/entitlements | Get active entitlements
 [**v1_profile_get**](UserApi.md#v1_profile_get) | **GET** /v1/profile | Get current user profile
 [**v1_profile_patch**](UserApi.md#v1_profile_patch) | **PATCH** /v1/profile | Update current user profile
 [**v1_profile_portfolio_get**](UserApi.md#v1_profile_portfolio_get) | **GET** /v1/profile/portfolio | List portfolio items
@@ -241,6 +243,158 @@ This endpoint does not need any parameter.
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Achievement progress |  -  |
+**401** | Unauthorized — missing or invalid authentication |  -  |
+**403** | Forbidden — insufficient scope or permissions |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **v1_profile_badges_get**
+> VV1ProfileBadgesGet200Response v1_profile_badges_get()
+
+Get earned badges
+
+Returns all badges earned by the authenticated user, with rarity information.
+
+### Example
+
+* Bearer Authentication (BearerToken):
+
+```python
+import tampa_events_api
+from tampa_events_api.models.vv1_profile_badges_get200_response import VV1ProfileBadgesGet200Response
+from tampa_events_api.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://api.tampa.dev
+# See configuration.py for a list of all supported configuration parameters.
+configuration = tampa_events_api.Configuration(
+    host = "https://api.tampa.dev"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure Bearer authorization: BearerToken
+configuration = tampa_events_api.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with tampa_events_api.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = tampa_events_api.UserApi(api_client)
+
+    try:
+        # Get earned badges
+        api_response = api_instance.v1_profile_badges_get()
+        print("The response of UserApi->v1_profile_badges_get:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling UserApi->v1_profile_badges_get: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**VV1ProfileBadgesGet200Response**](VV1ProfileBadgesGet200Response.md)
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | User badges |  -  |
+**401** | Unauthorized — missing or invalid authentication |  -  |
+**403** | Forbidden — insufficient scope or permissions |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **v1_profile_entitlements_get**
+> VV1ProfileEntitlementsGet200Response v1_profile_entitlements_get()
+
+Get active entitlements
+
+Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+
+### Example
+
+* Bearer Authentication (BearerToken):
+
+```python
+import tampa_events_api
+from tampa_events_api.models.vv1_profile_entitlements_get200_response import VV1ProfileEntitlementsGet200Response
+from tampa_events_api.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://api.tampa.dev
+# See configuration.py for a list of all supported configuration parameters.
+configuration = tampa_events_api.Configuration(
+    host = "https://api.tampa.dev"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure Bearer authorization: BearerToken
+configuration = tampa_events_api.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with tampa_events_api.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = tampa_events_api.UserApi(api_client)
+
+    try:
+        # Get active entitlements
+        api_response = api_instance.v1_profile_entitlements_get()
+        print("The response of UserApi->v1_profile_entitlements_get:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling UserApi->v1_profile_entitlements_get: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**VV1ProfileEntitlementsGet200Response**](VV1ProfileEntitlementsGet200Response.md)
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | User entitlements |  -  |
 **401** | Unauthorized — missing or invalid authentication |  -  |
 **403** | Forbidden — insufficient scope or permissions |  -  |
 

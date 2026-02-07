@@ -51,7 +51,11 @@ docs/VScope.md
 docs/VToken.md
 docs/VTokenCreated.md
 docs/VUpdateProfileRequest.md
+docs/VUserBadge.md
+docs/VUserBadgeGroup.md
+docs/VUserBadgeRarity.md
 docs/VUserBasic.md
+docs/VUserEntitlement.md
 docs/VUserProfile.md
 docs/VV1CheckinCodePost201Response.md
 docs/VV1ClaimCodeGet200Response.md
@@ -72,6 +76,8 @@ docs/VV1GroupsSlugGet200Response.md
 docs/VV1MeGet200Response.md
 docs/VV1MeLinkedAccountsGet200Response.md
 docs/VV1ProfileAchievementsGet200Response.md
+docs/VV1ProfileBadgesGet200Response.md
+docs/VV1ProfileEntitlementsGet200Response.md
 docs/VV1ProfileGet200Response.md
 docs/VV1ProfilePortfolioGet200Response.md
 docs/VV1ProfilePortfolioPost201Response.md
@@ -136,7 +142,11 @@ lib/tampa_events_api/models/v_scope.rb
 lib/tampa_events_api/models/v_token.rb
 lib/tampa_events_api/models/v_token_created.rb
 lib/tampa_events_api/models/v_update_profile_request.rb
+lib/tampa_events_api/models/v_user_badge.rb
+lib/tampa_events_api/models/v_user_badge_group.rb
+lib/tampa_events_api/models/v_user_badge_rarity.rb
 lib/tampa_events_api/models/v_user_basic.rb
+lib/tampa_events_api/models/v_user_entitlement.rb
 lib/tampa_events_api/models/v_user_profile.rb
 lib/tampa_events_api/models/vv1_checkin_code_post201_response.rb
 lib/tampa_events_api/models/vv1_claim_code_get200_response.rb
@@ -157,6 +167,8 @@ lib/tampa_events_api/models/vv1_groups_slug_get200_response.rb
 lib/tampa_events_api/models/vv1_me_get200_response.rb
 lib/tampa_events_api/models/vv1_me_linked_accounts_get200_response.rb
 lib/tampa_events_api/models/vv1_profile_achievements_get200_response.rb
+lib/tampa_events_api/models/vv1_profile_badges_get200_response.rb
+lib/tampa_events_api/models/vv1_profile_entitlements_get200_response.rb
 lib/tampa_events_api/models/vv1_profile_get200_response.rb
 lib/tampa_events_api/models/vv1_profile_portfolio_get200_response.rb
 lib/tampa_events_api/models/vv1_profile_portfolio_post201_response.rb
@@ -169,5 +181,11 @@ lib/tampa_events_api/models/vv1_users_username_follow_post201_response.rb
 lib/tampa_events_api/models/vv1_users_username_follow_post201_response_data.rb
 lib/tampa_events_api/models/vv1_users_username_followers_get200_response.rb
 lib/tampa_events_api/version.rb
+spec/models/v_user_badge_group_spec.rb
+spec/models/v_user_badge_rarity_spec.rb
+spec/models/v_user_badge_spec.rb
+spec/models/v_user_entitlement_spec.rb
+spec/models/vv1_profile_badges_get200_response_spec.rb
+spec/models/vv1_profile_entitlements_get200_response_spec.rb
 spec/spec_helper.rb
 tampa_events_api.gemspec

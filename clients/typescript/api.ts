@@ -377,12 +377,67 @@ export const VUpdateProfileRequestProfileVisibilityEnum = {
 
 export type VUpdateProfileRequestProfileVisibilityEnum = typeof VUpdateProfileRequestProfileVisibilityEnum[keyof typeof VUpdateProfileRequestProfileVisibilityEnum];
 
+export interface VUserBadge {
+    'name': string;
+    'slug': string;
+    'description': string;
+    'icon': string;
+    /**
+     * URL to the high-quality emoji image, or null if unavailable
+     */
+    'iconUrl': string;
+    'color': string;
+    'points': number;
+    'awardedAt': string;
+    'group': VUserBadgeGroup;
+    'rarity': VUserBadgeRarity;
+}
+export interface VUserBadgeGroup {
+    'id': string;
+    'name': string;
+    'urlname': string;
+    'photoUrl': string;
+}
+export interface VUserBadgeRarity {
+    'tier': VUserBadgeRarityTierEnum;
+    'percentage': number;
+}
+
+export const VUserBadgeRarityTierEnum = {
+    Common: 'common',
+    Uncommon: 'uncommon',
+    Rare: 'rare',
+    Epic: 'epic',
+    Legendary: 'legendary'
+} as const;
+
+export type VUserBadgeRarityTierEnum = typeof VUserBadgeRarityTierEnum[keyof typeof VUserBadgeRarityTierEnum];
+
 export interface VUserBasic {
     'id': string;
     'name': string;
     'avatarUrl': string;
     'username': string;
     'email'?: string;
+}
+export interface VUserEntitlement {
+    'id': string;
+    /**
+     * Entitlement key (e.g., dev.tampa.group.create)
+     */
+    'entitlement': string;
+    /**
+     * ISO timestamp when entitlement was granted
+     */
+    'grantedAt': string;
+    /**
+     * ISO timestamp when entitlement expires, or null if permanent
+     */
+    'expiresAt': string;
+    /**
+     * How the entitlement was granted (e.g., admin, achievement)
+     */
+    'source': string;
 }
 export interface VUserProfile {
     'id': string;
@@ -473,6 +528,12 @@ export interface VV1MeLinkedAccountsGet200Response {
 }
 export interface VV1ProfileAchievementsGet200Response {
     'data': Array<VAchievementProgress>;
+}
+export interface VV1ProfileBadgesGet200Response {
+    'data': Array<VUserBadge>;
+}
+export interface VV1ProfileEntitlementsGet200Response {
+    'data': Array<VUserEntitlement>;
 }
 export interface VV1ProfileGet200Response {
     'data': VUserProfile;
@@ -3599,6 +3660,74 @@ export const UserApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
+         * Returns all badges earned by the authenticated user, with rarity information.
+         * @summary Get earned badges
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileBadgesGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile/badges`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+         * @summary Get active entitlements
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileEntitlementsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/profile/entitlements`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerToken required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns the full profile for the authenticated user including bio, social links, and settings.
          * @summary Get current user profile
          * @param {*} [options] Override http request option.
@@ -3974,6 +4103,30 @@ export const UserApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Returns all badges earned by the authenticated user, with rarity information.
+         * @summary Get earned badges
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfileBadgesGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfileBadgesGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfileBadgesGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfileBadgesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+         * @summary Get active entitlements
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async v1ProfileEntitlementsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VV1ProfileEntitlementsGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.v1ProfileEntitlementsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UserApi.v1ProfileEntitlementsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns the full profile for the authenticated user including bio, social links, and settings.
          * @summary Get current user profile
          * @param {*} [options] Override http request option.
@@ -4125,6 +4278,24 @@ export const UserApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.v1ProfileAchievementsGet(options).then((request) => request(axios, basePath));
         },
         /**
+         * Returns all badges earned by the authenticated user, with rarity information.
+         * @summary Get earned badges
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileBadgesGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfileBadgesGet200Response> {
+            return localVarFp.v1ProfileBadgesGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+         * @summary Get active entitlements
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        v1ProfileEntitlementsGet(options?: RawAxiosRequestConfig): AxiosPromise<VV1ProfileEntitlementsGet200Response> {
+            return localVarFp.v1ProfileEntitlementsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns the full profile for the authenticated user including bio, social links, and settings.
          * @summary Get current user profile
          * @param {*} [options] Override http request option.
@@ -4247,6 +4418,26 @@ export class UserApi extends BaseAPI {
      */
     public v1ProfileAchievementsGet(options?: RawAxiosRequestConfig) {
         return UserApiFp(this.configuration).v1ProfileAchievementsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns all badges earned by the authenticated user, with rarity information.
+     * @summary Get earned badges
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfileBadgesGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfileBadgesGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+     * @summary Get active entitlements
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public v1ProfileEntitlementsGet(options?: RawAxiosRequestConfig) {
+        return UserApiFp(this.configuration).v1ProfileEntitlementsGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

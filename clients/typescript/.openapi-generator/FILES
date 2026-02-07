@@ -50,7 +50,11 @@ docs/Token.md
 docs/TokenCreated.md
 docs/UpdateProfileRequest.md
 docs/UserApi.md
+docs/UserBadge.md
+docs/UserBadgeGroup.md
+docs/UserBadgeRarity.md
 docs/UserBasic.md
+docs/UserEntitlement.md
 docs/UserProfile.md
 docs/V1CheckinCodePost201Response.md
 docs/V1ClaimCodeGet200Response.md
@@ -71,6 +75,8 @@ docs/V1GroupsSlugGet200Response.md
 docs/V1MeGet200Response.md
 docs/V1MeLinkedAccountsGet200Response.md
 docs/V1ProfileAchievementsGet200Response.md
+docs/V1ProfileBadgesGet200Response.md
+docs/V1ProfileEntitlementsGet200Response.md
 docs/V1ProfileGet200Response.md
 docs/V1ProfilePortfolioGet200Response.md
 docs/V1ProfilePortfolioPost201Response.md

@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY
  *
  * Generated from: http://localhost:8787/openapi.json
- * Generated at: 2026-02-05T04:25:28.896Z
+ * Generated at: 2026-02-07T03:24:13.557Z
  *
  * Regenerate with: npm run generate:types
  */
@@ -1390,6 +1390,124 @@ export interface paths {
                     content: {
                         "application/json": {
                             data: components["schemas"]["AchievementProgress"][];
+                        };
+                    };
+                };
+                /** @description Unauthorized — missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden — insufficient scope or permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/profile/badges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get earned badges
+         * @description Returns all badges earned by the authenticated user, with rarity information.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description User badges */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["UserBadge"][];
+                        };
+                    };
+                };
+                /** @description Unauthorized — missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden — insufficient scope or permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/profile/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get active entitlements
+         * @description Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description User entitlements */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["UserEntitlement"][];
                         };
                     };
                 };
@@ -2891,6 +3009,39 @@ export interface components {
             completedAt: string | null;
             badgeSlug: string | null;
             hidden: boolean;
+        };
+        UserBadge: {
+            name: string;
+            slug: string;
+            description: string | null;
+            icon: string;
+            /** @description URL to the high-quality emoji image, or null if unavailable */
+            iconUrl: string | null;
+            color: string;
+            points: number;
+            awardedAt: string | null;
+            group: {
+                id: string;
+                name: string;
+                urlname: string | null;
+                photoUrl: string | null;
+            } | null;
+            rarity: {
+                /** @enum {string} */
+                tier: "common" | "uncommon" | "rare" | "epic" | "legendary";
+                percentage: number;
+            };
+        };
+        UserEntitlement: {
+            id: string;
+            /** @description Entitlement key (e.g., dev.tampa.group.create) */
+            entitlement: string;
+            /** @description ISO timestamp when entitlement was granted */
+            grantedAt: string | null;
+            /** @description ISO timestamp when entitlement expires, or null if permanent */
+            expiresAt: string | null;
+            /** @description How the entitlement was granted (e.g., admin, achievement) */
+            source: string | null;
         };
         Token: {
             id: string;
