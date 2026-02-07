@@ -7,9 +7,9 @@
 
 import { type ReactNode, useState, useEffect, useCallback } from "react";
 import { redirect, useLoaderData, useFetcher } from "react-router";
-import { Button, Avatar } from "@tampadevs/react";
+import { Avatar } from "@tampadevs/react";
 import type { Route } from "./+types/oauth.authorize";
-import { fetchCurrentUser, type AuthUser } from "~/lib/admin-api.server";
+import { fetchCurrentUser } from "~/lib/admin-api.server";
 
 // Group scopes into categories for a cleaner consent screen.
 // Maps each scope (including legacy aliases) to a display group.

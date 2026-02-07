@@ -21,7 +21,6 @@ import {
   revokeBadge,
   type AdminUser,
   type Badge,
-  type FeatureFlag,
 } from "~/lib/admin-api.server";
 import { ProviderIcon } from "./login";
 
