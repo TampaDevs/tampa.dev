@@ -9,6 +9,8 @@ import {
   CACHE_NAME,
   RESPONSE_CACHE_MAX_AGE,
   STALE_WHILE_REVALIDATE,
+  KV_KEY_SYNC_VERSION,
+  KV_TTL_SYNC_VERSION,
 } from './config/cache.js';
 import { createDatabase } from './db/index.js';
 import { syncLogs } from './db/schema.js';
@@ -36,7 +38,7 @@ export async function invalidateResponseCache(db: D1Database, kv?: KVNamespace):
 
   // Bust the KV-cached sync version so the next request picks up the new version
   if (kv) {
-    await kv.delete(SYNC_VERSION_KV_KEY).catch(() => {});
+    await kv.delete(KV_KEY_SYNC_VERSION).catch(() => {});
   }
 }
 
@@ -50,9 +52,6 @@ export interface SyncMetadata {
   eventsUpdated: number;
 }
 
-const SYNC_VERSION_KV_KEY = 'cache:sync-version';
-const SYNC_VERSION_TTL_SECONDS = 30;
-
 /**
  * Get the latest sync timestamp from D1 for cache invalidation.
  * Returns a hash-like string derived from the latest sync completion time.
@@ -65,7 +64,7 @@ export async function getSyncVersion(db: D1Database, kv?: KVNamespace): Promise<
   // Try KV cache first
   if (kv) {
     try {
-      const cached = await kv.get(SYNC_VERSION_KV_KEY);
+      const cached = await kv.get(KV_KEY_SYNC_VERSION);
       if (cached !== null) return cached;
     } catch {
       // KV unavailable, fall through to D1
@@ -89,7 +88,7 @@ export async function getSyncVersion(db: D1Database, kv?: KVNamespace): Promise<
 
       // Write to KV cache in the background
       if (kv) {
-        kv.put(SYNC_VERSION_KV_KEY, version, { expirationTtl: SYNC_VERSION_TTL_SECONDS }).catch(() => {});
+        kv.put(KV_KEY_SYNC_VERSION, version, { expirationTtl: KV_TTL_SYNC_VERSION }).catch(() => {});
       }
 
       return version;

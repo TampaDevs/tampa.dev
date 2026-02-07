@@ -16,6 +16,7 @@ import { users, userIdentities, sessions, UserRole } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { getConfiguredProviders, getProvider } from '../lib/oauth-providers';
+import { resolveSessionWithUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { encrypt } from '../lib/crypto.js';
 import { validateReturnTo, renderRedirectInterstitial } from '../lib/redirect-validation.js';
@@ -465,34 +466,26 @@ export function createAuthRoutes() {
 
     const db = createDatabase(c.env.DB);
 
-    const session = await db.query.sessions.findFirst({
-      where: eq(sessions.id, sessionToken),
+    // Single JOIN query for session + user (shared with lib/auth.ts resolveSession)
+    const resolved = await resolveSessionWithUser(db, sessionToken);
+
+    if (!resolved) {
+      deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
+      return c.json({ user: null }, 200);
+    }
+
+    const { user } = resolved;
+
+    // Fetch identities (only remaining query needed)
+    const identities = await db.query.userIdentities.findMany({
+      where: eq(userIdentities.userId, user.id),
     });
-
-    if (!session || new Date(session.expiresAt) < new Date()) {
-      deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
-      return c.json({ user: null }, 200);
-    }
-
-    // Fetch user and identities in parallel (both only need session.userId)
-    const [user, identities] = await Promise.all([
-      db.query.users.findFirst({
-        where: eq(users.id, session.userId),
-      }),
-      db.query.userIdentities.findMany({
-        where: eq(userIdentities.userId, session.userId),
-      }),
-    ]);
-
-    if (!user) {
-      deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
-      return c.json({ user: null }, 200);
-    }
 
     const githubIdentity = identities.find(i => i.provider === 'github');
 
-    // Allow browser to cache for 60s to avoid redundant calls during navigation
-    c.header('Cache-Control', 'private, max-age=60');
+    // Short browser cache to avoid redundant calls during rapid navigation;
+    // stale-while-revalidate ensures the UI stays responsive on profile changes.
+    c.header('Cache-Control', 'private, max-age=10, stale-while-revalidate=50');
 
     return c.json({
       user: {

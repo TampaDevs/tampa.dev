@@ -12,6 +12,7 @@ import { eq, desc, and, count, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { groups, groupMembers, users, userFavorites } from '../db/schema';
 import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
+import { KV_KEY_FAV_COUNTS, KV_TTL_FAV_COUNTS } from '../config/cache.js';
 
 /**
  * Query parameters schema for group filtering
@@ -174,13 +175,12 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       return createNotModifiedResponse(syncVersion);
     }
 
-    // Get favorites counts (cached in KV for 60s to avoid aggregation query on every request)
-    const FAV_COUNTS_KV_KEY = 'cache:fav-counts';
+    // Get favorites counts (cached in KV to avoid aggregation query on every request)
     let favCountMap: Map<string, number>;
-    const kv: KVNamespace | undefined = c.env.kv;
+    const kv = c.env.kv;
     let kvCachedFavs: string | null = null;
     if (kv) {
-      try { kvCachedFavs = await kv.get(FAV_COUNTS_KV_KEY); } catch {}
+      try { kvCachedFavs = await kv.get(KV_KEY_FAV_COUNTS); } catch {}
     }
     if (kvCachedFavs) {
       favCountMap = new Map(JSON.parse(kvCachedFavs));
@@ -191,7 +191,7 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
         .groupBy(userFavorites.groupId);
       favCountMap = new Map(favCounts.map((f) => [f.groupId, f.count]));
       if (kv) {
-        kv.put(FAV_COUNTS_KV_KEY, JSON.stringify([...favCountMap]), { expirationTtl: 60 }).catch(() => {});
+        kv.put(KV_KEY_FAV_COUNTS, JSON.stringify([...favCountMap]), { expirationTtl: KV_TTL_FAV_COUNTS }).catch(() => {});
       }
     }
 
