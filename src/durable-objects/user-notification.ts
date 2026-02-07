@@ -147,6 +147,16 @@ export class UserNotificationDO implements DurableObject {
    * Hibernation API callback — called when a connected client sends a message.
    */
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+    // Defense-in-depth: validate that the WebSocket's userId tag is present.
+    // Each user gets their own DO instance, so a missing tag indicates a
+    // programming error (WebSocket accepted without userId tagging).
+    const tags = this.ctx.getTags(ws);
+    if (tags.length === 0) {
+      console.error('[UserNotificationDO] WebSocket missing userId tag — closing');
+      ws.close(1008, 'Unauthorized');
+      return;
+    }
+
     // Only expect 'pong' from clients — ignore everything else
     if (typeof message === 'string') {
       try {
