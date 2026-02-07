@@ -24,7 +24,6 @@ import {
   type JsonRpcError,
   type ToolCallParams,
   type ToolContext,
-  type ToolResult,
   JSON_RPC_ERRORS,
   MCP_PROTOCOL_VERSION,
 } from './types.js';

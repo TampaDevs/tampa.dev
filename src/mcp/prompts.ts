@@ -6,7 +6,7 @@
  * structured messages with context for the AI to act on.
  */
 
-import { eq, gte, asc, desc, sql, and, lte } from 'drizzle-orm';
+import { eq, gte, asc, desc, sql, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
 import {
   events,

@@ -16,7 +16,7 @@ import { createDatabase } from '../db/index.js';
 import { userFavorites, groups } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { DomainEvent } from '../lib/event-bus.js';
-import type { WSMessage, PersonalMessageType, BroadcastMessageType } from '../lib/ws-types.js';
+import type { WSMessage, PersonalMessageType } from '../lib/ws-types.js';
 import type { Env } from '../../types/worker.js';
 
 /**

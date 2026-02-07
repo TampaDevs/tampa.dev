@@ -18,7 +18,7 @@
  */
 
 import { z } from 'zod';
-import { eq, desc, and, like, or, sql } from 'drizzle-orm';
+import { eq, desc, and, like, or } from 'drizzle-orm';
 import { defineTool } from '../registry.js';
 import { createDatabase } from '../../db/index.js';
 import {
@@ -39,13 +39,12 @@ import {
   groupFeatureFlags,
   webhooks,
   groupClaimRequests,
-  groupClaimInvites,
   groupCreationRequests,
   sessions,
   oauthClientRegistry,
 } from '../../db/schema.js';
 import { isPlatformAdmin } from '../../lib/auth.js';
-import type { ToolContext, ToolResult } from '../types.js';
+import type { ToolResult } from '../types.js';
 
 // ── Helpers ──
 

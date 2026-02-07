@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createTestEnv, createUser, createSession, createAdminUser, grantEntitlement } from '../helpers';
+import { createTestEnv, createUser, createSession, grantEntitlement } from '../helpers';
 import { appRequest } from '../helpers/request';
 
 describe('/oauth/userinfo', () => {

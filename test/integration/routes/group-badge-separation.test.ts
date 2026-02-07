@@ -14,7 +14,6 @@ import {
   createGroup,
   createBadge,
   awardBadge,
-  addGroupMember,
   appRequest,
   getDb,
 } from '../helpers';

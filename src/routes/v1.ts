@@ -20,7 +20,6 @@ import {
   userFollows,
   eventCheckinCodes,
   eventCheckins,
-  eventRsvps,
   achievements,
   achievementProgress,
   userEntitlements,
@@ -28,10 +27,10 @@ import {
   userBadges,
 } from '../db/schema.js';
 import { getCurrentUser, requireScope, isPlatformAdmin } from '../lib/auth.js';
-import { SCOPES, SCOPE_HIERARCHY, type Scope } from '../lib/scopes.js';
+import { SCOPES, SCOPE_HIERARCHY } from '../lib/scopes.js';
 import {
   ok, created, list, success, noContent,
-  unauthorized, forbidden, notFound, conflict, gone, badRequest,
+  unauthorized, notFound, conflict, gone, badRequest,
   parsePagination,
 } from '../lib/responses.js';
 import { emitEvent, emitEvents } from '../lib/event-bus.js';

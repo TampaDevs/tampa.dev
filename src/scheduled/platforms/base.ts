@@ -4,7 +4,7 @@
  */
 
 import type { Env } from '../../app.js';
-import type { PlatformGroupData, PlatformFetchResult } from './types.js';
+import type { PlatformFetchResult } from './types.js';
 
 /**
  * Configuration for a group to fetch from a platform

@@ -18,12 +18,7 @@ import {
   syncLogs,
   groupPlatformConnections,
   type Group,
-  type NewGroup,
-  type NewEvent,
-  type NewVenue,
-  type NewSyncLog,
   type GroupPlatformConnection,
-  EventPlatform,
   SyncStatus,
 } from '../db/schema';
 import type { ProviderRegistry } from '../providers/registry';
@@ -33,7 +28,6 @@ import type {
   CanonicalEvent,
   CanonicalGroup,
   CanonicalVenue,
-  ProviderFetchResult,
 } from '../providers/types';
 
 // ============== Types ==============

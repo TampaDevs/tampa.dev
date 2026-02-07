@@ -8,7 +8,7 @@
 import { registerHandler } from './handler.js';
 import { createDatabase } from '../db/index.js';
 import { webhooks, webhookDeliveries } from '../db/schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { DomainEvent } from '../lib/event-bus.js';
 import type { Env } from '../../types/worker.js';
 import { decryptOrPassthrough } from '../lib/crypto.js';

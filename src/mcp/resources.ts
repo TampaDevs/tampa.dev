@@ -6,9 +6,9 @@
  * database and returns JSON-formatted content.
  */
 
-import { eq, gte, asc, sql, and, isNull } from 'drizzle-orm';
+import { eq, gte, asc, sql, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
-import { events, groups, venues, users, badges, userBadges } from '../db/schema.js';
+import { events, groups, venues, users, badges } from '../db/schema.js';
 import { SCOPES } from '../lib/scopes.js';
 import { defineResource, defineResourceTemplate } from './registry.js';
 import type { ResourceContent, ToolContext } from './types.js';

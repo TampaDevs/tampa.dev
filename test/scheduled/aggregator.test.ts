@@ -4,7 +4,6 @@ import { platformRegistry } from '../../src/scheduled/platforms/base.js';
 import { getAllGroups, getGroupsByPlatform, MEETUP_GROUPS } from '../../src/scheduled/groups.js';
 // Import aggregator to trigger platform registration
 import '../../src/scheduled/aggregator.js';
-import type { Env } from '../../src/app.js';
 
 describe('Aggregator', () => {
   describe('PlatformRegistry', () => {

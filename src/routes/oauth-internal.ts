@@ -10,7 +10,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
-import { users, userIdentities, sessions, oauthClientRegistry, oauthGrants } from '../db/schema.js';
+import { users, userIdentities, oauthClientRegistry, oauthGrants } from '../db/schema.js';
 import { filterScopesForUser } from '../lib/scopes.js';
 import { getAuthUser } from '../middleware/auth.js';
 import type { Env } from '../../types/worker.js';

@@ -10,7 +10,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
 import {
   events,
@@ -24,7 +24,7 @@ import {
   GroupMemberRole,
 } from '../db/schema.js';
 import type { Env } from '../../types/worker.js';
-import { getCurrentUser, requireScope, requireGroupRole, isPlatformAdmin } from '../lib/auth.js';
+import { getCurrentUser, requireScope, requireGroupRole } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { ok, created, success, unauthorized, forbidden, notFound, badRequest } from '../lib/responses.js';
 

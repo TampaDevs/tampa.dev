@@ -5,10 +5,7 @@ import {
   createUser,
   createSession,
   appRequest,
-  getDb,
 } from '../helpers';
-import * as schema from '../../../src/db/schema';
-import { eq } from 'drizzle-orm';
 
 describe('Admin Achievements API — enabled field', () => {
   describe('POST /admin/achievements', () => {

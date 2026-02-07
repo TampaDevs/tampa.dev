@@ -7,7 +7,6 @@
 
 import { drizzle } from 'drizzle-orm/d1';
 import * as schema from '../../../src/db/schema';
-import type { Env } from '../../../types/worker';
 
 export function getDb() {
   return drizzle(globalThis.__TEST_ENV__.DB, { schema });

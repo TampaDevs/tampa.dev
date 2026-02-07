@@ -1,5 +1,3 @@
-import type { Context } from 'hono';
-import type { Env } from '../app.js';
 import type { Event } from '../../models/index.js';
 import * as rss from '../../lib/rss.js';
 import * as ical from '../../lib/ical.js';

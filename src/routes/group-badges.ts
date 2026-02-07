@@ -22,7 +22,6 @@ import {
   badgeClaimLinks,
   featureFlags,
   groupFeatureFlags,
-  groupMembers,
   GroupMemberRole,
 } from '../db/schema.js';
 import type { Env } from '../../types/worker.js';
