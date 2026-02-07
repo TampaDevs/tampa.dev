@@ -11,7 +11,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
 import {
   groups,
@@ -25,7 +25,7 @@ import {
   EventPlatform,
 } from '../db/schema.js';
 import type { Env } from '../../types/worker.js';
-import { getCurrentUser, requireScope, requireGroupRole, hasMinRole, isPlatformAdmin, ROLE_HIERARCHY } from '../lib/auth.js';
+import { getCurrentUser, requireScope, requireGroupRole, hasMinRole, isPlatformAdmin } from '../lib/auth.js';
 import { consumeEntitlement } from '../lib/entitlements.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { ok, created, success, unauthorized, forbidden, notFound, badRequest, conflict } from '../lib/responses.js';

@@ -78,7 +78,7 @@ export function createLeaderboardRoutes() {
 
     // Fetch badges for all ranked users in a single query
     const userIds = rankedUsers.map((u) => u.id);
-    let userBadgesMap: Record<string, { name: string; slug: string; icon: string; color: string }[]> = {};
+    const userBadgesMap: Record<string, { name: string; slug: string; icon: string; color: string }[]> = {};
 
     if (userIds.length > 0) {
       const allUserBadges = await db
@@ -196,7 +196,7 @@ export function createGroupLeaderboardRoutes() {
 
     // Fetch group badges for all ranked users
     const userIds = rankedUsers.map((u) => u.id);
-    let userBadgesMap: Record<string, { name: string; slug: string; icon: string; color: string }[]> = {};
+    const userBadgesMap: Record<string, { name: string; slug: string; icon: string; color: string }[]> = {};
 
     if (userIds.length > 0) {
       const allUserBadges = await db

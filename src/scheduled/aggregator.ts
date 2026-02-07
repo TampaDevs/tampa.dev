@@ -7,7 +7,7 @@
 
 import type { Env } from '../app.js';
 import type { AggregatedData, PlatformFetchResult } from './platforms/types.js';
-import { platformRegistry, type EventPlatform } from './platforms/base.js';
+import { platformRegistry } from './platforms/base.js';
 import { meetupPlatform } from './platforms/meetup/index.js';
 import { getGroupsByPlatform, type GroupConfig } from './groups.js';
 

@@ -6,7 +6,7 @@
  */
 
 import { Link, data } from "react-router";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import type { Route } from "./+types/claim.$code";
 import { generateMetaTags } from "~/lib/seo";
 import { getTrophyTier, TrophyIcon } from "~/lib/trophy-tiers";

@@ -4,7 +4,7 @@
  * Displays all groups with filtering, search, and management actions.
  */
 
-import { Link, useSearchParams, useRevalidator } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useState } from "react";
 import type { Route } from "./+types/admin.groups._index";
 import {

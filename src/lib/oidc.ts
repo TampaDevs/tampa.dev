@@ -32,6 +32,9 @@ export function getCanonicalIssuer(requestUrl: string): string {
   if (hostname.includes('staging')) {
     return 'https://staging.tampa.dev';
   }
+  if (!hostname.endsWith('tampa.dev')) {
+    console.warn(`[OIDC] Unexpected hostname "${hostname}" — defaulting issuer to https://tampa.dev`);
+  }
   return 'https://tampa.dev';
 }
 

@@ -12,7 +12,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __TEST_ENV__: {
     DB: D1Database;
     kv: KVNamespace;

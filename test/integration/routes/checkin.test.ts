@@ -11,7 +11,7 @@ import {
   appRequest,
 } from '../helpers';
 import * as schema from '../../../src/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 // ============== POST /groups/manage/:groupId/events/:eventId/checkin-codes ==============
 

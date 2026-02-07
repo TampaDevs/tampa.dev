@@ -7,7 +7,7 @@
 
 import { eq, and } from 'drizzle-orm';
 import { users, userPortfolioItems, apiTokens } from '../db/schema.js';
-import type { User, UserPortfolioItem, ApiToken } from '../db/schema.js';
+import type { User, UserPortfolioItem } from '../db/schema.js';
 import type { DomainEvent } from '../lib/event-bus.js';
 
 type DB = ReturnType<typeof import('../db/index.js').createDatabase>;

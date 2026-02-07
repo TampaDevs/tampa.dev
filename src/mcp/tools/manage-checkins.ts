@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { defineTool } from '../registry.js';
 import { createDatabase } from '../../db/index.js';
 import {

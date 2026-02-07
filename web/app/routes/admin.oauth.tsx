@@ -11,7 +11,6 @@ import {
   fetchOAuthStats,
   deleteOAuthClient,
   type OAuthClient,
-  type OAuthStats,
 } from "~/lib/admin-api.server";
 
 export async function loader({ request }: Route.LoaderArgs) {

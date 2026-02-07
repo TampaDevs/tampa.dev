@@ -81,7 +81,7 @@ export function createPublicUsersRoutes() {
 
     // Fetch badges for all returned users
     const userIds = results.map((u) => u.id);
-    let badgesByUser: Record<string, Array<{ name: string; slug: string; icon: string; color: string; description: string | null }>> = {};
+    const badgesByUser: Record<string, Array<{ name: string; slug: string; icon: string; color: string; description: string | null }>> = {};
 
     if (userIds.length > 0) {
       // Only show platform badges (no groupId) in the directory listing

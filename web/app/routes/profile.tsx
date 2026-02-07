@@ -8,7 +8,7 @@
 
 import { redirect, useLoaderData, useFetcher, useRevalidator, useSearchParams, Link } from "react-router";
 import { Avatar } from "@tampadevs/react";
-import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useCallback, useLayoutEffect } from "react";
 import type { Route } from "./+types/profile";
 import { fetchCurrentUser, fetchAuthProviders, type AuthIdentity, type AuthProvider } from "~/lib/admin-api.server";
 import { ProviderIcon } from "./login";

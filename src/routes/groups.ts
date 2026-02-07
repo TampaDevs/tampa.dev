@@ -8,7 +8,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
-import { eq, desc, and, count, sql } from 'drizzle-orm';
+import { eq, desc, and, count } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { groups, groupMembers, users, userFavorites } from '../db/schema';
 import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';

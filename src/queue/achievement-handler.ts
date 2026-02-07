@@ -10,7 +10,7 @@
 
 import { registerHandler } from './handler.js';
 import { createDatabase } from '../db/index.js';
-import { achievements, achievementProgress, badges, userBadges, onboardingSteps, userOnboarding } from '../db/schema.js';
+import { achievementProgress, badges, userBadges, onboardingSteps, userOnboarding } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { grantEntitlement } from '../lib/entitlements.js';
 import { NotificationService } from '../lib/event-bus.js';

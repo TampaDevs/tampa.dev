@@ -135,7 +135,7 @@ async function main() {
 
   const results: Record<string, any> = {};
   let totalEvents = 0;
-  let errors: string[] = [];
+  const errors: string[] = [];
 
   for (const adapter of providersToTest) {
     console.log(`\n─── ${adapter.name} ───`);

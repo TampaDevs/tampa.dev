@@ -6,7 +6,6 @@
  */
 
 import { Link, Outlet, useNavigate, useParams } from "react-router";
-import { data as routerData } from "react-router";
 import { DOCS, CATEGORIES } from "~/content/docs";
 import { fetchCurrentUser } from "~/lib/api.server";
 import type { Route } from "./+types/developer.docs";

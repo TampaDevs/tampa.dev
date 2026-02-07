@@ -13,7 +13,7 @@ import { useMemo } from "react";
 
 import type { Route } from "./+types/root";
 import { Header, Footer } from "./components";
-import { fetchCurrentUser, type AuthUser } from "./lib/admin-api.server";
+import { fetchCurrentUser } from "./lib/admin-api.server";
 import { WebSocketProvider } from "./hooks/WebSocketProvider";
 import { NotificationToast } from "./components/NotificationToast";
 import { CelebrationToast } from "./components/CelebrationToast";

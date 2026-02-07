@@ -10,7 +10,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
-import { users, userIdentities, sessions, oauthClientRegistry, oauthGrants } from '../db/schema.js';
+import { users, userIdentities, oauthClientRegistry, oauthGrants } from '../db/schema.js';
 import { filterScopesForUser } from '../lib/scopes.js';
 import { getAuthUser } from '../middleware/auth.js';
 import type { Env } from '../../types/worker.js';
@@ -209,19 +209,25 @@ export function createOAuthInternalRoutes() {
       });
 
       if (existingGrant) {
-        // Delete from KV first (tokens reference the grant, so delete tokens too)
-        const kv = c.env.OAUTH_KV;
-        if (kv) {
-          // Delete the grant from KV
-          await kv.delete(existingGrant.grantKey);
-          // Delete associated tokens (they reference this grantId)
-          const tokenPrefix = `token:${user.id}:${existingGrant.grantId}:`;
-          const tokenList = await kv.list({ prefix: tokenPrefix });
-          await Promise.all(tokenList.keys.map((k) => kv.delete(k.name)));
-        }
-        // Delete from D1
+        // Delete D1 record first (authoritative, can be retried on failure).
+        // KV cleanup is fire-and-forget since KV entries are ephemeral and
+        // will expire naturally. This ordering prevents orphaned D1 records
+        // that can't be cleaned up via the profile UI.
         await db.delete(oauthGrants)
           .where(eq(oauthGrants.grantId, existingGrant.grantId));
+
+        // Clean up KV in background (grant + associated tokens)
+        const kv = c.env.OAUTH_KV;
+        if (kv) {
+          c.executionCtx.waitUntil(
+            (async () => {
+              await kv.delete(existingGrant.grantKey);
+              const tokenPrefix = `token:${user.id}:${existingGrant.grantId}:`;
+              const tokenList = await kv.list({ prefix: tokenPrefix });
+              await Promise.all(tokenList.keys.map((k) => kv.delete(k.name)));
+            })().catch((e: unknown) => console.error('Failed to clean up KV grant:', e))
+          );
+        }
       }
 
       // Complete the authorization via OAuthProvider

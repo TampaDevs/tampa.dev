@@ -10,7 +10,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and, like, or, sql, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, achievements, achievementProgress, webhooks, webhookDeliveries, userEntitlements, badgeClaimLinks, groupPlatformConnections, groupClaimRequests, groupClaimInvites, groupCreationRequests, EventPlatform, UserRole, GroupMemberRole } from '../db/schema';
+import { groups, events, syncLogs, users, userIdentities, sessions, userFavorites, badges, userBadges, featureFlags, userFeatureFlags, groupFeatureFlags, groupMembers, achievements, achievementProgress, webhooks, userEntitlements, badgeClaimLinks, groupPlatformConnections, groupClaimRequests, groupClaimInvites, groupCreationRequests, EventPlatform, GroupMemberRole } from '../db/schema';
 import { SyncService } from '../services/sync';
 import { providerRegistry } from '../providers';
 import type { Env } from '../../types/worker';

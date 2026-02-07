@@ -1,5 +1,5 @@
 import type { Route } from "./+types/calendar";
-import { useNavigate, useSearchParams, useRouteLoaderData } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import { fetchEvents, fetchGroups, toLocalGroup, type LocalGroupCompat } from "~/lib/api.server";
 import { generateMetaTags } from "~/lib/seo";

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { Emoji, getEmojiUrl } from './Emoji';
 
 const R2_BASE = 'https://td-uploads-public.tampa.dev/emoji';

@@ -43,22 +43,17 @@ import {
 } from '../db/schema.js';
 import type { Env } from '../../types/worker.js';
 import { getCurrentUser, requireScope, requireGroupRole, hasMinRole, isPlatformAdmin } from '../lib/auth.js';
-import type { AuthResult } from '../lib/auth.js';
 import { consumeEntitlement } from '../lib/entitlements.js';
 import { emitEvent } from '../lib/event-bus.js';
 import {
   ok,
   created,
-  list,
   success,
   unauthorized,
   forbidden,
   notFound,
   conflict,
-  gone,
   badRequest,
-  internalError,
-  parsePagination,
 } from '../lib/responses.js';
 import { withIconUrl } from '../../lib/emoji.js';
 

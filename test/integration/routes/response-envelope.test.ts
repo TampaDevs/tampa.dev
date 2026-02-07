@@ -13,16 +13,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { eq } from 'drizzle-orm';
 import {
   createTestEnv,
   createUser,
   createAdminUser,
   createSession,
-  createGroup,
-  createEvent,
   createBadge,
-  awardBadge,
   createFollow,
   appRequest,
   getDb,

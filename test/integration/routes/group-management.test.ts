@@ -10,7 +10,6 @@ import {
   appRequest,
   getDb,
 } from '../helpers';
-import * as schema from '../../../src/db/schema';
 import { hasMinRole, ROLE_HIERARCHY, isPlatformAdmin } from '../../../src/lib/auth';
 
 // ============== Unit: auth helpers ==============
