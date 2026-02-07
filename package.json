@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.980.0",
-    "@cloudflare/workers-types": "^4.20250924.0",
+    "@cloudflare/workers-types": "^4.20260207.0",
     "@eslint/js": "^9.39.2",
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
