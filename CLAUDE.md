@@ -7,7 +7,9 @@ Note to Agents: When working on tasks, attempt to parallelize work as much as po
 
 When running TypeScript type checks, do not use npm tsc. Instead, do a dry run build/deployment with wrangler. If you try to use npm tsc, it will take a long time before dying due to a MAX_HEAP error.
 
-Integration test runs can cause Miniflare to die when all tests are run in a single process or with high parallelization. Test in smaller batches when you can, or target appropriately. Always make sure the full test suite has been invoked (all unit, integration, etc) before reporting success. Success requires the project to build successfully with a passing test suite.
+Before running tests, always run `npm run lint` (and `npm run lint` in `web/` for frontend changes) to catch unused imports. Fix any errors before proceeding to tests. Use `npm run lint:fix` to auto-fix unused imports.
+
+Integration test runs can cause Miniflare to die when all tests are run in a single process or with high parallelization. Test in smaller batches when you can, or target appropriately. Always make sure the full test suite has been invoked (all unit, integration, etc) before reporting success. Success requires the project to build successfully with a clean lint and a passing test suite.
 
 ---
 
