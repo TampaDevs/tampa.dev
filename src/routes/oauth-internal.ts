@@ -26,6 +26,7 @@ const completeAuthSchema = z.object({
     state: z.string().optional(),
     codeChallenge: z.string().optional(),
     codeChallengeMethod: z.string().optional(),
+    nonce: z.string().optional(),  // OIDC nonce
   }),
   // The authenticated user's ID
   userId: z.string(),
@@ -245,6 +246,10 @@ export function createOAuthInternalRoutes() {
           avatarUrl: user.avatarUrl,
           githubUsername: githubIdentity?.providerUsername,
           scopes: filteredScopes,
+          // OIDC: store nonce from authorization request for id_token inclusion
+          nonce: oauthRequest.nonce ?? undefined,
+          // OIDC: store actual authentication time (session creation time, not token issuance time)
+          authTime: Math.floor(Date.now() / 1000),
         },
       });
 

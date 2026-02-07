@@ -96,6 +96,10 @@ export interface Env {
   R2_ACCOUNT_ID?: string;
   R2_ACCESS_KEY_ID?: string;
   R2_SECRET_ACCESS_KEY?: string;
+
+  // OIDC id_token signing keys (RS256 JWK JSON strings)
+  OIDC_PRIVATE_JWK?: string;
+  OIDC_PUBLIC_JWK?: string;
 }
 
 /**

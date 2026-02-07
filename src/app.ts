@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 import { SCOPES } from './lib/scopes.js';
+import { getCanonicalIssuer } from './lib/oidc.js';
 
 /**
  * Environment bindings for Cloudflare Workers
@@ -68,28 +69,78 @@ export function createApp() {
   // OpenID Connect Discovery (fallback for clients that check openid-configuration
   // instead of RFC 8414 oauth-authorization-server served by OAuthProvider)
   app.get('/.well-known/openid-configuration', (c) => {
-    const url = new URL(c.req.url);
-    const origin = url.origin;
-    const isStaging = url.hostname.includes('staging');
-    const authBase = isStaging ? 'https://staging.tampa.dev' : 'https://tampa.dev';
+    // Use canonical issuer: tampa.dev in production, staging.tampa.dev in staging,
+    // request origin for localhost. All OIDC endpoints are mounted on tampa.dev
+    // via wrangler.toml routes, so URLs must be consistent regardless of which
+    // hostname the worker receives the request on.
+    const base = getCanonicalIssuer(c.req.url);
 
     return c.json({
-      issuer: origin,
-      authorization_endpoint: `${authBase}/oauth/authorize`,
-      token_endpoint: `${origin}/oauth/token`,
-      registration_endpoint: `${origin}/oauth/register`,
+      issuer: base,
+      authorization_endpoint: `${base}/oauth/authorize`,
+      token_endpoint: `${base}/oauth/token`,
+      userinfo_endpoint: `${base}/oauth/userinfo`,
+      jwks_uri: `${base}/.well-known/jwks.json`,
+      registration_endpoint: `${base}/oauth/register`,
+
       scopes_supported: [
-        ...Object.keys(SCOPES),
-        'offline_access',
+        'openid',                 // OIDC protocol flag (NOT in SCOPES object -- no duplication)
+        ...Object.keys(SCOPES),   // All data scopes from scopes.ts
+        'offline_access',         // Refresh token hint
         // OIDC standard aliases (resolved via LEGACY_SCOPE_ALIASES in scopes.ts)
         'profile',
         'email',
       ],
+
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code', 'refresh_token'],
+
+      id_token_signing_alg_values_supported: ['RS256'],
+      subject_types_supported: ['public'],
+
+      claims_supported: [
+        'sub',
+        'iss',
+        'aud',
+        'exp',
+        'iat',
+        'auth_time',
+        'nonce',
+        'at_hash',
+        'name',
+        'preferred_username',
+        'picture',
+        'profile',
+        'email',
+        'email_verified',
+        'updated_at',
+        'https://tampa.dev/entitlements',
+      ],
+
       code_challenge_methods_supported: ['S256'],
       token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
     }, 200, { 'Cache-Control': 'public, max-age=3600' });
+  });
+
+  // JWKS endpoint for id_token verification
+  app.get('/.well-known/jwks.json', async (c) => {
+    if (!c.env.OIDC_PUBLIC_JWK) {
+      return c.json({ keys: [] }, 200, { 'Cache-Control': 'public, max-age=3600' });
+    }
+
+    try {
+      const parsed = JSON.parse(c.env.OIDC_PUBLIC_JWK);
+
+      // Support both formats:
+      //   Single JWK:  {"kty":"RSA","kid":"...","n":"...","e":"AQAB",...}
+      //   Full JWKS:   {"keys":[{"kty":"RSA",...},{"kty":"RSA",...}]}
+      // The full JWKS format is used during key rotation to serve both old and new keys.
+      const jwks = Array.isArray(parsed.keys) ? parsed : { keys: [parsed] };
+
+      return c.json(jwks, 200, { 'Cache-Control': 'public, max-age=86400' });
+    } catch {
+      return c.json({ keys: [] }, 200, { 'Cache-Control': 'public, max-age=3600' });
+    }
   });
 
   // MCP Server Discovery (RFC well-known endpoint)

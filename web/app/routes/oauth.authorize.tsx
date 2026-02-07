@@ -14,6 +14,7 @@ import { fetchCurrentUser, type AuthUser } from "~/lib/admin-api.server";
 // Group scopes into categories for a cleaner consent screen.
 // Maps each scope (including legacy aliases) to a display group.
 const SCOPE_TO_GROUP: Record<string, string> = {
+  openid: "identity",
   user: "profile", "read:user": "profile", "user:email": "profile", profile: "profile",
   "read:events": "events", "write:events": "events",
   "events:read": "events", "rsvp:read": "events", "rsvp:write": "events",
@@ -28,7 +29,7 @@ const SCOPE_TO_GROUP: Record<string, string> = {
 };
 
 const GROUP_DISPLAY_ORDER = [
-  "profile", "events", "groups", "favorites", "portfolio", "management", "admin", "offline",
+  "identity", "profile", "events", "groups", "favorites", "portfolio", "management", "admin", "offline",
 ];
 
 interface GroupDisplay {
@@ -44,6 +45,8 @@ function getGroupDisplay(
   scopes: Set<string>,
 ): { label: string; icon: string; description: string } | null {
   switch (groupKey) {
+    case "identity":
+      return { label: "Identity", icon: "id", description: "Verify your identity and receive an ID token" };
     case "profile": {
       const hasFullUser = scopes.has("user") || scopes.has("profile");
       const hasEmail = scopes.has("user:email");
@@ -130,6 +133,7 @@ interface OAuthRequest {
   state?: string;
   codeChallenge?: string;
   codeChallengeMethod?: string;
+  nonce?: string;
 }
 
 interface ClientInfo {
@@ -164,6 +168,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const state = url.searchParams.get("state");
   const codeChallenge = url.searchParams.get("code_challenge");
   const codeChallengeMethod = url.searchParams.get("code_challenge_method");
+  // OIDC nonce parameter (captured from raw URL, not parseAuthRequest)
+  const nonce = url.searchParams.get("nonce");
   // Standard OAuth prompt parameter: 'consent' forces the consent screen
   const prompt = url.searchParams.get("prompt");
 
@@ -232,6 +238,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
       if (allScopesCovered) {
         // Auto-approve: call the complete endpoint directly
+        // Inject nonce from the raw URL into the oauthRequest (parseAuthRequest strips it)
+        const oauthReqWithNonce = nonce
+          ? { ...parseData.oauthRequest, nonce }
+          : parseData.oauthRequest;
         const completeResponse = await fetch(`${apiUrl}/oauth/internal/complete`, {
           method: "POST",
           headers: {
@@ -239,7 +249,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             ...(cookieHeader ? { Cookie: cookieHeader } : {}),
           },
           body: JSON.stringify({
-            oauthRequest: parseData.oauthRequest,
+            oauthRequest: oauthReqWithNonce,
             userId: user.id,
             approvedScopes: requestedScopes,
           }),
@@ -258,10 +268,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       }
     }
 
+    // Inject nonce from the raw URL into the oauthRequest (parseAuthRequest strips it)
+    const oauthRequestWithNonce = nonce
+      ? { ...parseData.oauthRequest, nonce }
+      : parseData.oauthRequest;
+
     return {
       error: null,
       user,
-      oauthRequest: parseData.oauthRequest,
+      oauthRequest: oauthRequestWithNonce,
       client: parseData.client,
       requestedScopes,
     };
@@ -345,6 +360,11 @@ export async function action({ request }: Route.ActionArgs) {
 
 function PermissionIcon({ icon }: { icon: string }) {
   const icons: Record<string, ReactNode> = {
+    id: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+      </svg>
+    ),
     user: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

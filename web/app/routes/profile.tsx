@@ -888,6 +888,7 @@ function ThemeColorPicker({
 
 // Scope display names
 const SCOPE_LABELS: Record<string, string> = {
+  openid: "OpenID Connect",
   user: "Profile (full)",
   "read:user": "Profile (read)",
   "user:email": "Email",
