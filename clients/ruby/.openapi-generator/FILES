@@ -181,11 +181,5 @@ lib/tampa_events_api/models/vv1_users_username_follow_post201_response.rb
 lib/tampa_events_api/models/vv1_users_username_follow_post201_response_data.rb
 lib/tampa_events_api/models/vv1_users_username_followers_get200_response.rb
 lib/tampa_events_api/version.rb
-spec/models/v_user_badge_group_spec.rb
-spec/models/v_user_badge_rarity_spec.rb
-spec/models/v_user_badge_spec.rb
-spec/models/v_user_entitlement_spec.rb
-spec/models/vv1_profile_badges_get200_response_spec.rb
-spec/models/vv1_profile_entitlements_get200_response_spec.rb
 spec/spec_helper.rb
 tampa_events_api.gemspec
