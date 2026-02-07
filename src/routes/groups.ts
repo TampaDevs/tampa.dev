@@ -8,7 +8,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '../app.js';
-import { eq, desc, and, count } from 'drizzle-orm';
+import { eq, desc, and, count, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { groups, groupMembers, users, userFavorites } from '../db/schema';
 import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
@@ -291,12 +291,14 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       }),
       db.select({ count: count() }).from(userFavorites).where(eq(userFavorites.groupId, group.id)),
     ]);
-    const owners = await Promise.all(
-      ownerMembers.map(async (m) => {
-        const user = await db.query.users.findFirst({ where: eq(users.id, m.userId) });
-        return user ? { id: user.id, name: user.name, username: user.username, avatarUrl: user.avatarUrl } : null;
-      })
-    );
+    const ownerUserIds = ownerMembers.map(m => m.userId);
+    const ownerUsers = ownerUserIds.length > 0
+      ? await db.select().from(users).where(inArray(users.id, ownerUserIds))
+      : [];
+    const owners = ownerMembers.map(m => {
+      const user = ownerUsers.find(u => u.id === m.userId);
+      return user ? { id: user.id, name: user.name, username: user.username, avatarUrl: user.avatarUrl } : null;
+    });
 
     const jsonWithOwners = {
       ...json,
@@ -322,6 +324,11 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const db = createDatabase(c.env.DB);
     const slug = c.req.param('slug');
 
+    // Pagination params with sensible defaults
+    const url = new URL(c.req.url);
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 1), 100);
+    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
+
     const group = await db.query.groups.findFirst({
       where: and(eq(groups.urlname, slug), eq(groups.displayOnSite, true)),
     });
@@ -330,22 +337,33 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       return c.json({ error: 'Group not found' }, 404);
     }
 
-    const members = await db
-      .select({
-        username: users.username,
-        name: users.name,
-        avatarUrl: users.avatarUrl,
-        favoritedAt: userFavorites.createdAt,
-      })
-      .from(userFavorites)
-      .innerJoin(users, eq(userFavorites.userId, users.id))
-      .where(
-        and(
-          eq(userFavorites.groupId, group.id),
-          eq(users.profileVisibility, 'public'),
-        )
-      )
-      .orderBy(desc(userFavorites.createdAt));
+    const whereClause = and(
+      eq(userFavorites.groupId, group.id),
+      eq(users.profileVisibility, 'public'),
+    );
+
+    const [members, totalResult] = await Promise.all([
+      db
+        .select({
+          username: users.username,
+          name: users.name,
+          avatarUrl: users.avatarUrl,
+          favoritedAt: userFavorites.createdAt,
+        })
+        .from(userFavorites)
+        .innerJoin(users, eq(userFavorites.userId, users.id))
+        .where(whereClause)
+        .orderBy(desc(userFavorites.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ count: count() })
+        .from(userFavorites)
+        .innerJoin(users, eq(userFavorites.userId, users.id))
+        .where(whereClause),
+    ]);
+
+    const total = totalResult[0]?.count ?? 0;
 
     return c.json({
       groupName: group.name,
@@ -358,6 +376,7 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
           avatarUrl: m.avatarUrl,
           favoritedAt: m.favoritedAt,
         })),
+      pagination: { total, limit, offset, hasMore: offset + limit < total },
     });
   };
 

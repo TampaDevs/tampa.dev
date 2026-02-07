@@ -24,10 +24,17 @@ export function getFavorites(): string[] {
 }
 
 /**
- * Set favorites in localStorage
+ * Custom event name dispatched whenever favorites change in the current tab.
+ * The groups page listens for this instead of polling localStorage.
+ */
+export const FAVORITES_CHANGED_EVENT = "tampa_dev_favorites_changed";
+
+/**
+ * Set favorites in localStorage and notify same-tab listeners
  */
 function setFavorites(favorites: string[]): void {
   localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+  window.dispatchEvent(new CustomEvent(FAVORITES_CHANGED_EVENT));
 }
 
 /**

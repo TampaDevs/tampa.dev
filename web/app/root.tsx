@@ -38,21 +38,32 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 /**
  * Prevent unnecessary revalidation of the root loader.
- * Only revalidate on explicit navigation or after logout.
+ * The root loader fetches /auth/me which rarely changes mid-session.
+ * Only revalidate when navigating to/from auth-related routes.
  */
 export function shouldRevalidate({
   formAction,
-  defaultShouldRevalidate,
+  currentUrl,
+  nextUrl,
 }: {
   formAction?: string;
+  currentUrl: URL;
+  nextUrl: URL;
   defaultShouldRevalidate: boolean;
 }) {
-  // Always revalidate after auth actions
+  // Always revalidate after auth form actions (login, logout, etc.)
   if (formAction?.startsWith("/auth/")) {
     return true;
   }
-  // Otherwise, use default behavior for navigation
-  return defaultShouldRevalidate;
+  // Revalidate when navigating to or from auth-related routes
+  const authPaths = ["/login", "/auth/", "/profile"];
+  const isToAuth = authPaths.some((p) => nextUrl.pathname.startsWith(p));
+  const isFromAuth = authPaths.some((p) => currentUrl.pathname.startsWith(p));
+  if (isToAuth || isFromAuth) {
+    return true;
+  }
+  // Skip revalidation for standard navigations — user data rarely changes mid-session
+  return false;
 }
 
 export const links: Route.LinksFunction = () => [

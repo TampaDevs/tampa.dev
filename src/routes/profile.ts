@@ -7,7 +7,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements, groups, oauthClientRegistry } from '../db/schema';
 import type { Env } from '../../types/worker';
@@ -115,9 +115,9 @@ export function createProfileRoutes() {
     type BadgeWithRarity = { id: string; name: string; slug: string; description: string | null; icon: string; color: string; points: number; awardedAt: string | null; groupId: string | null; rarity: { tier: string; percentage: number } };
     let allBadges: BadgeWithRarity[] = [];
     if (ub.length > 0) {
-      const badgeResults = await Promise.all(
-        ub.map((b) => db.query.badges.findFirst({ where: eq(badges.id, b.badgeId) }))
-      );
+      const badgeIds = ub.map(b => b.badgeId);
+      const badgeResults = await db.select().from(badges)
+        .where(inArray(badges.id, badgeIds));
 
       // Get total public users count for rarity computation
       const totalUsersResult = await db
@@ -127,7 +127,6 @@ export function createProfileRoutes() {
       const totalUsers = totalUsersResult[0]?.count ?? 0;
 
       // Count holders per badge in a single batch query
-      const badgeIds = ub.map(b => b.badgeId);
       const holderCounts = await db
         .select({ badgeId: userBadges.badgeId, count: sql<number>`COUNT(*)` })
         .from(userBadges)
@@ -177,11 +176,11 @@ export function createProfileRoutes() {
     const groupIds = [...groupBadgeMap.keys()];
     let groupBadges: Array<{ group: { id: string; name: string; urlname: string; photoUrl: string | null }; badges: Array<Omit<BadgeWithRarity, 'groupId'>>; xpSubtotal: number }> = [];
     if (groupIds.length > 0) {
-      const groupResults = await Promise.all(
-        groupIds.map((gid) => db.query.groups.findFirst({ where: eq(groups.id, gid) }))
-      );
-      groupBadges = groupIds.map((gid, idx) => {
-        const g = groupResults[idx];
+      const groupResultsList = await db.select().from(groups)
+        .where(inArray(groups.id, groupIds));
+      const groupResultMap = new Map(groupResultsList.map(g => [g.id, g]));
+      groupBadges = groupIds.map((gid) => {
+        const g = groupResultMap.get(gid);
         const badgesInGroup = groupBadgeMap.get(gid) || [];
         return {
           group: g ? { id: g.id, name: g.name, urlname: g.urlname, photoUrl: g.photoUrl } : { id: gid, name: 'Unknown Group', urlname: '', photoUrl: null },

@@ -17,6 +17,7 @@ export function GroupCard({ group, eventCount }: GroupCardProps) {
         <img
           src={group.logo}
           alt={group.name}
+          loading="lazy"
           className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => {
             e.currentTarget.src = "/images/placeholder-group.svg";

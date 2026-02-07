@@ -5,7 +5,7 @@ import { fetchGroups, toLocalGroup, extractTags } from "~/lib/api.server";
 import { useSearchParams } from "react-router";
 import { useState, useEffect, useMemo } from "react";
 import { useWS } from "~/hooks/WebSocketProvider";
-import { getFavorites } from "~/lib/favorites";
+import { getFavorites, FAVORITES_CHANGED_EVENT } from "~/lib/favorites";
 
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
@@ -60,16 +60,14 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
     setFavoriteSlugs(getFavorites());
     setIsLoaded(true);
 
-    // Listen for storage changes to update favorites in real-time
-    const handleStorage = () => setFavoriteSlugs(getFavorites());
-    window.addEventListener("storage", handleStorage);
-
-    // Poll for same-tab changes
-    const interval = setInterval(() => setFavoriteSlugs(getFavorites()), 500);
+    // Listen for cross-tab changes (storage event) and same-tab changes (custom event)
+    const handleChange = () => setFavoriteSlugs(getFavorites());
+    window.addEventListener("storage", handleChange);
+    window.addEventListener(FAVORITES_CHANGED_EVENT, handleChange);
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      clearInterval(interval);
+      window.removeEventListener("storage", handleChange);
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, handleChange);
     };
   }, []);
 

@@ -6,7 +6,7 @@
  */
 
 import { Hono } from 'hono';
-import { eq, and, like, or, sql } from 'drizzle-orm';
+import { eq, and, like, or, sql, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { users, userIdentities, userFavorites, groups, badges, userBadges, userPortfolioItems, achievementProgress, achievements } from '../db/schema';
 import type { Env } from '../../types/worker';
@@ -155,13 +155,11 @@ export function createPublicUsersRoutes() {
 
     let favoriteGroups: Array<{ slug: string; name: string; photoUrl: string | null }> = [];
     if (favorites.length > 0) {
-      const groupResults = await Promise.all(
-        favorites.map((f) =>
-          db.query.groups.findFirst({ where: eq(groups.id, f.groupId) })
-        )
-      );
+      const favoriteGroupIds = favorites.map(f => f.groupId);
+      const groupResults = await db.select().from(groups)
+        .where(inArray(groups.id, favoriteGroupIds));
       favoriteGroups = groupResults
-        .filter((g): g is NonNullable<typeof g> => g !== null && g.displayOnSite === true)
+        .filter((g) => g.displayOnSite === true)
         .map((g) => ({ slug: g.urlname, name: g.name, photoUrl: g.photoUrl }));
     }
 
@@ -173,9 +171,9 @@ export function createPublicUsersRoutes() {
     type BadgeEntryWithId = { badgeId: string; name: string; slug: string; icon: string; color: string; description: string | null; points: number; awardedAt: string | null; groupId: string | null };
     let userBadgeListWithIds: BadgeEntryWithId[] = [];
     if (ub.length > 0) {
-      const badgeResults = await Promise.all(
-        ub.map((b) => db.query.badges.findFirst({ where: eq(badges.id, b.badgeId) }))
-      );
+      const badgeIds = ub.map(b => b.badgeId);
+      const badgeResults = await db.select().from(badges)
+        .where(inArray(badges.id, badgeIds));
       userBadgeListWithIds = ub
         .map((ubEntry) => {
           const badge = badgeResults.find((b) => b?.id === ubEntry.badgeId);
@@ -235,11 +233,11 @@ export function createPublicUsersRoutes() {
     const groupIds = [...groupBadgeMap.keys()];
     let groupBadges: Array<{ group: { id: string; name: string; urlname: string; photoUrl: string | null }; badges: Array<Omit<BadgeWithRarity, 'groupId'>>; xpSubtotal: number }> = [];
     if (groupIds.length > 0) {
-      const groupResults = await Promise.all(
-        groupIds.map((gid) => db.query.groups.findFirst({ where: eq(groups.id, gid) }))
-      );
-      groupBadges = groupIds.map((gid, idx) => {
-        const g = groupResults[idx];
+      const groupResultsList = await db.select().from(groups)
+        .where(inArray(groups.id, groupIds));
+      const groupResultMap = new Map(groupResultsList.map(g => [g.id, g]));
+      groupBadges = groupIds.map((gid) => {
+        const g = groupResultMap.get(gid);
         const badgesInGroup = groupBadgeMap.get(gid) || [];
         return {
           group: g ? { id: g.id, name: g.name, urlname: g.urlname, photoUrl: g.photoUrl } : { id: gid, name: 'Unknown Group', urlname: '', photoUrl: null },

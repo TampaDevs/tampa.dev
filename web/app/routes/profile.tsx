@@ -125,52 +125,35 @@ export async function loader({ request }: Route.LoaderArgs) {
   const apiUrl = import.meta.env.EVENTS_API_URL || "https://api.tampa.dev";
   const host = new URL(request.url).host;
 
+  // Fire all data requests in a single parallel stage (flattened waterfall)
   let grants: OAuthGrant[] = [];
-  try {
-    const grantsResponse = await fetch(`${apiUrl}/oauth/internal/grants/${user.id}`, {
-      headers: {
-        Accept: "application/json",
-        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
-      },
-    });
-
-    if (grantsResponse.ok) {
-      const data = await grantsResponse.json() as { grants: OAuthGrant[] };
-      grants = data.grants || [];
-    }
-  } catch (error) {
-    console.error("Failed to fetch grants:", error);
-  }
-
-  // Fetch available auth providers, user's linked identities, and badges
   let badges: ProfileBadge[] = [];
-  const [providers, identities] = await Promise.all([
-    fetchAuthProviders(),
-    Promise.resolve(user.identities || []),
-  ]);
-
   let portfolioItems: PortfolioItem[] = [];
   let apiTokensList: ApiTokenInfo[] = [];
   let achievements: AchievementInfo[] = [];
   let favoriteGroups: FavoriteGroup[] = [];
+  let providers: AuthProvider[] = [];
+  const identities: AuthIdentity[] = user.identities || [];
+
+  const headers = { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) };
+
   try {
-    const [profileResponse, portfolioResponse, tokensResponse, achievementsResponse, favoritesResponse] = await Promise.all([
-      fetch(`${apiUrl}/profile`, {
-        headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
-      }),
-      fetch(`${apiUrl}/profile/portfolio`, {
-        headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
-      }),
-      fetch(`${apiUrl}/profile/tokens`, {
-        headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
-      }),
-      fetch(`${apiUrl}/profile/achievements`, {
-        headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
-      }),
-      fetch(`${apiUrl}/favorites`, {
-        headers: { Accept: "application/json", ...(cookieHeader ? { Cookie: cookieHeader } : {}) },
-      }),
+    const [grantsResponse, providersResult, profileResponse, portfolioResponse, tokensResponse, achievementsResponse, favoritesResponse] = await Promise.all([
+      fetch(`${apiUrl}/oauth/internal/grants/${user.id}`, { headers }).catch(() => null),
+      fetchAuthProviders(),
+      fetch(`${apiUrl}/profile`, { headers }),
+      fetch(`${apiUrl}/profile/portfolio`, { headers }),
+      fetch(`${apiUrl}/profile/tokens`, { headers }),
+      fetch(`${apiUrl}/profile/achievements`, { headers }),
+      fetch(`${apiUrl}/favorites`, { headers }),
     ]);
+
+    providers = providersResult;
+
+    if (grantsResponse?.ok) {
+      const data = await grantsResponse.json() as { grants: OAuthGrant[] };
+      grants = data.grants || [];
+    }
     if (profileResponse.ok) {
       const profileJson = await profileResponse.json() as { data: { badges?: ProfileBadge[]; profileVisibility?: string; showAchievements?: boolean; heroImageUrl?: string | null; themeColor?: string | null; socialLinks?: string[] | null; bio?: string | null } };
       const profileData = profileJson.data;
@@ -212,6 +195,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     }
   } catch (error) {
     console.error("Failed to fetch profile data:", error);
+    providers = await fetchAuthProviders();
   }
 
   const userWithBadges = { ...user, badges };
