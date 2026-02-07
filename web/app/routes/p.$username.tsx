@@ -153,8 +153,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const profile = ((await response.json()) as { data: PublicProfile }).data;
 
-  // Fetch followers (limit=5 for avatar stack), following count, and follow status in parallel
-  const [followersRes, followingRes, followStatusRes] = await Promise.all([
+  // Fetch followers, following, follow status, and group badges all in parallel
+  const [followersRes, followingRes, followStatusRes, groupBadgesRes] = await Promise.all([
     fetch(`${apiUrl}/users/${username}/followers?limit=5`, {
       headers: { Accept: "application/json" },
     }).catch(() => null),
@@ -169,11 +169,15 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         },
       }).catch(() => null)
       : Promise.resolve(null),
+    fetch(`${apiUrl}/users/${username}/group-badges`, {
+      headers: { Accept: "application/json" },
+    }).catch(() => null),
   ]);
 
   let followersData: FollowersResponse = { followers: [], total: 0 };
   let followingData: FollowingResponse = { following: [], total: 0 };
   let isFollowing = false;
+  let groupBadges: GroupBadgeGroup[] = [];
 
   if (followersRes?.ok) {
     const body = (await followersRes.json()) as { data: FollowerEntry[]; pagination: { total: number } };
@@ -187,20 +191,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const statusData = ((await followStatusRes.json()) as { data: { following: boolean } }).data;
     isFollowing = statusData.following;
   }
-
-  // Fetch group badges for this user
-  let groupBadges: GroupBadgeGroup[] = [];
-  try {
-    const groupBadgesRes = await fetch(
-      `${apiUrl}/users/${username}/group-badges`,
-      { headers: { Accept: "application/json" } }
-    );
-    if (groupBadgesRes.ok) {
-      const gbData = (await groupBadgesRes.json()) as { groups?: GroupBadgeGroup[] };
-      groupBadges = gbData.groups ?? [];
-    }
-  } catch {
-    // Non-critical — proceed without group badges
+  if (groupBadgesRes?.ok) {
+    const gbData = (await groupBadgesRes.json()) as { groups?: GroupBadgeGroup[] };
+    groupBadges = gbData.groups ?? [];
   }
 
   return {
@@ -253,23 +246,30 @@ function TiltCard({
   accentTint?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const rafId = useRef(0);
   const [hovered, setHovered] = useState(false);
 
   const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rx = ((y - rect.height / 2) / (rect.height / 2)) * -4;
-    const ry = ((x - rect.width / 2) / (rect.width / 2)) * 4;
-    el.style.setProperty("--rx", `${rx}deg`);
-    el.style.setProperty("--ry", `${ry}deg`);
-    el.style.setProperty("--sx", `${(x / rect.width) * 100}%`);
-    el.style.setProperty("--sy", `${(y / rect.height) * 100}%`);
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(() => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const rx = ((y - rect.height / 2) / (rect.height / 2)) * -4;
+      const ry = ((x - rect.width / 2) / (rect.width / 2)) * 4;
+      el.style.setProperty("--rx", `${rx}deg`);
+      el.style.setProperty("--ry", `${ry}deg`);
+      el.style.setProperty("--sx", `${(x / rect.width) * 100}%`);
+      el.style.setProperty("--sy", `${(y / rect.height) * 100}%`);
+    });
   }, []);
 
   const onLeave = useCallback(() => {
+    cancelAnimationFrame(rafId.current);
     const el = ref.current;
     if (el) {
       el.style.setProperty("--rx", "0deg");
