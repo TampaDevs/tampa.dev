@@ -11,9 +11,9 @@
  *   3. Session cookie                   → Session-based auth
  */
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gt } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
-import { users, sessions, apiTokens, groupMembers, type User, type GroupMember, GroupMemberRole } from '../db/schema.js';
+import { users, sessions, apiTokens, groupMembers, type User, type Session, type GroupMember, GroupMemberRole } from '../db/schema.js';
 import { getSessionCookieName } from './session.js';
 import { hasScope, type Scope } from './scopes.js';
 import { scopeError } from './responses.js';
@@ -259,6 +259,33 @@ async function resolveOAuthToken(env: Env, token: string): Promise<AuthResult | 
 // ============== Internal: Session Resolution ==============
 
 /**
+ * Look up a valid (non-expired) session and its associated user in a single
+ * JOIN query, eliminating two sequential D1 round-trips.
+ *
+ * Exported so that src/routes/auth.ts (GET /auth/me) can reuse the same
+ * optimised query instead of duplicating session + user lookups.
+ */
+export async function resolveSessionWithUser(
+  db: ReturnType<typeof createDatabase>,
+  sessionToken: string,
+): Promise<{ user: User; session: Session } | null> {
+  const now = new Date().toISOString();
+
+  const result = await db
+    .select()
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(and(
+      eq(sessions.id, sessionToken),
+      gt(sessions.expiresAt, now),
+    ))
+    .limit(1);
+
+  if (result.length === 0) return null;
+  return { user: result[0].users, session: result[0].sessions };
+}
+
+/**
  * Resolve a session cookie to an AuthResult.
  * Session auth returns scopes: null (unrestricted).
  */
@@ -272,21 +299,9 @@ async function resolveSession(env: Env, request: Request): Promise<AuthResult | 
   if (!sessionToken) return null;
 
   const db = createDatabase(env.DB);
-
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-
-  if (!user) return null;
-  return { user, scopes: null };
+  const resolved = await resolveSessionWithUser(db, sessionToken);
+  if (!resolved) return null;
+  return { user: resolved.user, scopes: null };
 }
 
 // ============== Cookie Parsing ==============

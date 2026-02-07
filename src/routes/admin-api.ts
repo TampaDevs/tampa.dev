@@ -295,7 +295,7 @@ export function createAdminApiRoutes() {
 
     // Invalidate response cache if display-affecting fields changed
     if (data.isFeatured !== undefined || data.displayOnSite !== undefined || data.isActive !== undefined) {
-      await invalidateResponseCache(c.env.DB);
+      await invalidateResponseCache(c.env.DB, c.env.kv);
     }
 
     const updated = await db.query.groups.findFirst({
@@ -371,7 +371,7 @@ export function createAdminApiRoutes() {
       //    groupPlatformConnections, groupFeatureFlags, groupClaimRequests, groupClaimInvites)
       await db.delete(groups).where(eq(groups.id, id));
 
-      await invalidateResponseCache(c.env.DB);
+      await invalidateResponseCache(c.env.DB, c.env.kv);
 
       return success(c, { message: 'Group permanently deleted' });
     }
@@ -385,7 +385,7 @@ export function createAdminApiRoutes() {
       })
       .where(eq(groups.id, id));
 
-    await invalidateResponseCache(c.env.DB);
+    await invalidateResponseCache(c.env.DB, c.env.kv);
 
     return success(c, { message: 'Group deactivated' });
   });

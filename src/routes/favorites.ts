@@ -13,6 +13,7 @@ import type { Env } from '../../types/worker';
 import { getSessionUser } from '../lib/auth.js';
 import { emitEvent, emitEvents } from '../lib/event-bus.js';
 import { ok, success, unauthorized, notFound } from '../lib/responses.js';
+import { KV_KEY_FAV_COUNTS } from '../config/cache.js';
 
 export function createFavoritesRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -87,6 +88,9 @@ export function createFavoritesRoutes() {
       groupId: group.id,
     });
 
+    // Bust cached favorites counts so /groups reflects the change
+    c.env.kv?.delete(KV_KEY_FAV_COUNTS).catch(() => {});
+
     // Emit event for achievement tracking
     emitEvent(c, {
       type: 'dev.tampa.user.favorite_added',
@@ -124,6 +128,9 @@ export function createFavoritesRoutes() {
           eq(userFavorites.groupId, group.id)
         )
       );
+
+    // Bust cached favorites counts so /groups reflects the change
+    c.env.kv?.delete(KV_KEY_FAV_COUNTS).catch(() => {});
 
     // Emit event for broadcast favorite count update
     emitEvent(c, {
@@ -178,6 +185,9 @@ export function createFavoritesRoutes() {
           groupId: g.id,
         }))
       );
+
+      // Bust cached favorites counts
+      c.env.kv?.delete(KV_KEY_FAV_COUNTS).catch(() => {});
 
       // Emit events for achievement tracking (one per new favorite)
       emitEvents(c, newFavorites.map((g) => ({

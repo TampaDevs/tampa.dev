@@ -12,6 +12,7 @@ import { eq, desc, and, count, sql } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { groups, groupMembers, users, userFavorites } from '../db/schema';
 import { getCachedResponse, cacheResponse, getSyncVersion, checkConditionalRequest, createNotModifiedResponse } from '../cache.js';
+import { KV_KEY_FAV_COUNTS, KV_TTL_FAV_COUNTS } from '../config/cache.js';
 
 /**
  * Query parameters schema for group filtering
@@ -167,19 +168,32 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const tag = url.searchParams.get('tag');
 
     // Get sync version for cache key
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
 
     // Check for conditional request (If-None-Match)
     if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
       return createNotModifiedResponse(syncVersion);
     }
 
-    // Always compute fresh favorites counts (not cached, since favorites change independently of sync)
-    const favCounts = await db
-      .select({ groupId: userFavorites.groupId, count: count() })
-      .from(userFavorites)
-      .groupBy(userFavorites.groupId);
-    const favCountMap = new Map(favCounts.map((f) => [f.groupId, f.count]));
+    // Get favorites counts (cached in KV to avoid aggregation query on every request)
+    let favCountMap: Map<string, number>;
+    const kv = c.env.kv;
+    let kvCachedFavs: string | null = null;
+    if (kv) {
+      try { kvCachedFavs = await kv.get(KV_KEY_FAV_COUNTS); } catch {}
+    }
+    if (kvCachedFavs) {
+      favCountMap = new Map(JSON.parse(kvCachedFavs));
+    } else {
+      const favCounts = await db
+        .select({ groupId: userFavorites.groupId, count: count() })
+        .from(userFavorites)
+        .groupBy(userFavorites.groupId);
+      favCountMap = new Map(favCounts.map((f) => [f.groupId, f.count]));
+      if (kv) {
+        kv.put(KV_KEY_FAV_COUNTS, JSON.stringify([...favCountMap]), { expirationTtl: KV_TTL_FAV_COUNTS }).catch(() => {});
+      }
+    }
 
     // Check cache for group data
     const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
@@ -244,7 +258,7 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const slug = c.req.param('slug');
 
     // Get sync version for cache key
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
 
     // Check for conditional request (If-None-Match)
     if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {

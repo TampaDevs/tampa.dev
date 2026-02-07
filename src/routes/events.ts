@@ -148,7 +148,7 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
       const noCache = url.searchParams.get('nocache') === '1';
 
       // Get sync version for cache key (enables indefinite caching until new sync completes)
-      const syncVersion = noCache ? null : await getSyncVersion(c.env.DB);
+      const syncVersion = noCache ? null : await getSyncVersion(c.env.DB, c.env.kv);
 
       // Check for conditional request (If-None-Match)
       if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
@@ -187,7 +187,7 @@ export function registerEventRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   const nextEventsHandler = async (c: any) => {
     try {
       // Get sync version for cache key (enables indefinite caching until new sync completes)
-      const syncVersion = await getSyncVersion(c.env.DB);
+      const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
 
       // Check for conditional request (If-None-Match)
       if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {

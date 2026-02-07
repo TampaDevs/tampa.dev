@@ -16,6 +16,7 @@ import { users, userIdentities, sessions, UserRole } from '../db/schema';
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { getConfiguredProviders, getProvider } from '../lib/oauth-providers';
+import { resolveSessionWithUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { encrypt } from '../lib/crypto.js';
 import { validateReturnTo, renderRedirectInterstitial } from '../lib/redirect-validation.js';
@@ -465,30 +466,26 @@ export function createAuthRoutes() {
 
     const db = createDatabase(c.env.DB);
 
-    const session = await db.query.sessions.findFirst({
-      where: eq(sessions.id, sessionToken),
-    });
+    // Single JOIN query for session + user (shared with lib/auth.ts resolveSession)
+    const resolved = await resolveSessionWithUser(db, sessionToken);
 
-    if (!session || new Date(session.expiresAt) < new Date()) {
+    if (!resolved) {
       deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
       return c.json({ user: null }, 200);
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.userId),
-    });
+    const { user } = resolved;
 
-    if (!user) {
-      deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
-      return c.json({ user: null }, 200);
-    }
-
-    // Get all identities for this user
+    // Fetch identities (only remaining query needed)
     const identities = await db.query.userIdentities.findMany({
       where: eq(userIdentities.userId, user.id),
     });
 
     const githubIdentity = identities.find(i => i.provider === 'github');
+
+    // Short browser cache to avoid redundant calls during rapid navigation;
+    // stale-while-revalidate ensures the UI stays responsive on profile changes.
+    c.header('Cache-Control', 'private, max-age=10, stale-while-revalidate=50');
 
     return c.json({
       user: {
