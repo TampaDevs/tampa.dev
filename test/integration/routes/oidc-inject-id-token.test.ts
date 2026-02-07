@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as jose from 'jose';
 import { createTestEnv, createUser, grantEntitlement } from '../helpers';
-import { injectIdToken } from '../../../src/index';
+import { injectIdToken } from '../../../src/lib/oidc';
 import { verifyIdToken } from '../../../src/lib/oidc';
 import type { Env } from '../../../types/worker';
 
