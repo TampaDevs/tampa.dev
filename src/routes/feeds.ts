@@ -132,7 +132,7 @@ const webcalRoute = createRoute({
 export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // RSS handler
   const rssHandler = async (c: any) => {
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
 
     // Check for conditional request (If-None-Match)
     if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
@@ -163,7 +163,7 @@ export function registerFeedRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
   // iCalendar handler
   const icalHandler = async (c: any) => {
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
 
     // Check for conditional request (If-None-Match)
     if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {

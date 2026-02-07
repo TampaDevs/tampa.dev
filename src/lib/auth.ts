@@ -11,7 +11,7 @@
  *   3. Session cookie                   → Session-based auth
  */
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gt } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
 import { users, sessions, apiTokens, groupMembers, type User, type GroupMember, GroupMemberRole } from '../db/schema.js';
 import { getSessionCookieName } from './session.js';
@@ -273,20 +273,19 @@ async function resolveSession(env: Env, request: Request): Promise<AuthResult | 
 
   const db = createDatabase(env.DB);
 
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.id, sessionToken),
-  });
+  // Single JOIN query instead of two sequential D1 round-trips
+  const result = await db
+    .select()
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(and(
+      eq(sessions.id, sessionToken),
+      gt(sessions.expiresAt, new Date().toISOString()),
+    ))
+    .limit(1);
 
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, session.userId),
-  });
-
-  if (!user) return null;
-  return { user, scopes: null };
+  if (result.length === 0) return null;
+  return { user: result[0].users, scopes: null };
 }
 
 // ============== Cookie Parsing ==============

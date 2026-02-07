@@ -474,21 +474,25 @@ export function createAuthRoutes() {
       return c.json({ user: null }, 200);
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.userId),
-    });
+    // Fetch user and identities in parallel (both only need session.userId)
+    const [user, identities] = await Promise.all([
+      db.query.users.findFirst({
+        where: eq(users.id, session.userId),
+      }),
+      db.query.userIdentities.findMany({
+        where: eq(userIdentities.userId, session.userId),
+      }),
+    ]);
 
     if (!user) {
       deleteCookie(c, getSessionCookieName(c.env), { path: '/', domain: '.tampa.dev' });
       return c.json({ user: null }, 200);
     }
 
-    // Get all identities for this user
-    const identities = await db.query.userIdentities.findMany({
-      where: eq(userIdentities.userId, user.id),
-    });
-
     const githubIdentity = identities.find(i => i.provider === 'github');
+
+    // Allow browser to cache for 60s to avoid redundant calls during navigation
+    c.header('Cache-Control', 'private, max-age=60');
 
     return c.json({
       user: {

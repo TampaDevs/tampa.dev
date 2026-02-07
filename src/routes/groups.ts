@@ -167,19 +167,33 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const tag = url.searchParams.get('tag');
 
     // Get sync version for cache key
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
 
     // Check for conditional request (If-None-Match)
     if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {
       return createNotModifiedResponse(syncVersion);
     }
 
-    // Always compute fresh favorites counts (not cached, since favorites change independently of sync)
-    const favCounts = await db
-      .select({ groupId: userFavorites.groupId, count: count() })
-      .from(userFavorites)
-      .groupBy(userFavorites.groupId);
-    const favCountMap = new Map(favCounts.map((f) => [f.groupId, f.count]));
+    // Get favorites counts (cached in KV for 60s to avoid aggregation query on every request)
+    const FAV_COUNTS_KV_KEY = 'cache:fav-counts';
+    let favCountMap: Map<string, number>;
+    const kv: KVNamespace | undefined = c.env.kv;
+    let kvCachedFavs: string | null = null;
+    if (kv) {
+      try { kvCachedFavs = await kv.get(FAV_COUNTS_KV_KEY); } catch {}
+    }
+    if (kvCachedFavs) {
+      favCountMap = new Map(JSON.parse(kvCachedFavs));
+    } else {
+      const favCounts = await db
+        .select({ groupId: userFavorites.groupId, count: count() })
+        .from(userFavorites)
+        .groupBy(userFavorites.groupId);
+      favCountMap = new Map(favCounts.map((f) => [f.groupId, f.count]));
+      if (kv) {
+        kv.put(FAV_COUNTS_KV_KEY, JSON.stringify([...favCountMap]), { expirationTtl: 60 }).catch(() => {});
+      }
+    }
 
     // Check cache for group data
     const cached = await getCachedResponse(c.req.raw, syncVersion || undefined);
@@ -244,7 +258,7 @@ export function registerGroupRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
     const slug = c.req.param('slug');
 
     // Get sync version for cache key
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
 
     // Check for conditional request (If-None-Match)
     if (syncVersion && checkConditionalRequest(c.req.raw, syncVersion)) {

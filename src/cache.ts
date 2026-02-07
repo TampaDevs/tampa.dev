@@ -19,7 +19,7 @@ import { desc, eq } from 'drizzle-orm';
  * This effectively invalidates all cached responses keyed on the sync version,
  * since a new version means new cache key URLs.
  */
-export async function invalidateResponseCache(db: D1Database): Promise<void> {
+export async function invalidateResponseCache(db: D1Database, kv?: KVNamespace): Promise<void> {
   const drizzleDb = createDatabase(db);
   const now = new Date().toISOString();
 
@@ -33,6 +33,11 @@ export async function invalidateResponseCache(db: D1Database): Promise<void> {
     eventsUpdated: 0,
     eventsDeleted: 0,
   });
+
+  // Bust the KV-cached sync version so the next request picks up the new version
+  if (kv) {
+    await kv.delete(SYNC_VERSION_KV_KEY).catch(() => {});
+  }
 }
 
 /**
@@ -45,11 +50,28 @@ export interface SyncMetadata {
   eventsUpdated: number;
 }
 
+const SYNC_VERSION_KV_KEY = 'cache:sync-version';
+const SYNC_VERSION_TTL_SECONDS = 30;
+
 /**
- * Get the latest sync timestamp from D1 for cache invalidation
- * Returns a hash-like string derived from the latest sync completion time
+ * Get the latest sync timestamp from D1 for cache invalidation.
+ * Returns a hash-like string derived from the latest sync completion time.
+ *
+ * When a KV namespace is provided, caches the result for 30 seconds to avoid
+ * hitting D1 on every request. Syncs only happen every 30 minutes, so a short
+ * TTL introduces negligible staleness.
  */
-export async function getSyncVersion(db: D1Database): Promise<string | null> {
+export async function getSyncVersion(db: D1Database, kv?: KVNamespace): Promise<string | null> {
+  // Try KV cache first
+  if (kv) {
+    try {
+      const cached = await kv.get(SYNC_VERSION_KV_KEY);
+      if (cached !== null) return cached;
+    } catch {
+      // KV unavailable, fall through to D1
+    }
+  }
+
   try {
     const drizzleDb = createDatabase(db);
 
@@ -63,7 +85,14 @@ export async function getSyncVersion(db: D1Database): Promise<string | null> {
       // Convert timestamp to a short hash for cache key
       // Using base36 encoding of timestamp for compactness
       const timestamp = new Date(latestSync.completedAt).getTime();
-      return timestamp.toString(36);
+      const version = timestamp.toString(36);
+
+      // Write to KV cache in the background
+      if (kv) {
+        kv.put(SYNC_VERSION_KV_KEY, version, { expirationTtl: SYNC_VERSION_TTL_SECONDS }).catch(() => {});
+      }
+
+      return version;
     }
   } catch {
     // Database not available

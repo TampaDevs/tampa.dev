@@ -93,7 +93,7 @@ function withTimeZoneCacheKey(request: Request, timeZone: string): Request {
 export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
   // GET /widget/next-event
   app.openapi(nextEventWidgetRoute, async (c) => {
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
     const timeZone = getVisitorTimeZone(c.req.raw);
     const cacheReq = withTimeZoneCacheKey(c.req.raw, timeZone);
 
@@ -119,7 +119,7 @@ export function registerWidgetRoutes(app: OpenAPIHono<{ Bindings: Env }>) {
 
   // GET /widget/carousel
   app.openapi(carouselWidgetRoute, async (c) => {
-    const syncVersion = await getSyncVersion(c.env.DB);
+    const syncVersion = await getSyncVersion(c.env.DB, c.env.kv);
     const timeZone = getVisitorTimeZone(c.req.raw);
     const cacheReq = withTimeZoneCacheKey(c.req.raw, timeZone);
 
