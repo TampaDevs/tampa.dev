@@ -7,7 +7,7 @@
  */
 
 import { useLoaderData, useFetcher, Link, redirect } from "react-router";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import type { Route } from "./+types/admin.users.$id";
 import { Emoji } from "~/components/Emoji";
 import { EmojiSelect } from "~/components/EmojiSelect";

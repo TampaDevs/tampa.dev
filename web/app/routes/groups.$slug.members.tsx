@@ -5,7 +5,7 @@
  */
 
 import { Link, data } from "react-router";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import type { Route } from "./+types/groups.$slug.members";
 import { generateMetaTags } from "~/lib/seo";
 

@@ -7,7 +7,7 @@
 import type { Route } from "./+types/groups.$slug.leaderboard";
 import type React from "react";
 import { Link, data as routerData } from "react-router";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import { Emoji } from "~/components/Emoji";
 import { generateMetaTags } from "~/lib/seo";
 import type { GroupLeaderboardEntry } from "~/lib/types";

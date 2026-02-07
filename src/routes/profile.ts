@@ -7,7 +7,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, and, sql, inArray } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { users, sessions, userIdentities, userFavorites, badges, userBadges, userPortfolioItems, apiTokens, achievementProgress, achievements, userEntitlements, groups, oauthClientRegistry } from '../db/schema';
 import type { Env } from '../../types/worker';
@@ -17,16 +17,7 @@ import { getSessionUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { ok, created, success, unauthorized, forbidden, notFound, badRequest, conflict } from '../lib/responses.js';
 import { RESERVED_USERNAMES } from '../lib/username.js';
-
-// ============== Rarity Helper ==============
-
-function getRarityTierName(percentage: number): string {
-  if (percentage < 1) return 'legendary';
-  if (percentage < 5) return 'epic';
-  if (percentage < 15) return 'rare';
-  if (percentage < 50) return 'uncommon';
-  return 'common';
-}
+import { getCachedTotalPublicUsers, getCachedBadgeHolderCounts, computeRarity } from '../lib/badge-rarity.js';
 
 // ============== Validation Schemas ==============
 
@@ -119,28 +110,17 @@ export function createProfileRoutes() {
       const badgeResults = await db.select().from(badges)
         .where(inArray(badges.id, badgeIds));
 
-      // Get total public users count for rarity computation
-      const totalUsersResult = await db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(users)
-        .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
-      const totalUsers = totalUsersResult[0]?.count ?? 0;
-
-      // Count holders per badge in a single batch query
-      const holderCounts = await db
-        .select({ badgeId: userBadges.badgeId, count: sql<number>`COUNT(*)` })
-        .from(userBadges)
-        .where(sql`${userBadges.badgeId} IN (${sql.join(badgeIds.map(id => sql`${id}`), sql`, `)})`)
-        .groupBy(userBadges.badgeId);
-
-      const holderCountMap = new Map(holderCounts.map(h => [h.badgeId, h.count]));
+      // Fetch total users and per-badge holder counts (KV-cached)
+      const [totalUsers, holderCountMap] = await Promise.all([
+        getCachedTotalPublicUsers(db, c.env.kv),
+        getCachedBadgeHolderCounts(db, c.env.kv, badgeIds),
+      ]);
 
       allBadges = ub
         .map((ubEntry) => {
           const badge = badgeResults.find((b) => b?.id === ubEntry.badgeId);
           if (!badge) return null;
           const awardedCount = holderCountMap.get(badge.id) ?? 0;
-          const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
           return {
             id: badge.id,
             name: badge.name,
@@ -151,10 +131,7 @@ export function createProfileRoutes() {
             points: badge.points,
             awardedAt: ubEntry.awardedAt,
             groupId: badge.groupId,
-            rarity: {
-              tier: getRarityTierName(rarityPercentage),
-              percentage: Math.round(rarityPercentage * 10) / 10,
-            },
+            rarity: computeRarity(totalUsers, awardedCount),
           };
         })
         .filter((b): b is NonNullable<typeof b> => b !== null);

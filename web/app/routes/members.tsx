@@ -1,7 +1,7 @@
 import type { Route } from "./+types/members";
 import { useLoaderData, Link, useSearchParams, Form } from "react-router";
 import { useState, useMemo } from "react";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import { generateMetaTags } from "~/lib/seo";
 import { Emoji } from "~/components/Emoji";
 
@@ -51,6 +51,11 @@ interface MembersResponse {
 
 const PAGE_SIZE = 24;
 
+// Module-level cache: badges change infrequently, no need to re-fetch on every pagination click.
+// Persists across requests within the same Worker isolate (typically minutes on Cloudflare Pages).
+const BADGES_CACHE_TTL = 60_000; // 1 minute
+let badgesCache: { data: AvailableBadge[]; ts: number } | null = null;
+
 export const meta: Route.MetaFunction = () => {
   return generateMetaTags({
     title: "Community Members",
@@ -79,19 +84,28 @@ export async function loader({ request }: Route.LoaderArgs) {
     params.set("badge", badge);
   }
 
+  // Use cached badges if fresh — they don't change between pagination clicks
+  const now = Date.now();
+  const hasCachedBadges = badgesCache !== null && now - badgesCache.ts < BADGES_CACHE_TTL;
+
   const [response, badgesResponse] = await Promise.all([
     fetch(`${apiUrl}/users?${params.toString()}`, {
       headers: { Accept: "application/json" },
     }),
-    fetch(`${apiUrl}/badges`, {
-      headers: { Accept: "application/json" },
-    }),
+    hasCachedBadges
+      ? Promise.resolve(null)
+      : fetch(`${apiUrl}/badges`, { headers: { Accept: "application/json" } }),
   ]);
 
-  let availableBadges: AvailableBadge[] = [];
-  if (badgesResponse.ok) {
+  let availableBadges: AvailableBadge[];
+  if (hasCachedBadges) {
+    availableBadges = badgesCache!.data;
+  } else if (badgesResponse?.ok) {
     const badgesData = (await badgesResponse.json()) as { badges: AvailableBadge[] };
     availableBadges = badgesData.badges ?? [];
+    badgesCache = { data: availableBadges, ts: now };
+  } else {
+    availableBadges = [];
   }
 
   if (!response.ok) {

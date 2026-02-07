@@ -5,7 +5,8 @@
  */
 
 import { useLoaderData, useFetcher, Link, Form, useSearchParams } from "react-router";
-import { Avatar, Button } from "@tampadevs/react";
+import { Button } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import type { Route } from "./+types/admin.users";
 import {
   fetchAdminUsers,

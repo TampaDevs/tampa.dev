@@ -7,7 +7,7 @@
 
 import { useState, type ReactNode } from "react";
 import { redirect } from "react-router";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 
 // Only allow in development
 export async function loader() {
