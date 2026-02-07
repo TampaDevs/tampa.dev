@@ -31,6 +31,15 @@ export interface AuthResult {
   scopes: string[] | null;
 }
 
+// ============== Auth Mode ==============
+
+/**
+ * Authentication mode for getCurrentUser().
+ * - 'tri-auth': Accept PAT, OAuth, or session (default, for /v1/ public API)
+ * - 'session-only': Accept only session cookies (for internal web routes)
+ */
+export type AuthMode = 'tri-auth' | 'session-only';
+
 // ============== Role Hierarchy ==============
 
 /**
@@ -94,14 +103,29 @@ export function requireScope(
 /**
  * Get the current authenticated user from Bearer token or session cookie.
  *
- * Resolution order:
+ * Resolution order (when mode = 'tri-auth'):
  *   1. Authorization: Bearer td_pat_... → Personal Access Token
  *   2. Authorization: Bearer ...        → OAuth access token (via OAUTH_PROVIDER.unwrapToken)
  *   3. Session cookie                   → Session-based auth
  *
+ * When mode = 'session-only', only session cookies are accepted.
+ * Bearer tokens are ignored (not rejected with 401, just skipped).
+ *
  * Returns null if not authenticated.
+ *
+ * @param c - Hono context with env, req, and optional executionCtx
+ * @param mode - 'tri-auth' (default) or 'session-only'
  */
-export async function getCurrentUser(c: { env: Env; req: { raw: Request }; executionCtx?: ExecutionContext }): Promise<AuthResult | null> {
+export async function getCurrentUser(
+  c: { env: Env; req: { raw: Request }; executionCtx?: ExecutionContext },
+  mode: AuthMode = 'tri-auth',
+): Promise<AuthResult | null> {
+  // Session-only mode: skip token checks entirely
+  if (mode === 'session-only') {
+    return resolveSession(c.env, c.req.raw);
+  }
+
+  // Tri-auth mode: check tokens first, then session
   // 1. Check for Bearer token
   const authHeader = c.req.raw.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
@@ -118,6 +142,18 @@ export async function getCurrentUser(c: { env: Env; req: { raw: Request }; execu
 
   // 2. Fall back to session cookie
   return resolveSession(c.env, c.req.raw);
+}
+
+/**
+ * Get the current authenticated user from session cookie only.
+ * Convenience wrapper for getCurrentUser(c, 'session-only').
+ *
+ * Use this for internal web routes that should not accept API tokens.
+ */
+export async function getSessionUser(
+  c: { env: Env; req: { raw: Request }; executionCtx?: ExecutionContext },
+): Promise<AuthResult | null> {
+  return getCurrentUser(c, 'session-only');
 }
 
 // ============== PAT Resolution ==============

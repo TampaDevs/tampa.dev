@@ -41,10 +41,33 @@ export function playAchievementSound() {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Check if a notification is intended for the current user.
+ * Returns true if the notification should be displayed (matches user or unknown).
+ * Returns false if the notification is definitely for a different user (stale connection).
+ */
+function isNotificationForCurrentUser(
+  msgUserId: string | undefined,
+  currentUserId: string | null | undefined,
+): boolean {
+  // If either ID is missing, allow the notification (be permissive)
+  if (!msgUserId || !currentUserId) return true;
+  // Only show if IDs match
+  return msgUserId === currentUserId;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function CelebrationToast() {
+interface CelebrationToastProps {
+  currentUserId?: string | null;
+}
+
+export function CelebrationToast({ currentUserId }: CelebrationToastProps) {
   const { personal } = useWS();
   const [toasts, setToasts] = useState<CelebrationItem[]>([]);
   const [exiting, setExiting] = useState<Set<string>>(new Set());
@@ -88,6 +111,11 @@ export function CelebrationToast() {
 
   useEffect(() => {
     return personal.on('achievement.unlocked', (msg) => {
+      // Guard: drop notifications for other users (stale connection defense)
+      if (!isNotificationForCurrentUser(msg.data.userId, currentUserId)) {
+        console.warn('[CelebrationToast] Dropped achievement notification for wrong user');
+        return;
+      }
       addToast({
         id: `celeb-ach-${Date.now()}`,
         kind: 'achievement',
@@ -98,10 +126,15 @@ export function CelebrationToast() {
         dismissAt: Date.now() + 8000,
       });
     });
-  }, [personal, addToast]);
+  }, [personal, addToast, currentUserId]);
 
   useEffect(() => {
     return personal.on('badge.issued', (msg) => {
+      // Guard: drop notifications for other users (stale connection defense)
+      if (!isNotificationForCurrentUser(msg.data.userId, currentUserId)) {
+        console.warn('[CelebrationToast] Dropped badge notification for wrong user');
+        return;
+      }
       addToast({
         id: `celeb-badge-${Date.now()}`,
         kind: 'badge',
@@ -112,7 +145,7 @@ export function CelebrationToast() {
         dismissAt: Date.now() + 8000,
       });
     });
-  }, [personal, addToast]);
+  }, [personal, addToast, currentUserId]);
 
   /* --- Cleanup timers on unmount ---------------------------------- */
 

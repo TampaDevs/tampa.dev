@@ -164,6 +164,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const state = url.searchParams.get("state");
   const codeChallenge = url.searchParams.get("code_challenge");
   const codeChallengeMethod = url.searchParams.get("code_challenge_method");
+  // Standard OAuth prompt parameter: 'consent' forces the consent screen
+  const prompt = url.searchParams.get("prompt");
 
   if (!clientId || !redirectUri || !responseType) {
     return {
@@ -191,6 +193,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       success: boolean;
       oauthRequest?: OAuthRequest;
       client?: ClientInfo;
+      existingGrant?: { scopes: string[] };
       error?: string;
     };
 
@@ -215,6 +218,45 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const requestedScopes = isAdmin
       ? rawScopes
       : rawScopes.filter((s) => s !== "admin");
+
+    // Skip consent for returning users:
+    // If user has already authorized this app with the same or broader scopes,
+    // auto-approve (unless prompt=consent forces the consent screen).
+    if (
+      parseData.existingGrant &&
+      parseData.oauthRequest &&
+      prompt !== "consent"
+    ) {
+      const existingScopes = new Set(parseData.existingGrant.scopes);
+      const allScopesCovered = requestedScopes.every((s) => existingScopes.has(s));
+
+      if (allScopesCovered) {
+        // Auto-approve: call the complete endpoint directly
+        const completeResponse = await fetch(`${apiUrl}/oauth/internal/complete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+          },
+          body: JSON.stringify({
+            oauthRequest: parseData.oauthRequest,
+            userId: user.id,
+            approvedScopes: requestedScopes,
+          }),
+        });
+
+        const completeData = await completeResponse.json() as {
+          success: boolean;
+          redirectTo?: string;
+          error?: string;
+        };
+
+        if (completeData.success && completeData.redirectTo) {
+          return redirect(completeData.redirectTo);
+        }
+        // If auto-approve failed, fall through to show consent screen
+      }
+    }
 
     return {
       error: null,

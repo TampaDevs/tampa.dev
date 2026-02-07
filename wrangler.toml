@@ -43,7 +43,7 @@ binding = "EVENTS_QUEUE"
 [[queues.consumers]]
 queue = "events-bus"
 max_batch_size = 10
-max_batch_timeout = 5
+max_batch_timeout = 1
 
 # Cron triggers for event aggregation
 # Runs every 30 minutes to fetch fresh data from external sources
@@ -56,7 +56,8 @@ name = "events-api-pr"
 
 [env.staging]
 name = "events-api-staging"
-workers_dev = true
+workers_dev = false
+previews_enabled = false
 
 [[env.staging.routes]]
 pattern = "staging.tampa.dev/auth/*"
@@ -167,12 +168,13 @@ binding = "EVENTS_QUEUE"
 [[env.staging.queues.consumers]]
 queue = "events-bus-staging"
 max_batch_size = 10
-max_batch_timeout = 5
+max_batch_timeout = 1
 
 # No cron triggers for staging — sync manually via admin UI
 
 [env.production]
 name = "events-api-tampa-dev"
+previews_enabled = false
 
 # Routes for tampa.dev paths
 [[env.production.routes]]
@@ -284,7 +286,7 @@ binding = "EVENTS_QUEUE"
 [[env.production.queues.consumers]]
 queue = "events-bus"
 max_batch_size = 10
-max_batch_timeout = 5
+max_batch_timeout = 1
 
 [env.production.triggers]
 crons = ["0,30 * * * *", "0 3 * * *"]

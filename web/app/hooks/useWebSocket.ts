@@ -7,6 +7,7 @@
  * - Immediate reconnect on tab refocus
  * - Event subscription via `on(type, handler)` that returns an unsubscribe fn
  * - Auto pong response to server pings
+ * - Client-side health check that detects dead connections faster than server pings
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -33,14 +34,45 @@ const NOOP_CONNECTION: WSConnection = {
 
 export { NOOP_CONNECTION };
 
+// Health check: if no message (including pings) in this duration, force reconnect
+const HEALTH_CHECK_TIMEOUT_MS = 45_000;
+const HEALTH_CHECK_INTERVAL_MS = 15_000;
+
 export function useWebSocket(url: string | null): WSConnection {
   const [status, setStatus] = useState<WSStatus>('disconnected');
   const wsRef = useRef<WebSocket | null>(null);
   const listenersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const healthCheckTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastMessageTimeRef = useRef<number>(Date.now());
   const urlRef = useRef(url);
   urlRef.current = url;
+
+  // Start health check timer
+  const startHealthCheck = useCallback(() => {
+    // Clear any existing timer
+    if (healthCheckTimerRef.current) {
+      clearInterval(healthCheckTimerRef.current);
+    }
+
+    healthCheckTimerRef.current = setInterval(() => {
+      const timeSinceLastMessage = Date.now() - lastMessageTimeRef.current;
+      if (timeSinceLastMessage > HEALTH_CHECK_TIMEOUT_MS && wsRef.current) {
+        console.warn('[WS] No message received in 45s, forcing reconnect');
+        // Force close with custom code to indicate health check timeout
+        wsRef.current.close(4000, 'Health check timeout');
+      }
+    }, HEALTH_CHECK_INTERVAL_MS);
+  }, []);
+
+  // Stop health check timer
+  const stopHealthCheck = useCallback(() => {
+    if (healthCheckTimerRef.current) {
+      clearInterval(healthCheckTimerRef.current);
+      healthCheckTimerRef.current = null;
+    }
+  }, []);
 
   const connect = useCallback(() => {
     const currentUrl = urlRef.current;
@@ -62,10 +94,15 @@ export function useWebSocket(url: string | null): WSConnection {
 
       ws.onopen = () => {
         retryCountRef.current = 0;
+        lastMessageTimeRef.current = Date.now();
         setStatus('connected');
+        startHealthCheck();
       };
 
       ws.onmessage = (event) => {
+        // Update last message time for health check (any message counts)
+        lastMessageTimeRef.current = Date.now();
+
         try {
           const message: WSMessage = JSON.parse(event.data);
 
@@ -94,6 +131,7 @@ export function useWebSocket(url: string | null): WSConnection {
       ws.onclose = () => {
         wsRef.current = null;
         setStatus('disconnected');
+        stopHealthCheck();
         scheduleReconnect();
       };
 
@@ -104,7 +142,7 @@ export function useWebSocket(url: string | null): WSConnection {
       setStatus('disconnected');
       scheduleReconnect();
     }
-  }, []);
+  }, [startHealthCheck, stopHealthCheck]);
 
   const scheduleReconnect = useCallback(() => {
     if (retryTimerRef.current) return; // Already scheduled
@@ -155,6 +193,7 @@ export function useWebSocket(url: string | null): WSConnection {
         clearTimeout(retryTimerRef.current);
         retryTimerRef.current = null;
       }
+      stopHealthCheck();
       if (wsRef.current) {
         wsRef.current.onclose = null; // Prevent reconnect on intentional close
         wsRef.current.close();
@@ -162,7 +201,7 @@ export function useWebSocket(url: string | null): WSConnection {
       }
       setStatus('disconnected');
     };
-  }, [url, connect]);
+  }, [url, connect, stopHealthCheck]);
 
   // Reconnect on tab refocus
   useEffect(() => {

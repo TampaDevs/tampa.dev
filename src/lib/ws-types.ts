@@ -23,10 +23,10 @@ export type WSMessageType = PersonalMessageType | BroadcastMessageType;
 
 /** Data payloads per message type */
 export interface WSMessageDataMap {
-  'onboarding.step_completed': { stepKey: string };
-  'achievement.unlocked': { achievementKey: string; achievementName: string; icon: string; color: string; points: number };
-  'badge.issued': { badgeId: string; badgeSlug: string; badgeName: string; icon: string; color: string; points: number };
-  'score.changed': { totalScore: number };
+  'onboarding.step_completed': { userId: string; stepKey: string };
+  'achievement.unlocked': { userId: string; achievementKey: string; achievementName: string; icon: string; color: string; points: number };
+  'badge.issued': { userId: string; badgeId: string; badgeSlug: string; badgeName: string; icon: string; color: string; points: number };
+  'score.changed': { userId: string; totalScore: number };
   'favorite.count_changed': { groupSlug: string; favoriteCount: number };
   'ping': Record<string, never>;
 }

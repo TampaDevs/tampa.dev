@@ -10,7 +10,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db/index.js';
-import { users, userIdentities, sessions, oauthClientRegistry } from '../db/schema.js';
+import { users, userIdentities, sessions, oauthClientRegistry, oauthGrants } from '../db/schema.js';
 import { filterScopesForUser } from '../lib/scopes.js';
 import { getAuthUser } from '../middleware/auth.js';
 import type { Env } from '../../types/worker.js';
@@ -53,7 +53,8 @@ export function createOAuthInternalRoutes() {
    * Parse an OAuth authorization request
    * POST /oauth/internal/parse-request
    *
-   * Called by web app to parse OAuth params from the authorization URL
+   * Called by web app to parse OAuth params from the authorization URL.
+   * Also returns any existing grant for this user+client (for skip-consent flow).
    */
   app.post('/parse-request', async (c) => {
     const body = await c.req.json();
@@ -62,6 +63,9 @@ export function createOAuthInternalRoutes() {
       return c.json({ success: false, error: 'Invalid request: url is required and must be a valid URL' }, 400);
     }
     const { url } = parsed.data;
+
+    // Get the authenticated user (if any) to check for existing grants
+    const sessionUser = await getAuthUser(c);
 
     try {
       // Create a mock request to parse
@@ -82,10 +86,30 @@ export function createOAuthInternalRoutes() {
         }, 400);
       }
 
+      // Check for existing grant (enables skip-consent for returning users)
+      let existingGrant: { scopes: string[] } | null = null;
+      if (sessionUser) {
+        const db = createDatabase(c.env.DB);
+        const grant = await db.query.oauthGrants.findFirst({
+          where: and(
+            eq(oauthGrants.userId, sessionUser.id),
+            eq(oauthGrants.clientId, oauthReqInfo.clientId)
+          ),
+        });
+        if (grant) {
+          try {
+            existingGrant = { scopes: JSON.parse(grant.scopes) };
+          } catch {
+            // Invalid JSON in scopes, treat as no existing grant
+          }
+        }
+      }
+
       return c.json({
         success: true,
         oauthRequest: oauthReqInfo,
         client: clientInfo,
+        existingGrant,
       });
     } catch (error) {
       console.error('Failed to parse OAuth request:', error);
@@ -172,6 +196,33 @@ export function createOAuthInternalRoutes() {
       // with the 'admin' scope, even if the client requested it.
       const filteredScopes = filterScopesForUser(approvedScopes, user);
 
+      // Clean up any existing grant for this user+client combination.
+      // This ensures only one active grant per user/client pair, preventing:
+      // 1. Duplicate entries in the "Authorized Apps" profile section
+      // 2. Orphaned grants that can't be revoked when the app is deleted
+      const existingGrant = await db.query.oauthGrants.findFirst({
+        where: and(
+          eq(oauthGrants.userId, user.id),
+          eq(oauthGrants.clientId, oauthRequest.clientId)
+        ),
+      });
+
+      if (existingGrant) {
+        // Delete from KV first (tokens reference the grant, so delete tokens too)
+        const kv = c.env.OAUTH_KV;
+        if (kv) {
+          // Delete the grant from KV
+          await kv.delete(existingGrant.grantKey);
+          // Delete associated tokens (they reference this grantId)
+          const tokenPrefix = `token:${user.id}:${existingGrant.grantId}:`;
+          const tokenList = await kv.list({ prefix: tokenPrefix });
+          await Promise.all(tokenList.keys.map((k) => kv.delete(k.name)));
+        }
+        // Delete from D1
+        await db.delete(oauthGrants)
+          .where(eq(oauthGrants.grantId, existingGrant.grantId));
+      }
+
       // Complete the authorization via OAuthProvider
       // The oauthRequest was originally returned by parseAuthRequest() (which produces
       // a full AuthRequest), then round-tripped through JSON by the web frontend.
@@ -196,6 +247,52 @@ export function createOAuthInternalRoutes() {
           scopes: filteredScopes,
         },
       });
+
+      // Extract grantId from the redirect URL to track in D1.
+      //
+      // DEPENDENCY: This relies on @cloudflare/workers-oauth-provider's internal
+      // authorization code format: {userId}:{grantId}:{secret}
+      // See: node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.js
+      // (search for "authCode" or "grantId" to verify format)
+      //
+      // If the library changes this format, D1 grant tracking will silently fail
+      // (grants won't be recorded, but OAuth flow still works). The fallback is
+      // that tokens would persist after app deletion until they expire naturally.
+      const redirectUrl = new URL(redirectTo);
+      const authCode = redirectUrl.searchParams.get('code');
+      if (authCode) {
+        const parts = authCode.split(':');
+        // Validate expected format: 3 colon-separated parts
+        if (parts.length !== 3) {
+          console.warn('Unexpected auth code format - D1 grant tracking skipped:', authCode.substring(0, 20) + '...');
+        }
+        const [, grantId] = parts;
+        if (grantId) {
+          const grantKey = `grant:${user.id}:${grantId}`;
+          // Record the grant in D1 for reliable tracking.
+          // Use INSERT OR REPLACE in case of race conditions.
+          c.executionCtx.waitUntil(
+            db.insert(oauthGrants)
+              .values({
+                grantId,
+                userId: user.id,
+                clientId: oauthRequest.clientId,
+                grantKey,
+                scopes: JSON.stringify(filteredScopes),
+              })
+              .onConflictDoUpdate({
+                target: [oauthGrants.userId, oauthGrants.clientId],
+                set: {
+                  grantId,
+                  grantKey,
+                  scopes: JSON.stringify(filteredScopes),
+                  createdAt: new Date().toISOString(),
+                },
+              })
+              .catch((e: unknown) => console.error('Failed to track grant in D1:', e))
+          );
+        }
+      }
 
       // Track grant creation for OAuth client lifecycle management.
       // Fire-and-forget: a failure here doesn't affect the OAuth flow.

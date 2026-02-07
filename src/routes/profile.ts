@@ -13,7 +13,7 @@ import { users, sessions, userIdentities, userFavorites, badges, userBadges, use
 import type { Env } from '../../types/worker';
 import { getSessionCookieName } from '../lib/session';
 import { deleteCookie } from 'hono/cookie';
-import { getCurrentUser } from '../lib/auth.js';
+import { getSessionUser } from '../lib/auth.js';
 import { emitEvent } from '../lib/event-bus.js';
 import { ok, created, success, unauthorized, forbidden, notFound, badRequest, conflict } from '../lib/responses.js';
 import { RESERVED_USERNAMES } from '../lib/username.js';
@@ -102,7 +102,7 @@ export function createProfileRoutes() {
    * GET /api/profile - Get current user's profile
    */
   app.get('/', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -216,7 +216,7 @@ export function createProfileRoutes() {
     });
 
     // If the requester is logged in, allow their own current username
-    const currentAuth = await getCurrentUser(c);
+    const currentAuth = await getSessionUser(c);
     const currentUser = currentAuth?.user ?? null;
     if (existing && currentUser && existing.id === currentUser.id) {
       return ok(c, { available: true });
@@ -229,7 +229,7 @@ export function createProfileRoutes() {
    * PATCH /api/profile - Update current user's profile
    */
   app.patch('/', zValidator('json', updateProfileSchema), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -324,7 +324,7 @@ export function createProfileRoutes() {
   app.patch('/primary-email', zValidator('json', z.object({
     provider: z.string().min(1),
   })), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -366,7 +366,7 @@ export function createProfileRoutes() {
    * DELETE /api/profile - Delete current user's account and all data
    */
   app.delete('/', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -419,7 +419,7 @@ export function createProfileRoutes() {
    * GET /api/profile/portfolio - List user's portfolio items
    */
   app.get('/portfolio', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -436,7 +436,7 @@ export function createProfileRoutes() {
    * POST /api/profile/portfolio - Create a portfolio item
    */
   app.post('/portfolio', zValidator('json', portfolioItemSchema), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -475,7 +475,7 @@ export function createProfileRoutes() {
    * PATCH /api/profile/portfolio/:id - Update a portfolio item
    */
   app.patch('/portfolio/:id', zValidator('json', portfolioItemSchema.partial()), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -504,7 +504,7 @@ export function createProfileRoutes() {
    * DELETE /api/profile/portfolio/:id - Delete a portfolio item
    */
   app.delete('/portfolio/:id', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -534,7 +534,7 @@ export function createProfileRoutes() {
    * GET /api/profile/tokens - List user's API tokens
    */
   app.get('/tokens', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -560,7 +560,7 @@ export function createProfileRoutes() {
    * Returns the full token ONCE in the response.
    */
   app.post('/tokens', zValidator('json', createTokenSchema), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -626,7 +626,7 @@ export function createProfileRoutes() {
    * DELETE /api/profile/tokens/:id - Revoke an API token
    */
   app.delete('/tokens/:id', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -650,7 +650,7 @@ export function createProfileRoutes() {
    * GET /api/profile/achievements - Get user's achievement progress
    */
   app.get('/achievements', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -691,7 +691,7 @@ export function createProfileRoutes() {
    * GET /api/profile/entitlements - Get user's active entitlements
    */
   app.get('/entitlements', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 

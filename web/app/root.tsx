@@ -132,8 +132,8 @@ export default function App() {
         <Outlet />
       </main>
       <Footer />
-      <NotificationToast />
-      <CelebrationToast />
+      <NotificationToast currentUserId={user?.id} />
+      <CelebrationToast currentUserId={user?.id} />
       {showModal && <SignInPromptModal onClose={dismissModal} />}
     </WebSocketProvider>
   );

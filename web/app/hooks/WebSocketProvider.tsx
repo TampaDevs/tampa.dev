@@ -44,11 +44,12 @@ interface WebSocketProviderProps {
   children: React.ReactNode;
 }
 
-export function WebSocketProvider({ user, children }: WebSocketProviderProps) {
-  const personalUrl = useMemo(
-    () => (user ? getWSUrl('/ws') : null),
-    [!!user],
-  );
+/**
+ * Inner provider that manages WebSocket connections.
+ * Separated so we can use React key to force remount on user identity change.
+ */
+function InnerWSProvider({ children }: { children: React.ReactNode }) {
+  const personalUrl = useMemo(() => getWSUrl('/ws'), []);
   const broadcastUrl = useMemo(() => getWSUrl('/ws/broadcast'), []);
 
   const personal = useWebSocket(personalUrl);
@@ -60,6 +61,27 @@ export function WebSocketProvider({ user, children }: WebSocketProviderProps) {
   );
 
   return <WSContext.Provider value={value}>{children}</WSContext.Provider>;
+}
+
+export function WebSocketProvider({ user, children }: WebSocketProviderProps) {
+  // Extract a stable user identifier for keying
+  // When userId changes, React will unmount/remount InnerWSProvider,
+  // which closes the old WebSocket and opens a new one
+  const userId = user && typeof user === 'object' && 'id' in user
+    ? (user as { id: string }).id
+    : null;
+
+  // For logged-out users, render a noop provider (no personal WS connection)
+  if (!userId) {
+    return <WSContext.Provider value={NOOP_CONTEXT}>{children}</WSContext.Provider>;
+  }
+
+  // Key forces remount when user identity changes → fresh WebSocket connection
+  return (
+    <InnerWSProvider key={userId}>
+      {children}
+    </InnerWSProvider>
+  );
 }
 
 /**

@@ -78,13 +78,17 @@ async function sendBroadcastNotification(
 
 /**
  * Build WS message data for personal events.
+ * Includes userId for frontend validation of notification ownership.
+ * Exported for testing.
  */
-function buildPersonalData(event: DomainEvent): Record<string, unknown> {
+export function buildPersonalData(event: DomainEvent, userId: string): Record<string, unknown> {
+  const base = { userId };
   switch (event.type) {
     case 'dev.tampa.onboarding.step_completed':
-      return { stepKey: event.payload.stepKey };
+      return { ...base, stepKey: event.payload.stepKey };
     case 'dev.tampa.achievement.unlocked':
       return {
+        ...base,
         achievementKey: event.payload.achievementKey,
         achievementName: event.payload.achievementName,
         icon: event.payload.icon,
@@ -93,6 +97,7 @@ function buildPersonalData(event: DomainEvent): Record<string, unknown> {
       };
     case 'dev.tampa.badge.issued':
       return {
+        ...base,
         badgeId: event.payload.badgeId,
         badgeSlug: event.payload.badgeSlug,
         badgeName: event.payload.badgeName,
@@ -101,9 +106,9 @@ function buildPersonalData(event: DomainEvent): Record<string, unknown> {
         points: event.payload.points,
       };
     case 'dev.tampa.user.score_changed':
-      return { totalScore: event.payload.totalScore };
+      return { ...base, totalScore: event.payload.totalScore };
     default:
-      return event.payload;
+      return { ...base, ...event.payload };
   }
 }
 
@@ -152,19 +157,24 @@ export function registerNotificationHandler(): void {
     if (personalType && userId) {
       const message: WSMessage = {
         type: personalType,
-        data: buildPersonalData(event),
+        data: buildPersonalData(event, userId),
         timestamp: event.timestamp,
       };
 
+      // Structured logging: trace notification routing
+      const userIdShort = userId.slice(0, 8);
+      console.log(`[ws:personal] ${personalType} → user:${userIdShort}...`);
+
       await sendPersonalNotification(env, userId, message).catch((err) => {
-        console.error(`Failed to send personal notification (${personalType}):`, err);
+        console.error(`[ws:personal] FAILED ${personalType} → user:${userIdShort}...:`, err);
       });
     }
 
     // Broadcast notifications
     if (BROADCAST_EVENTS.has(event.type)) {
+      console.log(`[ws:broadcast] ${event.type}`);
       await handleFavoriteEvent(env, event).catch((err) => {
-        console.error(`Failed to send broadcast notification:`, err);
+        console.error(`[ws:broadcast] FAILED ${event.type}:`, err);
       });
     }
   });

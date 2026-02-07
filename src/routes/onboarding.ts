@@ -9,7 +9,7 @@ import { eq, and } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { onboardingSteps, userOnboarding } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getCurrentUser } from '../lib/auth.js';
+import { getSessionUser } from '../lib/auth.js';
 
 export function createOnboardingRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -18,7 +18,7 @@ export function createOnboardingRoutes() {
    * GET /me/onboarding - Get all steps with completion status for current user
    */
   app.get('/', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -57,7 +57,7 @@ export function createOnboardingRoutes() {
    * POST /me/onboarding/:stepKey/dismiss - Mark a step as dismissed
    */
   app.post('/:stepKey/dismiss', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -106,7 +106,7 @@ export function createOnboardingRoutes() {
    * POST /me/onboarding/dismiss-all - Dismiss all onboarding steps
    */
   app.post('/dismiss-all', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
