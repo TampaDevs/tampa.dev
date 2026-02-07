@@ -35,6 +35,7 @@ import {
 } from '../lib/responses.js';
 import { emitEvent, emitEvents } from '../lib/event-bus.js';
 import { getEmojiUrl } from '../../lib/emoji.js';
+import { getCachedTotalPublicUsers, getCachedBadgeHolderCounts, computeRarity } from '../lib/badge-rarity.js';
 import type { Env } from '../../types/worker.js';
 
 // Service imports
@@ -615,28 +616,11 @@ function createV1Routes() {
       : [];
     const groupMap = new Map(groupResults.map((g) => [g.id, g]));
 
-    // Compute rarity for each badge
-    const totalUsersResult = await db
-      .select({ count: count() })
-      .from(users)
-      .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
-    const totalUsers = totalUsersResult[0]?.count ?? 0;
-
-    // Count holders per badge
-    const holderCounts = await db
-      .select({ badgeId: userBadges.badgeId, count: count() })
-      .from(userBadges)
-      .where(inArray(userBadges.badgeId, badgeIds))
-      .groupBy(userBadges.badgeId);
-    const holderCountMap = new Map(holderCounts.map((h) => [h.badgeId, h.count]));
-
-    const getRarityTier = (percentage: number): 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' => {
-      if (percentage < 1) return 'legendary';
-      if (percentage < 5) return 'epic';
-      if (percentage < 15) return 'rare';
-      if (percentage < 50) return 'uncommon';
-      return 'common';
-    };
+    // Fetch total users and per-badge holder counts (KV-cached)
+    const [totalUsers, holderCountMap] = await Promise.all([
+      getCachedTotalPublicUsers(db, c.env.kv),
+      getCachedBadgeHolderCounts(db, c.env.kv, badgeIds),
+    ]);
 
     const result = ub.map((ubEntry) => {
       const badge = badgeResults.find((b) => b.id === ubEntry.badgeId);
@@ -644,7 +628,6 @@ function createV1Routes() {
 
       const group = badge.groupId ? groupMap.get(badge.groupId) : null;
       const awardedCount = holderCountMap.get(badge.id) ?? 0;
-      const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
 
       return {
         name: badge.name,
@@ -661,10 +644,7 @@ function createV1Routes() {
           urlname: group.urlname,
           photoUrl: group.photoUrl,
         } : null,
-        rarity: {
-          tier: getRarityTier(rarityPercentage),
-          percentage: Math.round(rarityPercentage * 10) / 10,
-        },
+        rarity: computeRarity(totalUsers, awardedCount),
       };
     }).filter((b): b is NonNullable<typeof b> => b !== null);
 

@@ -6,7 +6,7 @@
  */
 
 import { Outlet, NavLink, Link, Form, redirect } from "react-router";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import { useState, useRef, useEffect } from "react";
 import type { Route } from "./+types/admin";
 import { fetchCurrentUser, type AuthUser } from "~/lib/admin-api.server";

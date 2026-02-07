@@ -1,6 +1,6 @@
 import type { Route } from "./+types/p.$username.following";
 import { Link } from "react-router";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import { generateMetaTags } from "~/lib/seo";
 
 interface FollowedUser {
@@ -19,6 +19,11 @@ interface UserProfile {
 }
 
 const PAGE_SIZE = 24;
+
+// Module-level cache: profile doesn't change during pagination.
+// Keyed by username so navigating between users still works correctly.
+const PROFILE_CACHE_TTL = 60_000; // 1 minute
+let profileCache: { username: string; data: UserProfile; ts: number } | null = null;
 
 const CORAL_GRADIENT =
   "linear-gradient(135deg, #C44D44 0%, #E85A4F 40%, #F07167 100%)";
@@ -53,21 +58,35 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const offset = parseInt(url.searchParams.get("offset") || "0", 10);
 
+  // Use cached profile if fresh — it doesn't change between pagination clicks
+  const now = Date.now();
+  const decodedUsername = decodeURIComponent(username);
+  const hasCachedProfile =
+    profileCache !== null &&
+    profileCache.username === decodedUsername &&
+    now - profileCache.ts < PROFILE_CACHE_TTL;
+
   const [profileRes, followingRes] = await Promise.all([
-    fetch(`${apiUrl}/users/${username}`, {
-      headers: { Accept: "application/json" },
-    }),
+    hasCachedProfile
+      ? Promise.resolve(null)
+      : fetch(`${apiUrl}/users/${username}`, {
+          headers: { Accept: "application/json" },
+        }),
     fetch(
       `${apiUrl}/users/${username}/following?limit=${PAGE_SIZE}&offset=${offset}`,
       { headers: { Accept: "application/json" } }
     ),
   ]);
 
-  if (!profileRes.ok) {
+  let profile: UserProfile;
+  if (hasCachedProfile) {
+    profile = profileCache!.data;
+  } else if (profileRes?.ok) {
+    profile = ((await profileRes.json()) as { data: UserProfile }).data;
+    profileCache = { username: decodedUsername, data: profile, ts: now };
+  } else {
     throw new Response("Not Found", { status: 404 });
   }
-
-  const profile = ((await profileRes.json()) as { data: UserProfile }).data;
 
   let following: FollowedUser[] = [];
   let total = 0;

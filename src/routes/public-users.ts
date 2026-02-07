@@ -12,14 +12,7 @@ import { users, userIdentities, userFavorites, groups, badges, userBadges, userP
 import type { Env } from '../../types/worker';
 import { normalizeSocialLinks } from './profile';
 import { ok, list, notFound, parsePagination } from '../lib/responses.js';
-
-function getRarityTierName(percentage: number): string {
-  if (percentage < 1) return 'legendary';
-  if (percentage < 5) return 'epic';
-  if (percentage < 15) return 'rare';
-  if (percentage < 50) return 'uncommon';
-  return 'common';
-}
+import { getCachedTotalPublicUsers, getCachedBadgeHolderCounts, computeRarity } from '../lib/badge-rarity.js';
 
 export function createPublicUsersRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -187,33 +180,19 @@ export function createPublicUsersRoutes() {
     type BadgeWithRarity = { name: string; slug: string; icon: string; color: string; description: string | null; points: number; awardedAt: string | null; groupId: string | null; rarity: { tier: string; percentage: number } };
     let allBadgesWithRarity: BadgeWithRarity[] = [];
     if (userBadgeListWithIds.length > 0) {
-      // Get total public users count for rarity computation
-      const totalUsersResult = await db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(users)
-        .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
-      const totalUsers = totalUsersResult[0]?.count ?? 0;
-
-      // Count holders per badge in a single batch query
+      // Fetch total users and per-badge holder counts (KV-cached)
       const badgeIds = userBadgeListWithIds.map(b => b.badgeId);
-      const holderCounts = await db
-        .select({ badgeId: userBadges.badgeId, count: sql<number>`COUNT(*)` })
-        .from(userBadges)
-        .where(sql`${userBadges.badgeId} IN (${sql.join(badgeIds.map(id => sql`${id}`), sql`, `)})`)
-        .groupBy(userBadges.badgeId);
-
-      const holderCountMap = new Map(holderCounts.map(h => [h.badgeId, h.count]));
+      const [totalUsers, holderCountMap] = await Promise.all([
+        getCachedTotalPublicUsers(db, c.env.kv),
+        getCachedBadgeHolderCounts(db, c.env.kv, badgeIds),
+      ]);
 
       allBadgesWithRarity = userBadgeListWithIds.map(b => {
         const awardedCount = holderCountMap.get(b.badgeId) ?? 0;
-        const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
         const { badgeId, ...rest } = b;
         return {
           ...rest,
-          rarity: {
-            tier: getRarityTierName(rarityPercentage),
-            percentage: Math.round(rarityPercentage * 10) / 10,
-          },
+          rarity: computeRarity(totalUsers, awardedCount),
         };
       });
     }

@@ -5,19 +5,12 @@
  */
 
 import { Hono } from 'hono';
-import { eq, and, sql, isNull } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { badges, userBadges, users } from '../db/schema';
+import { badges } from '../db/schema';
 import { getEmojiUrl } from '../../lib/emoji.js';
+import { getCachedTotalPublicUsers, getCachedBadgeHolderCounts, computeRarity } from '../lib/badge-rarity.js';
 import type { Env } from '../../types/worker';
-
-function getRarityTierName(percentage: number): string {
-  if (percentage < 1) return 'legendary';
-  if (percentage < 5) return 'epic';
-  if (percentage < 15) return 'rare';
-  if (percentage < 50) return 'uncommon';
-  return 'common';
-}
 
 export function createBadgesPublicRoutes() {
   const app = new Hono<{ Bindings: Env }>();
@@ -34,39 +27,30 @@ export function createBadgesPublicRoutes() {
       orderBy: [badges.sortOrder],
     });
 
-    // Get total public users count for rarity computation
-    const totalUsersResult = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(users)
-      .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
-    const totalUsers = totalUsersResult[0]?.count ?? 0;
+    const badgeIds = allBadges.map((b) => b.id);
 
-    // Get user count per badge
-    const badgesWithCounts = await Promise.all(
-      allBadges.map(async (badge) => {
-        const badgeUsers = await db.query.userBadges.findMany({
-          where: eq(userBadges.badgeId, badge.id),
-        });
-        const awardedCount = badgeUsers.length;
-        const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
-        return {
-          id: badge.id,
-          name: badge.name,
-          slug: badge.slug,
-          description: badge.description,
-          icon: badge.icon,
-          iconUrl: getEmojiUrl(badge.icon),
-          color: badge.color,
-          points: badge.points,
-          sortOrder: badge.sortOrder,
-          awardedCount,
-          rarity: {
-            tier: getRarityTierName(rarityPercentage),
-            percentage: Math.round(rarityPercentage * 10) / 10,
-          },
-        };
-      })
-    );
+    // Fetch total users and per-badge holder counts (KV-cached)
+    const [totalUsers, holderCountMap] = await Promise.all([
+      getCachedTotalPublicUsers(db, c.env.kv),
+      getCachedBadgeHolderCounts(db, c.env.kv, badgeIds),
+    ]);
+
+    const badgesWithCounts = allBadges.map((badge) => {
+      const awardedCount = holderCountMap.get(badge.id) ?? 0;
+      return {
+        id: badge.id,
+        name: badge.name,
+        slug: badge.slug,
+        description: badge.description,
+        icon: badge.icon,
+        iconUrl: getEmojiUrl(badge.icon),
+        color: badge.color,
+        points: badge.points,
+        sortOrder: badge.sortOrder,
+        awardedCount,
+        rarity: computeRarity(totalUsers, awardedCount),
+      };
+    });
 
     return c.json({ badges: badgesWithCounts });
   });
@@ -86,20 +70,12 @@ export function createBadgesPublicRoutes() {
       return c.json({ error: 'Badge not found' }, 404);
     }
 
-    // Get count of users with this badge
-    const badgeUsers = await db.query.userBadges.findMany({
-      where: eq(userBadges.badgeId, badge.id),
-    });
-    const awardedCount = badgeUsers.length;
-
-    // Get total public users count for rarity computation
-    const totalUsersResult = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(users)
-      .where(and(eq(users.profileVisibility, 'public'), sql`${users.username} IS NOT NULL`));
-    const totalUsers = totalUsersResult[0]?.count ?? 0;
-
-    const rarityPercentage = totalUsers > 0 ? (awardedCount / totalUsers) * 100 : 100;
+    // Fetch total users and holder count for this badge (KV-cached)
+    const [totalUsers, holderCountMap] = await Promise.all([
+      getCachedTotalPublicUsers(db, c.env.kv),
+      getCachedBadgeHolderCounts(db, c.env.kv, [badge.id]),
+    ]);
+    const awardedCount = holderCountMap.get(badge.id) ?? 0;
 
     return c.json({
       id: badge.id,
@@ -112,10 +88,7 @@ export function createBadgesPublicRoutes() {
       points: badge.points,
       sortOrder: badge.sortOrder,
       awardedCount,
-      rarity: {
-        tier: getRarityTierName(rarityPercentage),
-        percentage: Math.round(rarityPercentage * 10) / 10,
-      },
+      rarity: computeRarity(totalUsers, awardedCount),
       createdAt: badge.createdAt,
     });
   });

@@ -41,8 +41,16 @@ export default [
   // Auth routes
   route("auth/logout", "routes/auth.logout.tsx"),
 
-  // User profile
-  route("profile", "routes/profile.tsx"),
+  // User profile (layout with tab sub-routes — C5 split)
+  layout("routes/profile.tsx", [
+    route("profile", "routes/profile._index.tsx", { index: true }),
+    route("profile/accounts", "routes/profile.accounts.tsx"),
+    route("profile/portfolio", "routes/profile.portfolio.tsx"),
+    route("profile/achievements", "routes/profile.achievements.tsx"),
+    route("profile/settings", "routes/profile.settings.tsx"),
+    route("profile/developer", "routes/profile.developer.tsx"),
+    route("profile/feeds", "routes/profile.feeds.tsx"),
+  ]),
   route("p/:username", "routes/p.$username.tsx"),
   route("p/:username/followers", "routes/p.$username.followers.tsx"),
   route("p/:username/following", "routes/p.$username.following.tsx"),

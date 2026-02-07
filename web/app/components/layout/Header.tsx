@@ -1,6 +1,6 @@
 import { Link, NavLink } from "react-router";
 import React, { useState, useRef, useEffect } from "react";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 
 interface User {
   id: string;

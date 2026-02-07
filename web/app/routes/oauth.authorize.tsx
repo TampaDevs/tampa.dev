@@ -7,7 +7,7 @@
 
 import { type ReactNode, useState, useEffect, useCallback } from "react";
 import { redirect, useLoaderData, useFetcher } from "react-router";
-import { Avatar } from "@tampadevs/react";
+import { Avatar } from "~/components/Avatar";
 import type { Route } from "./+types/oauth.authorize";
 import { fetchCurrentUser } from "~/lib/admin-api.server";
 

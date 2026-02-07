@@ -34,3 +34,13 @@ export const KV_TTL_SYNC_VERSION = 30;
 export const KV_KEY_FAV_COUNTS = 'cache:fav-counts';
 /** TTL for cached favorites counts (seconds) */
 export const KV_TTL_FAV_COUNTS = 60;
+
+/** KV key for cached total public users count (profileVisibility='public' + username set) */
+export const KV_KEY_TOTAL_PUBLIC_USERS = 'cache:total-public-users';
+/** TTL for cached total public users count (seconds). Changes infrequently. */
+export const KV_TTL_TOTAL_PUBLIC_USERS = 300; // 5 minutes
+
+/** KV key for cached badge holder counts (JSON map of badgeId → count) */
+export const KV_KEY_BADGE_HOLDER_COUNTS = 'cache:badge-holder-counts';
+/** TTL for cached badge holder counts (seconds). Changes on badge award/revoke. */
+export const KV_TTL_BADGE_HOLDER_COUNTS = 300; // 5 minutes
