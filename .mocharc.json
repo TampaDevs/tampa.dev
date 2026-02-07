@@ -1,6 +1,7 @@
 {
   "extensions": ["ts"],
   "spec": "test/**/*.test.ts",
+  "ignore": ["test/integration/**"],
   "node-option": [
     "import=tsx"
   ]
