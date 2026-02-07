@@ -7,6 +7,8 @@ Method | HTTP request | Description
 [**V1MeGet**](UserAPI.md#V1MeGet) | **Get** /v1/me | Get current user identity
 [**V1MeLinkedAccountsGet**](UserAPI.md#V1MeLinkedAccountsGet) | **Get** /v1/me/linked-accounts | List linked OAuth accounts
 [**V1ProfileAchievementsGet**](UserAPI.md#V1ProfileAchievementsGet) | **Get** /v1/profile/achievements | Get achievement progress
+[**V1ProfileBadgesGet**](UserAPI.md#V1ProfileBadgesGet) | **Get** /v1/profile/badges | Get earned badges
+[**V1ProfileEntitlementsGet**](UserAPI.md#V1ProfileEntitlementsGet) | **Get** /v1/profile/entitlements | Get active entitlements
 [**V1ProfileGet**](UserAPI.md#V1ProfileGet) | **Get** /v1/profile | Get current user profile
 [**V1ProfilePatch**](UserAPI.md#V1ProfilePatch) | **Patch** /v1/profile | Update current user profile
 [**V1ProfilePortfolioGet**](UserAPI.md#V1ProfilePortfolioGet) | **Get** /v1/profile/portfolio | List portfolio items
@@ -187,6 +189,128 @@ Other parameters are passed through a pointer to a apiV1ProfileAchievementsGetRe
 ### Return type
 
 [**VVV1ProfileAchievementsGet200Response**](VV1ProfileAchievementsGet200Response.md)
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## V1ProfileBadgesGet
+
+> VVV1ProfileBadgesGet200Response V1ProfileBadgesGet(ctx).Execute()
+
+Get earned badges
+
+
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
+)
+
+func main() {
+
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.UserAPI.V1ProfileBadgesGet(context.Background()).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UserAPI.V1ProfileBadgesGet``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `V1ProfileBadgesGet`: VVV1ProfileBadgesGet200Response
+	fmt.Fprintf(os.Stdout, "Response from `UserAPI.V1ProfileBadgesGet`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiV1ProfileBadgesGetRequest struct via the builder pattern
+
+
+### Return type
+
+[**VVV1ProfileBadgesGet200Response**](VV1ProfileBadgesGet200Response.md)
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## V1ProfileEntitlementsGet
+
+> VVV1ProfileEntitlementsGet200Response V1ProfileEntitlementsGet(ctx).Execute()
+
+Get active entitlements
+
+
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
+)
+
+func main() {
+
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.UserAPI.V1ProfileEntitlementsGet(context.Background()).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UserAPI.V1ProfileEntitlementsGet``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `V1ProfileEntitlementsGet`: VVV1ProfileEntitlementsGet200Response
+	fmt.Fprintf(os.Stdout, "Response from `UserAPI.V1ProfileEntitlementsGet`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiV1ProfileEntitlementsGetRequest struct via the builder pattern
+
+
+### Return type
+
+[**VVV1ProfileEntitlementsGet200Response**](VV1ProfileEntitlementsGet200Response.md)
 
 ### Authorization
 

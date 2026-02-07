@@ -7,6 +7,8 @@ All URIs are relative to *https://api.tampa.dev*
 |[**v1MeGet**](#v1meget) | **GET** /v1/me | Get current user identity|
 |[**v1MeLinkedAccountsGet**](#v1melinkedaccountsget) | **GET** /v1/me/linked-accounts | List linked OAuth accounts|
 |[**v1ProfileAchievementsGet**](#v1profileachievementsget) | **GET** /v1/profile/achievements | Get achievement progress|
+|[**v1ProfileBadgesGet**](#v1profilebadgesget) | **GET** /v1/profile/badges | Get earned badges|
+|[**v1ProfileEntitlementsGet**](#v1profileentitlementsget) | **GET** /v1/profile/entitlements | Get active entitlements|
 |[**v1ProfileGet**](#v1profileget) | **GET** /v1/profile | Get current user profile|
 |[**v1ProfilePatch**](#v1profilepatch) | **PATCH** /v1/profile | Update current user profile|
 |[**v1ProfilePortfolioGet**](#v1profileportfolioget) | **GET** /v1/profile/portfolio | List portfolio items|
@@ -150,6 +152,98 @@ This endpoint does not have any parameters.
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | Achievement progress |  -  |
+|**401** | Unauthorized — missing or invalid authentication |  -  |
+|**403** | Forbidden — insufficient scope or permissions |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **v1ProfileBadgesGet**
+> VV1ProfileBadgesGet200Response v1ProfileBadgesGet()
+
+Returns all badges earned by the authenticated user, with rarity information.
+
+### Example
+
+```typescript
+import {
+    UserApi,
+    Configuration
+} from '@tampadevs/events-api-client';
+
+const configuration = new Configuration();
+const apiInstance = new UserApi(configuration);
+
+const { status, data } = await apiInstance.v1ProfileBadgesGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**VV1ProfileBadgesGet200Response**
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | User badges |  -  |
+|**401** | Unauthorized — missing or invalid authentication |  -  |
+|**403** | Forbidden — insufficient scope or permissions |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **v1ProfileEntitlementsGet**
+> VV1ProfileEntitlementsGet200Response v1ProfileEntitlementsGet()
+
+Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.
+
+### Example
+
+```typescript
+import {
+    UserApi,
+    Configuration
+} from '@tampadevs/events-api-client';
+
+const configuration = new Configuration();
+const apiInstance = new UserApi(configuration);
+
+const { status, data } = await apiInstance.v1ProfileEntitlementsGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**VV1ProfileEntitlementsGet200Response**
+
+### Authorization
+
+[BearerToken](../README.md#BearerToken)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | User entitlements |  -  |
 |**401** | Unauthorized — missing or invalid authentication |  -  |
 |**403** | Forbidden — insufficient scope or permissions |  -  |
 

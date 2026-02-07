@@ -60,7 +60,11 @@ docs/VScope.md
 docs/VToken.md
 docs/VTokenCreated.md
 docs/VUpdateProfileRequest.md
+docs/VUserBadge.md
+docs/VUserBadgeGroup.md
+docs/VUserBadgeRarity.md
 docs/VUserBasic.md
+docs/VUserEntitlement.md
 docs/VUserProfile.md
 docs/VV1CheckinCodePost201Response.md
 docs/VV1ClaimCodeGet200Response.md
@@ -81,6 +85,8 @@ docs/VV1GroupsSlugGet200Response.md
 docs/VV1MeGet200Response.md
 docs/VV1MeLinkedAccountsGet200Response.md
 docs/VV1ProfileAchievementsGet200Response.md
+docs/VV1ProfileBadgesGet200Response.md
+docs/VV1ProfileEntitlementsGet200Response.md
 docs/VV1ProfileGet200Response.md
 docs/VV1ProfilePortfolioGet200Response.md
 docs/VV1ProfilePortfolioPost201Response.md
@@ -124,6 +130,8 @@ v_model__v1_groups_get_200_response.go
 v_model__v1_me_get_200_response.go
 v_model__v1_me_linked_accounts_get_200_response.go
 v_model__v1_profile_achievements_get_200_response.go
+v_model__v1_profile_badges_get_200_response.go
+v_model__v1_profile_entitlements_get_200_response.go
 v_model__v1_profile_get_200_response.go
 v_model__v1_profile_portfolio_get_200_response.go
 v_model__v1_profile_portfolio_post_201_response.go
@@ -163,5 +171,9 @@ v_model_scope.go
 v_model_token.go
 v_model_token_created.go
 v_model_update_profile_request.go
+v_model_user_badge.go
+v_model_user_badge_group.go
+v_model_user_badge_rarity.go
 v_model_user_basic.go
+v_model_user_entitlement.go
 v_model_user_profile.go

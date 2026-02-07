@@ -88,6 +88,8 @@ Class | Method | HTTP request | Description
 *UserApi* | [**v1MeGet**](docs/UserApi.md#v1meget) | **GET** /v1/me | Get current user identity
 *UserApi* | [**v1MeLinkedAccountsGet**](docs/UserApi.md#v1melinkedaccountsget) | **GET** /v1/me/linked-accounts | List linked OAuth accounts
 *UserApi* | [**v1ProfileAchievementsGet**](docs/UserApi.md#v1profileachievementsget) | **GET** /v1/profile/achievements | Get achievement progress
+*UserApi* | [**v1ProfileBadgesGet**](docs/UserApi.md#v1profilebadgesget) | **GET** /v1/profile/badges | Get earned badges
+*UserApi* | [**v1ProfileEntitlementsGet**](docs/UserApi.md#v1profileentitlementsget) | **GET** /v1/profile/entitlements | Get active entitlements
 *UserApi* | [**v1ProfileGet**](docs/UserApi.md#v1profileget) | **GET** /v1/profile | Get current user profile
 *UserApi* | [**v1ProfilePatch**](docs/UserApi.md#v1profilepatch) | **PATCH** /v1/profile | Update current user profile
 *UserApi* | [**v1ProfilePortfolioGet**](docs/UserApi.md#v1profileportfolioget) | **GET** /v1/profile/portfolio | List portfolio items
@@ -138,7 +140,11 @@ Class | Method | HTTP request | Description
  - [VToken](docs/VToken.md)
  - [VTokenCreated](docs/VTokenCreated.md)
  - [VUpdateProfileRequest](docs/VUpdateProfileRequest.md)
+ - [VUserBadge](docs/VUserBadge.md)
+ - [VUserBadgeGroup](docs/VUserBadgeGroup.md)
+ - [VUserBadgeRarity](docs/VUserBadgeRarity.md)
  - [VUserBasic](docs/VUserBasic.md)
+ - [VUserEntitlement](docs/VUserEntitlement.md)
  - [VUserProfile](docs/VUserProfile.md)
  - [VV1CheckinCodePost201Response](docs/VV1CheckinCodePost201Response.md)
  - [VV1ClaimCodeGet200Response](docs/VV1ClaimCodeGet200Response.md)
@@ -159,6 +165,8 @@ Class | Method | HTTP request | Description
  - [VV1MeGet200Response](docs/VV1MeGet200Response.md)
  - [VV1MeLinkedAccountsGet200Response](docs/VV1MeLinkedAccountsGet200Response.md)
  - [VV1ProfileAchievementsGet200Response](docs/VV1ProfileAchievementsGet200Response.md)
+ - [VV1ProfileBadgesGet200Response](docs/VV1ProfileBadgesGet200Response.md)
+ - [VV1ProfileEntitlementsGet200Response](docs/VV1ProfileEntitlementsGet200Response.md)
  - [VV1ProfileGet200Response](docs/VV1ProfileGet200Response.md)
  - [VV1ProfilePortfolioGet200Response](docs/VV1ProfilePortfolioGet200Response.md)
  - [VV1ProfilePortfolioPost201Response](docs/VV1ProfilePortfolioPost201Response.md)

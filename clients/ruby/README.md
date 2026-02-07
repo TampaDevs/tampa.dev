@@ -114,6 +114,8 @@ Class | Method | HTTP request | Description
 *TampaEventsAPI::UserApi* | [**v1_me_get**](docs/UserApi.md#v1_me_get) | **GET** /v1/me | Get current user identity
 *TampaEventsAPI::UserApi* | [**v1_me_linked_accounts_get**](docs/UserApi.md#v1_me_linked_accounts_get) | **GET** /v1/me/linked-accounts | List linked OAuth accounts
 *TampaEventsAPI::UserApi* | [**v1_profile_achievements_get**](docs/UserApi.md#v1_profile_achievements_get) | **GET** /v1/profile/achievements | Get achievement progress
+*TampaEventsAPI::UserApi* | [**v1_profile_badges_get**](docs/UserApi.md#v1_profile_badges_get) | **GET** /v1/profile/badges | Get earned badges
+*TampaEventsAPI::UserApi* | [**v1_profile_entitlements_get**](docs/UserApi.md#v1_profile_entitlements_get) | **GET** /v1/profile/entitlements | Get active entitlements
 *TampaEventsAPI::UserApi* | [**v1_profile_get**](docs/UserApi.md#v1_profile_get) | **GET** /v1/profile | Get current user profile
 *TampaEventsAPI::UserApi* | [**v1_profile_patch**](docs/UserApi.md#v1_profile_patch) | **PATCH** /v1/profile | Update current user profile
 *TampaEventsAPI::UserApi* | [**v1_profile_portfolio_get**](docs/UserApi.md#v1_profile_portfolio_get) | **GET** /v1/profile/portfolio | List portfolio items
@@ -164,7 +166,11 @@ Class | Method | HTTP request | Description
  - [TampaEventsAPI::VToken](docs/VToken.md)
  - [TampaEventsAPI::VTokenCreated](docs/VTokenCreated.md)
  - [TampaEventsAPI::VUpdateProfileRequest](docs/VUpdateProfileRequest.md)
+ - [TampaEventsAPI::VUserBadge](docs/VUserBadge.md)
+ - [TampaEventsAPI::VUserBadgeGroup](docs/VUserBadgeGroup.md)
+ - [TampaEventsAPI::VUserBadgeRarity](docs/VUserBadgeRarity.md)
  - [TampaEventsAPI::VUserBasic](docs/VUserBasic.md)
+ - [TampaEventsAPI::VUserEntitlement](docs/VUserEntitlement.md)
  - [TampaEventsAPI::VUserProfile](docs/VUserProfile.md)
  - [TampaEventsAPI::VV1CheckinCodePost201Response](docs/VV1CheckinCodePost201Response.md)
  - [TampaEventsAPI::VV1ClaimCodeGet200Response](docs/VV1ClaimCodeGet200Response.md)
@@ -185,6 +191,8 @@ Class | Method | HTTP request | Description
  - [TampaEventsAPI::VV1MeGet200Response](docs/VV1MeGet200Response.md)
  - [TampaEventsAPI::VV1MeLinkedAccountsGet200Response](docs/VV1MeLinkedAccountsGet200Response.md)
  - [TampaEventsAPI::VV1ProfileAchievementsGet200Response](docs/VV1ProfileAchievementsGet200Response.md)
+ - [TampaEventsAPI::VV1ProfileBadgesGet200Response](docs/VV1ProfileBadgesGet200Response.md)
+ - [TampaEventsAPI::VV1ProfileEntitlementsGet200Response](docs/VV1ProfileEntitlementsGet200Response.md)
  - [TampaEventsAPI::VV1ProfileGet200Response](docs/VV1ProfileGet200Response.md)
  - [TampaEventsAPI::VV1ProfilePortfolioGet200Response](docs/VV1ProfilePortfolioGet200Response.md)
  - [TampaEventsAPI::VV1ProfilePortfolioPost201Response](docs/VV1ProfilePortfolioPost201Response.md)

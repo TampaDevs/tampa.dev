@@ -469,6 +469,133 @@
           "hidden"
         ]
       },
+      "UserBadge": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string"
+          },
+          "iconUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL to the high-quality emoji image, or null if unavailable"
+          },
+          "color": {
+            "type": "string"
+          },
+          "points": {
+            "type": "number"
+          },
+          "awardedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "group": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "urlname": {
+                "type": "string",
+                "nullable": true
+              },
+              "photoUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "urlname",
+              "photoUrl"
+            ]
+          },
+          "rarity": {
+            "type": "object",
+            "properties": {
+              "tier": {
+                "type": "string",
+                "enum": [
+                  "common",
+                  "uncommon",
+                  "rare",
+                  "epic",
+                  "legendary"
+                ]
+              },
+              "percentage": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "tier",
+              "percentage"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "description",
+          "icon",
+          "iconUrl",
+          "color",
+          "points",
+          "awardedAt",
+          "group",
+          "rarity"
+        ]
+      },
+      "UserEntitlement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "entitlement": {
+            "type": "string",
+            "description": "Entitlement key (e.g., dev.tampa.group.create)"
+          },
+          "grantedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO timestamp when entitlement was granted"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO timestamp when entitlement expires, or null if permanent"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "How the entitlement was granted (e.g., admin, achievement)"
+          }
+        },
+        "required": [
+          "id",
+          "entitlement",
+          "grantedAt",
+          "expiresAt",
+          "source"
+        ]
+      },
       "Token": {
         "type": "object",
         "properties": {
@@ -2861,6 +2988,124 @@
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/AchievementProgress"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile/badges": {
+      "get": {
+        "summary": "Get earned badges",
+        "description": "Returns all badges earned by the authenticated user, with rarity information.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User badges",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UserBadge"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope or permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile/entitlements": {
+      "get": {
+        "summary": "Get active entitlements",
+        "description": "Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerToken": [
+              "read:user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User entitlements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UserEntitlement"
                       }
                     }
                   },

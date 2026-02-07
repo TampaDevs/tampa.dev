@@ -73,7 +73,11 @@ __all__ = [
     "VToken",
     "VTokenCreated",
     "VUpdateProfileRequest",
+    "VUserBadge",
+    "VUserBadgeGroup",
+    "VUserBadgeRarity",
     "VUserBasic",
+    "VUserEntitlement",
     "VUserProfile",
     "VV1CheckinCodePost201Response",
     "VV1ClaimCodeGet200Response",
@@ -94,6 +98,8 @@ __all__ = [
     "VV1MeGet200Response",
     "VV1MeLinkedAccountsGet200Response",
     "VV1ProfileAchievementsGet200Response",
+    "VV1ProfileBadgesGet200Response",
+    "VV1ProfileEntitlementsGet200Response",
     "VV1ProfileGet200Response",
     "VV1ProfilePortfolioGet200Response",
     "VV1ProfilePortfolioPost201Response",
@@ -167,7 +173,11 @@ from tampa_events_api.models.v_scope import VScope as VScope
 from tampa_events_api.models.v_token import VToken as VToken
 from tampa_events_api.models.v_token_created import VTokenCreated as VTokenCreated
 from tampa_events_api.models.v_update_profile_request import VUpdateProfileRequest as VUpdateProfileRequest
+from tampa_events_api.models.v_user_badge import VUserBadge as VUserBadge
+from tampa_events_api.models.v_user_badge_group import VUserBadgeGroup as VUserBadgeGroup
+from tampa_events_api.models.v_user_badge_rarity import VUserBadgeRarity as VUserBadgeRarity
 from tampa_events_api.models.v_user_basic import VUserBasic as VUserBasic
+from tampa_events_api.models.v_user_entitlement import VUserEntitlement as VUserEntitlement
 from tampa_events_api.models.v_user_profile import VUserProfile as VUserProfile
 from tampa_events_api.models.vv1_checkin_code_post201_response import VV1CheckinCodePost201Response as VV1CheckinCodePost201Response
 from tampa_events_api.models.vv1_claim_code_get200_response import VV1ClaimCodeGet200Response as VV1ClaimCodeGet200Response
@@ -188,6 +198,8 @@ from tampa_events_api.models.vv1_groups_slug_get200_response import VV1GroupsSlu
 from tampa_events_api.models.vv1_me_get200_response import VV1MeGet200Response as VV1MeGet200Response
 from tampa_events_api.models.vv1_me_linked_accounts_get200_response import VV1MeLinkedAccountsGet200Response as VV1MeLinkedAccountsGet200Response
 from tampa_events_api.models.vv1_profile_achievements_get200_response import VV1ProfileAchievementsGet200Response as VV1ProfileAchievementsGet200Response
+from tampa_events_api.models.vv1_profile_badges_get200_response import VV1ProfileBadgesGet200Response as VV1ProfileBadgesGet200Response
+from tampa_events_api.models.vv1_profile_entitlements_get200_response import VV1ProfileEntitlementsGet200Response as VV1ProfileEntitlementsGet200Response
 from tampa_events_api.models.vv1_profile_get200_response import VV1ProfileGet200Response as VV1ProfileGet200Response
 from tampa_events_api.models.vv1_profile_portfolio_get200_response import VV1ProfilePortfolioGet200Response as VV1ProfilePortfolioGet200Response
 from tampa_events_api.models.vv1_profile_portfolio_post201_response import VV1ProfilePortfolioPost201Response as VV1ProfilePortfolioPost201Response
