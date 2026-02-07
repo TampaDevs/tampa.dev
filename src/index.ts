@@ -10,6 +10,7 @@ import { createApp, addOpenAPIRoutes } from './app.js';
 import { resolveExternalToken } from './lib/auth.js';
 import { createDatabase } from './db/index.js';
 import { oauthClientRegistry } from './db/schema.js';
+import { injectIdToken } from './lib/oidc.js';
 import { registerEventRoutes } from './routes/events.js';
 import { registerGroupRoutes } from './routes/groups.js';
 import { registerSchemaRoutes } from './routes/schemas.js';
@@ -75,6 +76,10 @@ app.route('/admin', adminApiRoutes);
 
 // Mount OAuth internal routes (for web app to complete authorization)
 app.route('/oauth/internal', oauthInternalRoutes);
+
+// Mount OIDC userinfo endpoint (GET + POST per OIDC Core 5.3.1)
+import { userinfoRoutes } from './routes/oauth-userinfo.js';
+app.route('/oauth/userinfo', userinfoRoutes);
 
 // Mount favorites API (session-based auth)
 app.route('/favorites', favoritesRoutes);
@@ -270,6 +275,8 @@ const defaultHandler = {
 
 // Tampa.dev OAuth scopes (includes both new and legacy scopes for backwards compat)
 const SCOPES_SUPPORTED = [
+  // OIDC protocol flag -- not in SCOPES object, only in OAuthProvider config
+  'openid',
   // New GitHub-style scopes
   'user',
   'read:user',
@@ -416,6 +423,14 @@ export default {
     }
 
     const response = await oauthProvider.fetch(processedRequest, env, ctx);
+
+    // Inject id_token into successful token endpoint responses when openid scope is granted
+    if (processedRequest.method === 'POST' && response.status === 200) {
+      const reqUrl = new URL(processedRequest.url);
+      if (reqUrl.pathname === '/oauth/token') {
+        return injectIdToken(response, env, processedRequest.url);
+      }
+    }
 
     // Track successful DCR registrations in D1 for lifecycle management.
     // OAuthProvider handles /oauth/register internally, so we intercept the

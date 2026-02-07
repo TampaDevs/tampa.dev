@@ -40,17 +40,18 @@ describe('/.well-known/openid-configuration', () => {
     expect(body).toHaveProperty('token_endpoint_auth_methods_supported');
   });
 
-  it('derives issuer and endpoints from request origin', async () => {
+  it('derives all endpoints from canonical issuer base', async () => {
     const { env } = createTestEnv();
     const res = await appRequest('/.well-known/openid-configuration', { env });
     const body = await res.json() as Record<string, unknown>;
 
-    // Test app runs on http://localhost
+    // Test app runs on http://localhost — canonical issuer preserves origin for localhost
     expect(body.issuer).toBe('http://localhost');
     expect(body.token_endpoint).toBe('http://localhost/oauth/token');
     expect(body.registration_endpoint).toBe('http://localhost/oauth/register');
-    // Authorize endpoint is always on the web app (tampa.dev)
-    expect(body.authorization_endpoint).toBe('https://tampa.dev/oauth/authorize');
+    expect(body.authorization_endpoint).toBe('http://localhost/oauth/authorize');
+    expect(body.userinfo_endpoint).toBe('http://localhost/oauth/userinfo');
+    expect(body.jwks_uri).toBe('http://localhost/.well-known/jwks.json');
   });
 
   it('includes all native scopes', async () => {

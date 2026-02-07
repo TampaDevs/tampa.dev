@@ -34,6 +34,7 @@ import { v1AdminRoutes } from '../../../src/routes/v1-admin';
 import { v1ManageRoutes } from '../../../src/routes/v1-manage';
 import { mcpRoutes } from '../../../src/routes/mcp';
 import { wsRoutes } from '../../../src/routes/ws';
+import { userinfoRoutes } from '../../../src/routes/oauth-userinfo';
 import type { Env } from '../../../types/worker';
 
 let _app: ReturnType<typeof createApp> | null = null;
@@ -69,6 +70,7 @@ export function buildApp() {
   // Mount instance-style routes (same as src/index.ts)
   app.route('/auth', authRoutes);
   app.route('/oauth/internal', oauthInternalRoutes);
+  app.route('/oauth/userinfo', userinfoRoutes);
   app.route('/admin', adminApiRoutes);
   app.route('/favorites', favoritesRoutes);
   app.route('/developer', developerRoutes);

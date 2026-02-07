@@ -64,6 +64,23 @@ export async function grantEntitlement(
 }
 
 /**
+ * Get all active (non-expired) entitlements for a user.
+ * Returns an array of entitlement strings (e.g., 'dev.tampa.group.create').
+ */
+export async function getActiveEntitlements(
+  db: ReturnType<typeof createDatabase>,
+  userId: string,
+): Promise<string[]> {
+  const records = await db.query.userEntitlements.findMany({
+    where: eq(userEntitlements.userId, userId),
+  });
+  const now = new Date();
+  return records
+    .filter(r => !r.expiresAt || new Date(r.expiresAt) >= now)
+    .map(r => r.entitlement);
+}
+
+/**
  * Consume (use and delete) an entitlement from a user.
  * Returns true if the entitlement existed, was valid, and was consumed.
  * Returns false if the entitlement was not found or expired.
