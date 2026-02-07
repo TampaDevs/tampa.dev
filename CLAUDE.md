@@ -564,6 +564,108 @@ Domain features in this codebase are exposed through multiple layers. When addin
 - Use `Promise.all()` only when all operations must succeed together.
 - Use `ctx.waitUntil()` for fire-and-forget background tasks (e.g., updating `lastUsedAt` on tokens).
 
+### Performance
+
+Performance discipline matters because every request runs on Cloudflare Workers with D1 (SQLite over HTTP). Each D1 query is a network round-trip, so query count dominates latency. On the frontend, the React Router app server-renders on a Pages worker, and every `fetch()` in a loader is another cross-worker hop.
+
+#### Backend: Eliminating N+1 Queries
+
+The single most common performance mistake in this codebase is the N+1 query pattern -- fetching a list of IDs and then querying for each one individually inside a loop or `Promise.all()`.
+
+```typescript
+// BAD: N+1 — fires one query per badge (10 badges = 11 queries)
+const badgeResults = await Promise.all(
+  userBadges.map((b) => db.query.badges.findFirst({ where: eq(badges.id, b.badgeId) }))
+);
+
+// GOOD: Batch — single query regardless of count
+import { inArray } from 'drizzle-orm';
+const badgeIds = userBadges.map(b => b.badgeId);
+const badgeResults = await db.select().from(badges)
+  .where(inArray(badges.id, badgeIds));
+```
+
+**Rules:**
+- **Never use `findFirst()` inside a loop, `.map()`, or `Promise.all()`.** If you have a list of IDs, use `inArray()` to fetch them all in one query.
+- **Use JOINs when fetching related data.** Instead of fetching users and then fetching their badges separately, join the tables. See `src/routes/public-users.ts` (user directory endpoint) for a reference pattern using `innerJoin`.
+- **Parallelize independent queries with `Promise.all()`.** Two unrelated queries (e.g., user count + badge list) should run concurrently, not sequentially.
+- **Use atomic SQL for read-then-write.** `INSERT ... ON CONFLICT`, `UPDATE ... SET count = count + 1` — never read a value, modify it in JS, and write it back.
+
+When reviewing code, count the D1 queries a handler makes for the worst-case input. A profile endpoint should not exceed ~5 queries regardless of how many badges, groups, or favorites the user has.
+
+#### Backend: Pagination
+
+Every list endpoint must be paginated. Unbounded queries are a memory and latency risk:
+
+```typescript
+// BAD: No limit — could return 10,000 rows
+const members = await db.select().from(users).where(condition);
+
+// GOOD: Paginated with sensible defaults
+const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 1), 100);
+const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
+const members = await db.select().from(users).where(condition).limit(limit).offset(offset);
+```
+
+For `/v1/` endpoints, use `parsePagination(c)` from `src/lib/responses.ts` which handles this consistently.
+
+#### Frontend: Loader Waterfalls
+
+React Router loaders run on the server before the page renders. Sequential `fetch()` calls in a loader are additive — each adds 200-400ms of latency. Flatten them into a single `Promise.allSettled()`:
+
+```typescript
+// BAD: Waterfall — each fetch waits for the previous one (~800ms+)
+const user = await fetchUser(cookie);
+const grants = await fetchGrants(user.id, cookie);
+const [profile, tokens] = await Promise.all([
+  fetchProfile(cookie),
+  fetchTokens(cookie),
+]);
+
+// GOOD: Flat — all independent fetches fire concurrently (~200-400ms)
+const user = await fetchUser(cookie);  // needed for user.id
+const results = await Promise.allSettled([
+  fetchGrants(user.id, cookie),
+  fetchProfile(cookie),
+  fetchTokens(cookie),
+  fetchAchievements(cookie),
+]);
+const [grants, profile, tokens, achievements] = results.map(
+  r => r.status === 'fulfilled' ? r.value : null
+);
+```
+
+**Rules:**
+- After the initial auth check (`fetchCurrentUser`), fire everything else in a single `Promise.allSettled()`.
+- Loader fetches are independent — one failure should never block the page. Use `Promise.allSettled()`, not `Promise.all()`.
+- Never chain fetches that don't depend on each other's results.
+
+#### Frontend: Avoiding Unnecessary Re-renders
+
+- **Never poll with `setInterval()`.** Use event-driven updates instead. For localStorage changes across tabs, the `storage` event works natively. For same-tab changes, dispatch a custom event (see `FAVORITES_CHANGED_EVENT` in `web/app/lib/favorites.ts`).
+- **Use `shouldRevalidate`** on route modules to prevent React Router from re-running loaders on unrelated navigations. The root loader's `/auth/me` call is expensive -- it should not fire on every client-side navigation.
+- **Memoize derived data with `useMemo`.** If a computation filters or sorts a list, wrap it in `useMemo` with the correct dependency array.
+
+#### Frontend: Rendering Performance
+
+- **Lazy-load images below the fold.** Add `loading="lazy"` to `<img>` tags that aren't visible on initial viewport (group cards, member avatars, etc.).
+- **Avoid per-instance `<style>` tags.** CSS that is the same for every instance of a component belongs in a global stylesheet (`web/app/app.css`), not in an inline `<style>` rendered once per component mount. This eliminates redundant DOM nodes and style recalculation.
+- **Throttle expensive event handlers.** Mouse-tracking effects (`mousemove` handlers that call `getBoundingClientRect()`) should use `requestAnimationFrame` to coalesce updates to one per frame.
+- **Respect `prefers-reduced-motion`.** Expensive CSS effects like `backdrop-filter: blur()` cause GPU compositing overhead. Provide a `@media (prefers-reduced-motion: reduce)` rule that disables them. This is defined globally in `web/app/app.css`.
+
+#### Performance Review Checklist
+
+When reviewing a PR, check:
+
+| Question | Where to look |
+|----------|---------------|
+| Does the handler use `findFirst()` inside a loop? | Route handler body — replace with `inArray()` batch |
+| Are list endpoints paginated? | Every `db.select()` that returns user-facing lists needs `limit`/`offset` |
+| Does the frontend loader chain sequential fetches? | `loader()` functions — flatten into `Promise.allSettled()` |
+| Does the component poll or use `setInterval`? | `useEffect` blocks — replace with event listeners |
+| Are images missing `loading="lazy"`? | `<img>` tags below the fold |
+| Does the component inject per-instance `<style>`? | Component return — move to `app.css` |
+
 ### Route Handler Patterns
 
 This codebase uses two route registration styles:
