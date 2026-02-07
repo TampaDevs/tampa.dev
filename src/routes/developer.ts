@@ -9,14 +9,15 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and } from 'drizzle-orm';
 import { createDatabase } from '../db';
-import { webhooks, webhookDeliveries, oauthClientRegistry } from '../db/schema';
+import { webhooks, webhookDeliveries, oauthClientRegistry, oauthGrants } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getCurrentUser } from '../lib/auth.js';
+import { getSessionUser } from '../lib/auth.js';
 import { hasAdminRestrictedEvents, getAdminRestrictedFromList } from '../lib/webhook-events';
 import { emitEvent } from '../lib/event-bus.js';
 import { encrypt, decryptOrPassthrough } from '../lib/crypto.js';
 import { validateWebhookUrl } from '../lib/url-validation.js';
 import { rateLimit } from '../middleware/rate-limit.js';
+import { hashClientSecret } from '../lib/oauth-hash.js';
 
 // ============== Validation Schemas ==============
 
@@ -177,7 +178,7 @@ export function createDeveloperRoutes() {
    * GET /api/developer/apps - List user's registered apps
    */
   app.get('/apps', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -224,7 +225,7 @@ export function createDeveloperRoutes() {
    * POST /api/developer/apps - Register a new OAuth app
    */
   app.post('/apps', rateLimit({ prefix: 'dev-app-create', maxRequests: 10, windowSeconds: 60 }), zValidator('json', createAppSchema), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -241,11 +242,13 @@ export function createDeveloperRoutes() {
     const clientId = generateClientId();
     // Public clients (SPAs, mobile apps) don't get a secret - they use PKCE only
     const clientSecret = data.isPublicClient ? undefined : generateClientSecret();
+    // Hash the secret before storing - the OAuth provider library expects SHA-256 hashes
+    const hashedSecret = clientSecret ? await hashClientSecret(clientSecret) : undefined;
 
     // Create client data
     const clientData: OAuthClient = {
       clientId,
-      ...(clientSecret ? { clientSecret } : {}),
+      ...(hashedSecret ? { clientSecret: hashedSecret } : {}),
       clientName: data.name,
       clientUri: data.website,
       logoUri: data.logoUri,
@@ -294,7 +297,7 @@ export function createDeveloperRoutes() {
    * GET /api/developer/apps/:clientId - Get app details
    */
   app.get('/apps/:clientId', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -348,7 +351,7 @@ export function createDeveloperRoutes() {
    * PATCH /api/developer/apps/:clientId - Update app settings
    */
   app.patch('/apps/:clientId', zValidator('json', updateAppSchema), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -402,7 +405,7 @@ export function createDeveloperRoutes() {
    * POST /api/developer/apps/:clientId/regenerate-secret - Generate new client secret
    */
   app.post('/apps/:clientId/regenerate-secret', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -431,13 +434,14 @@ export function createDeveloperRoutes() {
       return c.json({ error: 'Public clients do not have a client secret' }, 400);
     }
 
-    // Generate new secret
+    // Generate new secret and hash it for storage
     const newSecret = generateClientSecret();
+    const hashedSecret = await hashClientSecret(newSecret);
 
-    // Update client
+    // Update client with hashed secret
     const updatedClient: OAuthClient = {
       ...clientData,
-      clientSecret: newSecret,
+      clientSecret: hashedSecret,
     };
 
     await kv.put(`client:${clientId}`, JSON.stringify(updatedClient));
@@ -453,7 +457,7 @@ export function createDeveloperRoutes() {
    * DELETE /api/developer/apps/:clientId - Delete an app
    */
   app.delete('/apps/:clientId', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -477,33 +481,44 @@ export function createDeveloperRoutes() {
       return c.json({ error: 'Not authorized to delete this app' }, 403);
     }
 
-    // Delete all grants for this app
-    const grantList = await kv.list({ prefix: 'grant:' });
+    const db = createDatabase(c.env.DB);
+
+    // Look up grants for this app from D1 (reliable, not affected by KV eventual consistency)
+    const grants = await db.query.oauthGrants.findMany({
+      where: eq(oauthGrants.clientId, clientId),
+    });
+
     let deletedGrants = 0;
-
-    for (const key of grantList.keys) {
-      const grantData = await kv.get(key.name, 'json') as { clientId?: string } | null;
-      if (grantData?.clientId === clientId) {
-        await kv.delete(key.name);
-        deletedGrants++;
-      }
-    }
-
-    // Delete all tokens for this app
-    const tokenList = await kv.list({ prefix: 'token:' });
     let deletedTokens = 0;
 
-    for (const key of tokenList.keys) {
-      const tokenData = await kv.get(key.name, 'json') as { clientId?: string } | null;
-      if (tokenData?.clientId === clientId) {
-        await kv.delete(key.name);
-        deletedTokens++;
-      }
+    // Delete each grant and its associated tokens from KV
+    for (const grant of grants) {
+      // Delete the grant from KV
+      await kv.delete(grant.grantKey);
+      deletedGrants++;
+
+      // Delete associated tokens (they reference this grantId)
+      // Token keys follow the pattern: token:{userId}:{grantId}:{tokenId}
+      const tokenPrefix = `token:${grant.userId}:${grant.grantId}:`;
+      let tokenCursor: string | undefined;
+      do {
+        const tokenList = await kv.list({ prefix: tokenPrefix, cursor: tokenCursor });
+        for (const key of tokenList.keys) {
+          await kv.delete(key.name);
+          deletedTokens++;
+        }
+        tokenCursor = tokenList.list_complete ? undefined : tokenList.cursor;
+      } while (tokenCursor);
+    }
+
+    // Delete grants from D1
+    if (grants.length > 0) {
+      await db.delete(oauthGrants)
+        .where(eq(oauthGrants.clientId, clientId));
     }
 
     // Delete the client from KV and D1 registry
     await kv.delete(`client:${clientId}`);
-    const db = createDatabase(c.env.DB);
     await db.delete(oauthClientRegistry)
       .where(eq(oauthClientRegistry.clientId, clientId));
 
@@ -520,7 +535,7 @@ export function createDeveloperRoutes() {
    * GET /api/developer/webhooks - List user's webhooks
    */
   app.get('/webhooks', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -547,7 +562,7 @@ export function createDeveloperRoutes() {
    * POST /api/developer/webhooks - Create a new webhook
    */
   app.post('/webhooks', zValidator('json', createWebhookSchema), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -610,7 +625,7 @@ export function createDeveloperRoutes() {
    * PATCH /api/developer/webhooks/:id - Update a webhook
    */
   app.patch('/webhooks/:id', zValidator('json', updateWebhookSchema), async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -670,7 +685,7 @@ export function createDeveloperRoutes() {
    * DELETE /api/developer/webhooks/:id - Delete a webhook
    */
   app.delete('/webhooks/:id', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -695,7 +710,7 @@ export function createDeveloperRoutes() {
    * GET /api/developer/webhooks/:id/deliveries - Get recent deliveries
    */
   app.get('/webhooks/:id/deliveries', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -735,7 +750,7 @@ export function createDeveloperRoutes() {
    * POST /api/developer/webhooks/:id/test - Send a test event
    */
   app.post('/webhooks/:id/test', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) {
       return c.json({ error: 'Unauthorized' }, 401);
     }

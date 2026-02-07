@@ -70,6 +70,7 @@ import {
   PortfolioItemResponseSchema,
   AchievementProgressSchema,
   UserBadgeSchema,
+  UserEntitlementSchema,
   TokenSchema,
   TokenCreatedSchema,
   EventListItemSchema,
@@ -669,6 +670,56 @@ function createV1Routes() {
     }).filter((b): b is NonNullable<typeof b> => b !== null);
 
     return ok(c, result);
+  });
+
+  // ============================================================
+  // Profile - Entitlements
+  // ============================================================
+
+  /**
+   * GET /v1/profile/entitlements -- User's active entitlements
+   */
+  const listEntitlementsRoute = createRoute({
+    method: 'get',
+    path: '/profile/entitlements',
+    summary: 'Get active entitlements',
+    description: 'Returns all active entitlements for the authenticated user. Expired entitlements are filtered out.',
+    tags: ['User'],
+    security: [{ BearerToken: ['read:user'] }],
+    responses: {
+      200: dataResponse(z.array(UserEntitlementSchema), 'User entitlements'),
+      ...AuthErrors,
+    },
+  });
+
+  // @ts-expect-error Response type mismatch with TypedResponse - handlers return Response from helpers
+  app.openapi(listEntitlementsRoute, async (c) => {
+    const auth = await getCurrentUser(c);
+    if (!auth) return unauthorized(c);
+
+    const scopeErr = requireScope(auth, 'read:user', c);
+    if (scopeErr) return scopeErr;
+
+    const db = createDatabase(c.env.DB);
+    const now = new Date().toISOString();
+
+    // Get all entitlements for user
+    const allEntitlements = await db.query.userEntitlements.findMany({
+      where: eq(userEntitlements.userId, auth.user.id),
+    });
+
+    // Filter to active entitlements: expiresAt is null or > now
+    const activeEntitlements = allEntitlements.filter(
+      (ent) => !ent.expiresAt || ent.expiresAt > now
+    );
+
+    return ok(c, activeEntitlements.map((ent) => ({
+      id: ent.id,
+      entitlement: ent.entitlement,
+      grantedAt: ent.grantedAt,
+      expiresAt: ent.expiresAt,
+      source: ent.source,
+    })));
   });
 
   // ============================================================

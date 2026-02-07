@@ -33,6 +33,7 @@ import { v1Routes } from '../../../src/routes/v1';
 import { v1AdminRoutes } from '../../../src/routes/v1-admin';
 import { v1ManageRoutes } from '../../../src/routes/v1-manage';
 import { mcpRoutes } from '../../../src/routes/mcp';
+import { wsRoutes } from '../../../src/routes/ws';
 import type { Env } from '../../../types/worker';
 
 let _app: ReturnType<typeof createApp> | null = null;
@@ -93,6 +94,9 @@ export function buildApp() {
 
   // Mount /v1/manage/ group management API
   app.route('/v1/manage', v1ManageRoutes);
+
+  // Mount WebSocket routes
+  app.route('/ws', wsRoutes);
 
   addOpenAPIRoutes(app);
   app.get('/', (c) => c.redirect('/docs'));

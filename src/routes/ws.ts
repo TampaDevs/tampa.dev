@@ -37,10 +37,15 @@ export function createWSRoutes() {
     const id = c.env.USER_NOTIFICATIONS.idFromName(userId);
     const stub = c.env.USER_NOTIFICATIONS.get(id);
 
-    // Forward the upgrade request to the DO
+    // Forward the upgrade request to the DO with userId header for validation
     const doUrl = new URL(c.req.url);
     doUrl.pathname = '/websocket';
-    return stub.fetch(new Request(doUrl.toString(), c.req.raw));
+    const doHeaders = new Headers(c.req.raw.headers);
+    doHeaders.set('X-User-Id', userId);
+    return stub.fetch(new Request(doUrl.toString(), {
+      headers: doHeaders,
+      method: c.req.raw.method,
+    }));
   });
 
   /**

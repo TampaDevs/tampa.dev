@@ -720,3 +720,37 @@ export const oauthClientRegistry = sqliteTable('oauth_client_registry', {
 
 export type OAuthClientRegistryEntry = typeof oauthClientRegistry.$inferSelect;
 export type NewOAuthClientRegistryEntry = typeof oauthClientRegistry.$inferInsert;
+
+/**
+ * OAuth Grants Tracking Table
+ *
+ * Tracks active OAuth grants (authorizations) in D1, providing:
+ * 1. Efficient lookup of grants by clientId for app deletion
+ * 2. Deduplication - only one grant per user/client pair
+ * 3. Reliable revocation without depending on KV list() eventual consistency
+ *
+ * This table mirrors grant data stored in KV but is the authoritative
+ * source for grant-to-client relationships.
+ */
+export const oauthGrants = sqliteTable('oauth_grants', {
+  // The grantId portion of the KV key (e.g., "abc123def456")
+  grantId: text('grant_id').primaryKey(),
+  // The user who authorized the app
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // The client (app) that was authorized
+  clientId: text('client_id').notNull(),
+  // Full KV key for direct deletion: "grant:{userId}:{grantId}"
+  grantKey: text('grant_key').notNull(),
+  // Granted scopes (JSON array)
+  scopes: text('scopes').notNull(),
+  // When the grant was created
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index('og_user_idx').on(table.userId),
+  index('og_client_idx').on(table.clientId),
+  // Unique constraint ensures only one grant per user/client pair
+  uniqueIndex('og_user_client_idx').on(table.userId, table.clientId),
+]);
+
+export type OAuthGrant = typeof oauthGrants.$inferSelect;
+export type NewOAuthGrant = typeof oauthGrants.$inferInsert;

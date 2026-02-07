@@ -109,6 +109,6 @@ export class BroadcastDO implements DurableObject {
   }
 
   private schedulePingAlarm(): void {
-    this.ctx.storage.setAlarm(Date.now() + 30_000).catch(() => {});
+    this.ctx.storage.setAlarm(Date.now() + 15_000).catch(() => {});
   }
 }

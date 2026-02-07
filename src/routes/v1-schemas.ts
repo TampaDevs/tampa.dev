@@ -168,6 +168,15 @@ export const UserBadgeSchema = z.object({
   }),
 }).openapi('UserBadge');
 
+/** User entitlement */
+export const UserEntitlementSchema = z.object({
+  id: z.string(),
+  entitlement: z.string().openapi({ description: 'Entitlement key (e.g., dev.tampa.group.create)' }),
+  grantedAt: z.string().nullable().openapi({ description: 'ISO timestamp when entitlement was granted' }),
+  expiresAt: z.string().nullable().openapi({ description: 'ISO timestamp when entitlement expires, or null if permanent' }),
+  source: z.string().nullable().openapi({ description: 'How the entitlement was granted (e.g., admin, achievement)' }),
+}).openapi('UserEntitlement');
+
 /** Personal Access Token (list view, no token value) */
 export const TokenSchema = z.object({
   id: z.string(),

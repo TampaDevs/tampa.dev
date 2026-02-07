@@ -10,7 +10,7 @@ import { eq, and, inArray } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { groups, userFavorites } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getCurrentUser } from '../lib/auth.js';
+import { getSessionUser } from '../lib/auth.js';
 import { emitEvent, emitEvents } from '../lib/event-bus.js';
 import { ok, success, unauthorized, notFound } from '../lib/responses.js';
 
@@ -23,7 +23,7 @@ export function createFavoritesRoutes() {
    * Returns list of favorited group slugs for the authenticated user.
    */
   app.get('/', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -54,7 +54,7 @@ export function createFavoritesRoutes() {
    * POST /api/favorites/:groupSlug - Add a group to favorites
    */
   app.post('/:groupSlug', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -101,7 +101,7 @@ export function createFavoritesRoutes() {
    * DELETE /api/favorites/:groupSlug - Remove a group from favorites
    */
   app.delete('/:groupSlug', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
@@ -142,7 +142,7 @@ export function createFavoritesRoutes() {
    * Returns the complete list of favorites after merge.
    */
   app.post('/sync', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 

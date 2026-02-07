@@ -20,6 +20,7 @@ import {
   createFollow,
   createBadge,
   awardBadge,
+  grantEntitlement,
   appRequest,
 } from '../helpers';
 
@@ -345,6 +346,76 @@ describe('/v1/ Profile', () => {
 
     const res = await appRequest('/v1/profile/badges', { env });
     expect(res.status).toBe(401);
+  });
+
+  it('GET /v1/profile/entitlements returns empty array when user has no entitlements', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['read:user']);
+
+    const res = await appRequest('/v1/profile/entitlements', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data).toBeInstanceOf(Array);
+    expect(body.data.length).toBe(0);
+  });
+
+  it('GET /v1/profile/entitlements returns active entitlements', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['read:user']);
+    await grantEntitlement(user.id, 'dev.tampa.group.create', 'admin');
+
+    const res = await appRequest('/v1/profile/entitlements', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data).toBeInstanceOf(Array);
+    expect(body.data.length).toBe(1);
+    expect(body.data[0].entitlement).toBe('dev.tampa.group.create');
+    expect(body.data[0].source).toBe('admin');
+    expect(body.data[0].grantedAt).toBeDefined();
+    expect(body.data[0].expiresAt).toBeNull();
+  });
+
+  it('GET /v1/profile/entitlements requires read:user scope', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { authHeader } = await createPatToken(user.id, ['read:events']);
+
+    const res = await appRequest('/v1/profile/entitlements', {
+      env,
+      headers: { Authorization: authHeader },
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('GET /v1/profile/entitlements rejects unauthenticated requests', async () => {
+    const { env } = createTestEnv();
+
+    const res = await appRequest('/v1/profile/entitlements', { env });
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /v1/profile/entitlements works with session auth', async () => {
+    const { env } = createTestEnv();
+    const user = await createUser();
+    const { cookieHeader } = await createSession(user.id);
+    await grantEntitlement(user.id, 'dev.tampa.feature.beta', 'system');
+
+    const res = await appRequest('/v1/profile/entitlements', {
+      env,
+      headers: { Cookie: cookieHeader },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.data.length).toBe(1);
+    expect(body.data[0].entitlement).toBe('dev.tampa.feature.beta');
   });
 });
 

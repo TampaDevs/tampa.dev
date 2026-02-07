@@ -19,7 +19,26 @@ interface Toast {
   dismissAt: number;
 }
 
-export function NotificationToast() {
+/**
+ * Check if a notification is intended for the current user.
+ * Returns true if the notification should be displayed (matches user or unknown).
+ * Returns false if the notification is definitely for a different user (stale connection).
+ */
+function isNotificationForCurrentUser(
+  msgUserId: string | undefined,
+  currentUserId: string | null | undefined,
+): boolean {
+  // If either ID is missing, allow the notification (be permissive)
+  if (!msgUserId || !currentUserId) return true;
+  // Only show if IDs match
+  return msgUserId === currentUserId;
+}
+
+interface NotificationToastProps {
+  currentUserId?: string | null;
+}
+
+export function NotificationToast({ currentUserId }: NotificationToastProps) {
   const { personal } = useWS();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [exiting, setExiting] = useState<Set<string>>(new Set());
@@ -57,6 +76,11 @@ export function NotificationToast() {
   // Listen for score changes
   useEffect(() => {
     return personal.on('score.changed', (msg) => {
+      // Guard: drop notifications for other users (stale connection defense)
+      if (!isNotificationForCurrentUser(msg.data.userId, currentUserId)) {
+        console.warn('[NotificationToast] Dropped score notification for wrong user');
+        return;
+      }
       addToast({
         id: `score-${Date.now()}`,
         title: 'XP Updated',
@@ -65,7 +89,7 @@ export function NotificationToast() {
         dismissAt: Date.now() + 5000,
       });
     });
-  }, [personal, addToast]);
+  }, [personal, addToast, currentUserId]);
 
   // Cleanup timers on unmount
   useEffect(() => {

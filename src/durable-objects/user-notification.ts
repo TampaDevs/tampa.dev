@@ -5,10 +5,17 @@
  * Uses the Hibernation API for cost efficiency — the DO hibernates when
  * no messages are being sent and wakes on alarm or incoming request.
  *
- * Stateless relay: no DO storage reads/writes, only in-memory WebSocket refs.
+ * Features:
+ * - Per-user WebSocket connections tagged with userId for validation
+ * - Message buffering for delivery during brief disconnections
+ * - 15-second ping interval for faster dead connection detection
  */
 
 import type { WSMessage } from '../lib/ws-types.js';
+
+const PING_INTERVAL_MS = 15_000; // 15 seconds
+const MAX_BUFFERED_MESSAGES = 20;
+const BUFFER_KEY = 'pendingMessages';
 
 export class UserNotificationDO implements DurableObject {
   private ctx: DurableObjectState;
@@ -33,20 +40,32 @@ export class UserNotificationDO implements DurableObject {
 
   /**
    * Accept WebSocket upgrade and schedule keep-alive ping.
+   * Tags the WebSocket with the userId from the X-User-Id header for validation.
    */
-  private handleWebSocketUpgrade(request: Request): Response {
+  private async handleWebSocketUpgrade(request: Request): Promise<Response> {
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
       return new Response('Expected WebSocket upgrade', { status: 426 });
+    }
+
+    // Extract userId from header set by the route handler
+    // This header is required — its absence indicates a programming error
+    const userId = request.headers.get('X-User-Id');
+    if (!userId) {
+      console.error('[UserNotificationDO] Missing X-User-Id header — rejecting upgrade');
+      return new Response('Missing X-User-Id header', { status: 400 });
     }
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
-    // Accept using Hibernation API — DO can sleep between messages
-    this.ctx.acceptWebSocket(server);
+    // Accept using Hibernation API with userId tag for validation
+    this.ctx.acceptWebSocket(server, [userId]);
 
     // Schedule ping alarm if not already set
     this.schedulePingAlarm();
+
+    // Deliver any buffered messages to the new connection
+    await this.flushBufferedMessages(server);
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -54,22 +73,74 @@ export class UserNotificationDO implements DurableObject {
   /**
    * Receive a notification payload from the queue handler and broadcast
    * to all connected WebSockets for this user.
+   * Buffers messages if no clients are connected.
    */
   private async handleNotify(request: Request): Promise<Response> {
     const message = await request.json() as WSMessage;
     const payload = JSON.stringify(message);
 
     const sockets = this.ctx.getWebSockets();
+
+    // No connected clients — buffer for redelivery when they reconnect
+    if (sockets.length === 0) {
+      await this.bufferMessage(payload);
+      return new Response('Buffered', { status: 202 });
+    }
+
+    let delivered = 0;
     for (const ws of sockets) {
       try {
         ws.send(payload);
+        delivered++;
       } catch {
         // Socket closed/errored — close it so getWebSockets() stops returning it
         try { ws.close(1011, 'Send failed'); } catch { /* already closed */ }
       }
     }
 
+    // If all sends failed, buffer the message for when client reconnects
+    if (delivered === 0) {
+      await this.bufferMessage(payload);
+      return new Response('Buffered', { status: 202 });
+    }
+
     return new Response('OK', { status: 200 });
+  }
+
+  /**
+   * Buffer a message for later delivery.
+   * Keeps at most MAX_BUFFERED_MESSAGES to prevent memory bloat.
+   */
+  private async bufferMessage(payload: string): Promise<void> {
+    const buffered = (await this.ctx.storage.get<string[]>(BUFFER_KEY)) ?? [];
+    buffered.push(payload);
+
+    // Trim to max size (FIFO — oldest messages dropped first)
+    while (buffered.length > MAX_BUFFERED_MESSAGES) {
+      buffered.shift();
+    }
+
+    await this.ctx.storage.put(BUFFER_KEY, buffered);
+  }
+
+  /**
+   * Flush buffered messages to a newly connected WebSocket.
+   */
+  private async flushBufferedMessages(ws: WebSocket): Promise<void> {
+    const buffered = (await this.ctx.storage.get<string[]>(BUFFER_KEY)) ?? [];
+    if (buffered.length === 0) return;
+
+    for (const msg of buffered) {
+      try {
+        ws.send(msg);
+      } catch {
+        // Connection failed immediately — leave messages buffered for next attempt
+        return;
+      }
+    }
+
+    // Successfully delivered all buffered messages
+    await this.ctx.storage.delete(BUFFER_KEY);
   }
 
   /**
@@ -122,11 +193,11 @@ export class UserNotificationDO implements DurableObject {
       }
     }
 
-    // Reschedule for 30 seconds from now
+    // Reschedule for 15 seconds from now
     this.schedulePingAlarm();
   }
 
   private schedulePingAlarm(): void {
-    this.ctx.storage.setAlarm(Date.now() + 30_000).catch(() => {});
+    this.ctx.storage.setAlarm(Date.now() + PING_INTERVAL_MS).catch(() => {});
   }
 }

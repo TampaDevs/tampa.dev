@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { createDatabase } from '../db';
 import { userIdentities } from '../db/schema';
 import type { Env } from '../../types/worker';
-import { getCurrentUser } from '../lib/auth.js';
+import { getSessionUser } from '../lib/auth.js';
 import { ok, unauthorized } from '../lib/responses.js';
 
 export function createLinkedAccountsRoutes() {
@@ -22,7 +22,7 @@ export function createLinkedAccountsRoutes() {
    * Returns provider info without tokens.
    */
   app.get('/', async (c) => {
-    const auth = await getCurrentUser(c);
+    const auth = await getSessionUser(c);
     if (!auth) return unauthorized(c);
     const user = auth.user;
 
