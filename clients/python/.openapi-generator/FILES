@@ -187,10 +187,4 @@ tampa_events_api/py.typed
 tampa_events_api/rest.py
 test-requirements.txt
 test/__init__.py
-test/test_v_user_badge.py
-test/test_v_user_badge_group.py
-test/test_v_user_badge_rarity.py
-test/test_v_user_entitlement.py
-test/test_vv1_profile_badges_get200_response.py
-test/test_vv1_profile_entitlements_get200_response.py
 tox.ini
