@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/s3-request-presigner": "^3.978.0",
+    "@aws-sdk/s3-request-presigner": "^3.995.0",
     "@cloudflare/workers-oauth-provider": "^0.2.2",
     "@hono/swagger-ui": "^0.5.3",
     "@hono/zod-openapi": "^0.19.10",
